@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} FAQ | Lido Shores Resort {% endblock title %}
+{% block content %}
+
+<style>
+    .faq-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: auto;
+        padding: 20px;
+    }
+
+    .faq-container {
+        max-width: 1000px;
+        width: 100%;
+        background: var(--bgtertiary);
+        padding: 40px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .faq-section {
+        margin-top: 25px;
+        padding-top: 15px;
+    }
+
+    .faq-question {
+        cursor: pointer;
+        padding: 15px;
+        font-weight: 500;
+        background-color: var(--bgprimary);
+        border: 1px solid #ddd;
+        margin-top: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: var(--bgtertiary);
+    }
+
+    .faq-answer {
+        overflow: hidden; 
+        height: 0; 
+        padding: 0; 
+        margin-top: 0; 
+        transition: height 0.3s ease, padding 0.3s ease, margin 0.3s ease; 
+    }
+    
+    .faq-answer.expanded {
+        padding: 0px 15px; /* Add padding when expanded */
+        margin-top: 10px; /* Add spacing between the question and the answer */
+    }
+    
+    
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px 35px 10px 10px;
+        font-size: 1em;
+        border: 1px solid #ddd;
+        outline: none;
+        border-radius: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .form-group input:focus {
+        border-color: var(--bgprimary);
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 10px;
+        left: 15px;
+        font-size: 1em;
+        color: #666;
+        background: var(--bgtertiary);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        padding: 0 5px;
+    }
+
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label {
+        top: -10px;
+        left: 10px;
+        font-size: 0.85em;
+        color: #333;
+    }
+
+    .form-group .icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.2em;
+        color: #666;
+    }
+</style>
+
+<div class="faq-wrapper">
+    <div class="faq-container">
+        <!-- FAQ Page Title and Description -->
+        <h1>Frequently Asked Questions</h1>
+        <p>Welcome to our FAQ page! Here you'll find answers to some of the most common questions about Lido Shores Resort. If you have any additional questions, feel free to reach out to us.</p>
+
+        <!-- Search Bar -->
+        <div class="form-group">
+            <input type="text" id="faqSearch" placeholder=" " onkeyup="searchFaq()">
+            <label for="faqSearch">Search FAQ</label>
+            <i class="fa-solid fa-magnifying-glass icon"></i>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="faq-section" id="faqSection">
+            <h3>FAQs</h3>
+
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Why do you ask for my birthday and gender?
+            </div>
+            <div class="faq-answer">
+                <p>At Lido Shores Resort, we collect your birthday and gender to create a personalized experience tailored to your preferences. This information allows us to celebrate special occasions, provide age-appropriate amenities, and ensure a welcoming stay. We take your privacy seriously and manage your data responsibly according to our Privacy Policy.</p>
+            </div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;How is my gender information used?</div>
+            <div class="faq-answer">Gender information helps us offer relevant recommendations and customize your experience. This may include room preferences or wellness amenities.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Is my information safe with Lido Shores Resort?</div>
+            <div class="faq-answer">Yes, we prioritize data security and strictly adhere to privacy standards to protect your information. For more details, please review our Privacy Policy.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Can I update or change my birthday or gender information later?</div>
+            <div class="faq-answer">Yes, you can update your information anytime by accessing your account settings or contacting our support team for assistance.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Will this information be shared with third parties?</div>
+            <div class="faq-answer">No, your information is not shared with third parties without your consent. It is solely used to enhance your experience at Lido Shores Resort.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;What are the entrance fee rates?</div>
+            <div class="faq-answer">Children below 3ft are charged half the entrance fee, while those 3ft and above are charged the full rate. Children 1 year old and below enter for free.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Do discounted rates apply to all services?</div>
+            <div class="faq-answer">Discounted rates apply only to the entrance fee per person.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Is there an age limit for free entrance?</div>
+            <div class="faq-answer">Yes, only children 1 year old and below are eligible for free entrance.</div>
+
+            <div class="faq-question" onclick="toggleFaq(this)"><i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;What are the Daytour and Nighttour price rates?</div>
+            <div class="faq-answer">
+                <h4>Daytour (6:00 AM to 5:59 PM) Price Rates:</h4>
+                <p>₱ 330 per person</p>
+                <p>₱ 165 per child (3ft below, half payment)</p>
+
+                <h4>Nighttour (7:00 PM to 5:59 AM) Price Rates:</h4>
+                <p>₱ 500 per person</p>
+                <p>₱ 250 per child (3ft below, half payment)</p>
+
+                <p>The rates above apply for Daytour and Nighttour respectively. For children below 3ft, half payment applies, meaning they pay 50% of the standard rate.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleFaq(element) {
+        const answer = element.nextElementSibling; // Get the corresponding answer
+        const isExpanded = answer.classList.contains("expanded");
+    
+        if (isExpanded) {
+            // Collapse the answer
+            answer.style.height = "0px"; // Reset height to 0
+            answer.classList.remove("expanded");
+        } else {
+            // Expand the answer
+            answer.style.height = `${answer.scrollHeight}px`; // Dynamically adjust height
+            answer.classList.add("expanded");
+        }
+    }
+    
+
+    // Search FAQ questions
+    function searchFaq() {
+        const input = document.getElementById('faqSearch');
+        const filter = input.value.toLowerCase();
+        const section = document.getElementById('faqSection');
+        const questions = section.getElementsByClassName('faq-question');
+
+        for (let i = 0; i < questions.length; i++) {
+            const question = questions[i];
+            const text = question.textContent || question.innerText;
+            const answer = question.nextElementSibling;
+
+            if (text.toLowerCase().includes(filter)) {
+                question.style.display = "";
+                answer.style.display = "";
+            } else {
+                question.style.display = "none";
+                answer.style.display = "none";
+            }
+        }
+    }
+</script>
+
+{% endblock content %}

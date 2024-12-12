@@ -1,0 +1,719 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Rooms | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+{% block mainnav %}{% endblock mainnav %}
+{% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+{% include 'message_notification.html' %}
+
+<div class="container rooms" style="margin-top: 20px;">
+    <div class="filter-container">
+        <h3 style="text-transform: uppercase;">Room List</h3>
+        <hr>
+        <div class="row align-items-center">
+            <div class="col-6">
+                <!-- Search bar -->
+                <div class="form-group">
+                    <label for="searchBar">
+                        <i class="fa-solid fa-magnifying-glass"></i>&nbsp;&nbsp;Search Room Names
+                    </label>
+                    <input type="text" id="searchBar" class="form-control" placeholder="" onfocus="updateLabelPosition(this)" oninput="updateLabelPosition(this)">
+                </div>
+                <div class="row align-items-center mt-3">
+                    <!-- Capacity Filter Section -->
+                    <div class="col-6 d-flex align-items-center">
+                        <label class="mr-3"><i class="fa-solid fa-user-group"></i> Capacity / Person(s): &nbsp;</label>
+                        <button id="decreaseCapacity" class="btn btn-outline-secondary">-</button>
+                        <span id="capacityValue" class="mx-2">1</span> <!-- Default to 1 guest capacity -->
+                        <button id="increaseCapacity" class="btn btn-outline-secondary">+</button>
+                    </div>
+                
+                    <!-- Bed Type Filter Section -->
+                    <div class="col-6 d-flex justify-content-end align-items-center">
+                    <div class="dropdown" id="bedTypeDropdown">
+                        <label for="bedTypeDropdownButton"><i class="fa-solid fa-bed"></i> Bed Type:</label>
+                        <button id="bedTypeDropdownButton" class="btn btn-outline-secondary dropdown-toggle" type="button">
+                            All Types
+                        </button>
+                        <div id="bedTypeMenu" class="dropdown-menu">
+                            <a class="dropdown-item bed-type-option" data-bed-type="">All Types</a>
+                            <a class="dropdown-item bed-type-option" data-bed-type="single"><i class="fa-solid fa-user-tie"></i> Single Bed</a>
+                            <a class="dropdown-item bed-type-option" data-bed-type="double"><i class="fa-solid fa-user-group"></i> Double Bed</a>
+                            <a class="dropdown-item bed-type-option" data-bed-type="queen"><i class="fa-solid fa-chess-queen"></i> Queen Bed</a>
+                            <a class="dropdown-item bed-type-option" data-bed-type="king"><i class="fa-solid fa-crown"></i> King Bed</a>
+                            <a class="dropdown-item bed-type-option" data-bed-type="twin"><i class="fa-solid fa-check-double"></i> Twin Bed</a>
+                        </div>
+                    </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <div class="col-6 d-flex justify-content-end">
+                <!-- Sorting Buttons with Icons -->
+                <div class="btn-group" role="group" aria-label="Sorting buttons">
+                    <button type="button" id="sortNewest" class="btn btn-outline-secondary" data-sort="-id">
+                        <i class="fas fa-sort-amount-down-alt"></i> Newest First
+                    </button>
+                    <button type="button" id="sortNameAsc" class="btn btn-outline-secondary" data-sort="room_name">
+                        <i class="fas fa-sort-alpha-down"></i> Name: <br>A-Z
+                    </button>
+                    <button type="button" id="sortNameDesc" class="btn btn-outline-secondary" data-sort="-room_name">
+                        <i class="fas fa-sort-alpha-up"></i> Name: <br>Z-A
+                    </button>
+                    <button type="button" id="sortPriceAsc" class="btn btn-outline-secondary" data-sort="room_price">
+                        <i class="fas fa-peso-sign"></i> Price: <br>Low-High
+                    </button>
+                    <button type="button" id="sortPriceDesc" class="btn btn-outline-secondary" data-sort="-room_price">
+                        <i class="fas fa-peso-sign"></i> Price: <br>High-Low
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row align-items-center mt-5">
+            <div class="col-md-6">
+                <label for="priceRange"><i class="fa-solid fa-peso-sign"></i> Price Range: <span id="priceLabel">All</span></label>
+                <div class="price-range">
+                    <input type="range" id="priceSlider" name="priceSlider" min="0" max="5" step="1" value="5" oninput="updateSliderLabel(this.value)">
+                    <div class="range-labels">
+                        <span>₱1,000</span>
+                        <span>₱3,000</span>
+                        <span>₱5,000</span>
+                        <span>₱8,000</span>
+                        <span>₱11,000</span>
+                        <span>All</span>
+                    </div>
+                    <br>
+                     
+                </div>
+            </div>
+            <div class="col-md-6 d-flex justify-content-end">
+                <button id="clearFilters" class="btn-one"><i class="fa-solid fa-filter-circle-xmark"></i> Clear Filters <span></span></button>
+                <button id="deleteMultipleRooms" class="btn-one ml-2" style="margin: 0 5px;"><i class="fa-solid fa-list-check"></i> Delete Multiple<span></span></button>
+                <button id="confirmDeleteSelected" class="btn-one ml-2" style="display: none; margin: 0 5px;" disabled>Confirm Delete <span></span></button>
+                <button id="cancelDeleteSelected" class="btn-one ml-2" style="display: none;"><i class="fa-solid fa-xmark"></i> <span></span></button>
+            </div>
+            
+        </div>
+        
+    </div>
+
+    <div class="roomlist-container">
+        <table class="table table-bordered" style="margin-top: 20px;">
+            <p><i>Note: Room list was sorted from newest to oldest by default.</i> 
+                <span style="float: right; font-weight: bold; color: red; font-size: 15px;">
+                    {{ filtered_room_count }} out of {{ total_room_count }}
+                </span>
+            </p>
+            
+            <thead>
+                <tr>
+                    <th class="checkbox-cell hidden"><i class="fa-solid fa-trash"></i></th>
+                    <th>Room ID</th>
+                    <th>Room Name</th>
+                    <th>Price (₱)</th>
+                    <th>Capacity / Pax</th>
+                    <th>Size ft²</th>
+                    <th>Bed Type</th>
+                    <th>Amenities</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <!-- Render the partial template for the room list -->
+            {% include 'authentication/frontdesk/room_list.html' %}
+        </table>
+    </div>
+</div>
+
+<!-- Custom Confirmation Popup for Single Delete -->
+<div id="deleteConfirmationPopup" class="confirmation-popup">
+    <div class="popup-content">
+        <h4>Confirm Deletion</h4>
+        <p id="confirmationMessage">Are you sure you want to delete "<strong><span id="roomNameToDelete"></span></strong>" room?</p>
+        <button id="confirmDelete" class="btn btn-danger">Delete</button>
+        <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+    </div>
+</div>
+
+<!-- Custom Confirmation Popup for Multiple Delete -->
+<div id="deleteConfirmationPopupMultiple" class="confirmation-popup">
+    <div class="popup-content">
+        <h4>Confirm Deletion</h4>
+        <p>Are you sure you want to delete the following rooms?</p>
+        <ul id="roomNamesList"></ul>
+        <p></p>
+        <button id="confirmDeleteMultiple" class="btn btn-danger">Delete</button>
+        <button id="cancelDeleteMultiple" class="btn btn-secondary">Cancel</button>
+    </div>
+</div>
+
+
+
+<input type="hidden" id="csrf_token" value="{{ csrf_token }}">
+
+<style>
+    button.btn-one:disabled {
+        background-color: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    
+    /* Amenity input styling */
+    .amenity-checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 15px 15px 0 0;
+    }
+
+    .amenity-checkbox-group label {
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+    }
+
+    .amenity-checkbox-group input[type="checkbox"] {
+        /* Custom styles for the checkbox */
+        width: 24px; /* Width of the checkbox */
+        height: 24px; /* Height of the checkbox */
+        accent-color: var(--bgsecondary); /* Background color of the checkbox */
+        cursor: pointer; /* Pointer cursor on hover */
+        margin-left: 15px;
+    }
+    
+    .amenity-checkbox-group input[type="checkbox"]:checked {
+        background-color: white; /* Color of the checkbox when checked */
+    }
+    
+    .custom-checkbox input[type="checkbox"] {
+        appearance: none;
+        border: 1px solid #a9a9a9;
+        background-color: white;
+        cursor: pointer;
+        position: relative;
+        outline: none;
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked {
+        background-color: var(--bgsecondary);
+        border-color: var(--bgsecondary);
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked::before {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 15px;
+        color: white;
+    }
+
+    .custom-checkbox label {
+        margin-left: 10px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        color: #202124;
+        cursor: pointer;
+    }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        padding: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+    
+    .dropdown-menu.show {
+        display: block;
+    }
+    
+    .dropdown-item {
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+    
+    .dropdown-item:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .price-range {
+        position: relative;
+        width: 100%;
+    }
+    
+    #priceSlider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 5px;
+        background: #ddd;
+        outline: none;
+        opacity: 0.9;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    
+    #priceSlider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #333;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    
+    .range-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5px;
+    }
+    
+    .filter-container {
+        padding: 40px;
+        margin-bottom: 20px;
+        background-color: var(--bgtertiary);
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .filter-container .form-control {
+        margin: 0;
+    }
+
+    .filter-container .btn-group .btn {
+        margin: 0 2px; /* Add slight margin between buttons */
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .roomlist-container {
+        padding: 40px;
+        background-color: var(--bgtertiary);
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .table-wrapper {
+        max-width: 100%;
+        overflow-x: auto; /* Allow horizontal scroll if table gets too wide */
+    }
+
+    .table {
+        width: 100%;
+        margin: 0; /* Ensure the table does not inherit padding */
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+    }
+
+    th {
+        font-size: 15px;
+        text-transform: uppercase;
+    }
+
+    .form-group {
+        position: relative;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        outline: none;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 1em;
+        color: #666;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 4px;
+    }
+
+    /* Confirmation Popup Styles */
+    .confirmation-popup {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        z-index: 9999; /* On top of other elements */
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+    }
+
+    .popup-content {
+        background-color: white;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .popup-content h4 {
+        margin-bottom: 10px;
+    }
+
+    .popup-content button {
+        margin: 5px;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.3s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa; /* Change this color to your desired hover color */
+    }
+    
+    .table tbody tr.darkened {
+        background-color: rgba(0, 0, 0, 0.1); /* Change this to a darker color */
+    }
+    
+
+    .delete-mode td {
+        cursor: pointer;
+    }
+
+    .hidden {
+        display: none;
+    }
+    
+</style>
+
+<!-- JavaScript for dynamic search and sorting -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Common variables
+        const searchBar = document.getElementById('searchBar');
+        const sortButtons = document.querySelectorAll('.btn-group button');
+        const roomTableBody = document.querySelector('table tbody');
+        const priceSlider = document.getElementById('priceSlider');
+        const priceLabel = document.getElementById('priceLabel');
+        const clearFiltersButton = document.getElementById('clearFilters');
+        const tableRows = document.querySelectorAll('.table tbody tr');
+        const capacityValue = document.getElementById('capacityValue');
+        const increaseCapacityButton = document.getElementById('increaseCapacity');
+        const decreaseCapacityButton = document.getElementById('decreaseCapacity');
+        let currentCapacity = parseInt(capacityValue.textContent, 10);
+        const bedTypeDropdownButton = document.getElementById('bedTypeDropdownButton');
+        const bedTypeMenu = document.getElementById('bedTypeMenu');
+        const bedTypeOptions = document.querySelectorAll('.bed-type-option');
+        let selectedBedType = '';
+        let sortBy = '-id';
+        const deleteConfirmationPopup = document.getElementById('deleteConfirmationPopup');
+        const deleteConfirmationPopupMultiple = document.getElementById('deleteConfirmationPopupMultiple');
+        const confirmDeleteButton = document.getElementById('confirmDelete');
+        const confirmDeleteMultipleButton = document.getElementById('confirmDeleteMultiple');
+        const cancelDeleteButton = document.getElementById('cancelDelete');
+        const cancelDeleteMultipleButton = document.getElementById('cancelDeleteMultiple');
+        let roomToDeleteId = null;
+        const deleteMultipleRoomsButton = document.getElementById('deleteMultipleRooms');
+        const confirmDeleteSelectedButton = document.getElementById('confirmDeleteSelected');
+        const cancelDeleteSelectedButton = document.getElementById('cancelDeleteSelected');
+        const checkboxCells = document.querySelectorAll('.checkbox-cell');
+        const csrfToken = document.getElementById('csrf_token')?.value;
+        let isDeleteMode = false;
+        const roomNamesList = document.getElementById('roomNamesList');
+
+        // Increase/decrease capacity
+        increaseCapacityButton.addEventListener('click', function() {
+            currentCapacity += 1;
+            capacityValue.textContent = currentCapacity;
+            fetchRooms();
+        });
+
+        decreaseCapacityButton.addEventListener('click', function() {
+            if (currentCapacity > 1) {
+                currentCapacity -= 1;
+                capacityValue.textContent = currentCapacity;
+                fetchRooms();
+            }
+        });
+
+        // Row hover effect
+        function handleRowHover() {
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    tableRows.forEach(r => { if (r !== this) r.classList.add('darkened'); });
+                });
+                row.addEventListener('mouseleave', function() {
+                    tableRows.forEach(r => r.classList.remove('darkened'));
+                });
+            });
+        }
+        handleRowHover();
+
+        // Dropdown for bed type
+        bedTypeDropdownButton.addEventListener('click', function() {
+            bedTypeMenu.classList.toggle('show');
+        });
+
+        bedTypeOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                selectedBedType = this.getAttribute('data-bed-type');
+                bedTypeDropdownButton.textContent = this.textContent;
+                bedTypeMenu.classList.remove('show');
+                fetchRooms();
+            });
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!bedTypeDropdownButton.contains(event.target) && !bedTypeMenu.contains(event.target)) {
+                bedTypeMenu.classList.remove('show');
+            }
+        });
+
+        // Sorting button handling
+        sortButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                sortButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                sortBy = this.getAttribute('data-sort');
+                fetchRooms();
+            });
+        });
+
+        // Price range calculation
+        function getPriceRange(value) {
+            let minPrice, maxPrice;
+            switch (parseInt(value, 10)) {
+                case 0: minPrice = 100; maxPrice = 1999; break;
+                case 1: minPrice = 2000; maxPrice = 3999; break;
+                case 2: minPrice = 4000; maxPrice = 5999; break;
+                case 3: minPrice = 6000; maxPrice = 8999; break;
+                case 4: minPrice = 9000; maxPrice = 10999; break;
+                case 5: minPrice = 100; maxPrice = 10000; break;
+                default: minPrice = 100; maxPrice = 10000;
+            }
+            return { minPrice, maxPrice };
+        }
+
+        function updateSliderLabel(value) {
+            const { minPrice, maxPrice } = getPriceRange(value);
+            priceLabel.textContent = value == 5 ? 'All' : `₱${minPrice.toLocaleString()} ~ ₱${maxPrice.toLocaleString()}`;
+            fetchRooms();
+        }
+        priceSlider.addEventListener('input', function() { updateSliderLabel(this.value); });
+
+        // Fetch rooms with filters and sorting
+        function fetchRooms() {
+            const query = searchBar.value;
+            const { minPrice, maxPrice } = getPriceRange(priceSlider.value);
+            const capacity = currentCapacity;
+
+            fetch(`/frontdesk_rooms/?q=${encodeURIComponent(query)}&sort_by=${encodeURIComponent(sortBy)}&min_price=${minPrice}&max_price=${maxPrice}&capacity=${capacity}&bed_type=${encodeURIComponent(selectedBedType)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                roomTableBody.innerHTML = data.html;
+                attachDeleteListeners();
+                handleRowHover();
+
+                // Keep checkboxes visible if still in delete mode
+                if (isDeleteMode) {
+                    checkboxCells.forEach(cell => cell.style.display = 'table-cell');
+                }
+            })
+            .catch(error => console.error('Error fetching rooms:', error));
+        }
+
+        // Attach delete button listeners
+        function attachDeleteListeners() {
+            document.querySelectorAll('.delete-room').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const roomId = this.getAttribute('data-room-id');
+                    const roomName = this.getAttribute('data-room-name');
+                    showDeleteConfirmation(roomId, roomName);
+                });
+            });
+        }
+
+        // Show confirmation popup for single delete
+        function showDeleteConfirmation(id, roomName) {
+            roomToDeleteId = id;
+            document.getElementById('roomNameToDelete').textContent = roomName;
+            deleteConfirmationPopup.style.display = 'flex';
+        }
+
+        // Confirm single delete action
+        confirmDeleteButton.addEventListener('click', function() {
+            if (roomToDeleteId) {
+                window.location.href = `/rooms/delete/${roomToDeleteId}/`;
+                deleteConfirmationPopup.style.display = 'none';
+            }
+        });
+
+        // Cancel button for single delete confirmation popup
+        cancelDeleteButton.addEventListener('click', function() {
+            deleteConfirmationPopup.style.display = 'none';
+        });
+
+        // Clear filters button
+        clearFiltersButton.addEventListener('click', function() {
+            searchBar.value = '';
+            priceSlider.value = 5;
+            currentCapacity = 1;
+            capacityValue.textContent = currentCapacity;
+            selectedBedType = '';
+            bedTypeDropdownButton.textContent = 'All Types';
+            sortBy = '-id';
+            sortButtons.forEach(btn => btn.classList.remove('active'));
+            document.getElementById('sortNewest').classList.add('active');
+            updateSliderLabel(priceSlider.value);
+            fetchRooms();
+
+            // Keep checkboxes visible if still in delete mode
+            if (isDeleteMode) {
+                checkboxCells.forEach(cell => cell.style.display = 'table-cell');
+            }
+        });
+
+        searchBar.addEventListener('input', fetchRooms);
+
+        // Label animation for search bar
+        function updateLabelPosition(input) {
+            const label = input.previousElementSibling;
+            if (label) {
+                if (input.value.trim() !== "" || document.activeElement === input) {
+                    label.style.top = "-10px";
+                    label.style.left = "8px";
+                    label.style.fontSize = "0.85em";
+                    label.style.color = "#333";
+                } else {
+                    label.style.top = "8px";
+                    label.style.left = "8px";
+                    label.style.fontSize = "1em";
+                    label.style.color = "#666";
+                }
+            }
+        }
+        searchBar.addEventListener('focus', function() { updateLabelPosition(this); });
+        searchBar.addEventListener('blur', function() { updateLabelPosition(this); });
+        searchBar.addEventListener('input', function() { updateLabelPosition(this); });
+        updateLabelPosition(searchBar);
+
+        // Toggle batch delete mode
+        deleteMultipleRoomsButton.addEventListener('click', function() {
+            isDeleteMode = true;
+            deleteMultipleRoomsButton.style.display = 'none';
+            confirmDeleteSelectedButton.style.display = 'inline-block';
+            cancelDeleteSelectedButton.style.display = 'inline-block';
+            confirmDeleteSelectedButton.disabled = true;
+            clearFiltersButton.style.display = 'none'; // Hide clear filters in delete mode
+
+            // Disable filter buttons and inputs
+            [...sortButtons, priceSlider, searchBar, bedTypeDropdownButton, increaseCapacityButton, decreaseCapacityButton].forEach(element => element.disabled = true);
+
+            // Show checkbox cells
+            checkboxCells.forEach(cell => cell.classList.remove('hidden'));
+            roomTableBody.classList.add('delete-mode');
+        });
+
+        cancelDeleteSelectedButton.addEventListener('click', function() {
+            isDeleteMode = false;
+            deleteMultipleRoomsButton.style.display = 'inline-block';
+            confirmDeleteSelectedButton.style.display = 'none';
+            cancelDeleteSelectedButton.style.display = 'none';
+            clearFiltersButton.style.display = 'inline-block'; // Show clear filters again
+
+            // Enable filter buttons and inputs
+            [...sortButtons, priceSlider, searchBar, bedTypeDropdownButton, increaseCapacityButton, decreaseCapacityButton].forEach(element => element.disabled = false);
+
+            // Hide checkbox cells and reset checkboxes
+            checkboxCells.forEach(cell => cell.classList.add('hidden'));
+            document.querySelectorAll('.room-checkbox').forEach(checkbox => checkbox.checked = false);
+            roomTableBody.classList.remove('delete-mode');
+        });
+
+        // Toggle checkbox selection on row click in delete mode
+        roomTableBody.addEventListener('click', function(event) {
+            if (isDeleteMode && event.target.tagName === 'TD' && !event.target.classList.contains('checkbox-cell') && !event.target.classList.contains('actions')) {
+                const checkbox = event.target.closest('tr').querySelector('.room-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+
+        // Enable confirm button if any checkbox selected
+        document.querySelectorAll('.room-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const anyChecked = [...document.querySelectorAll('.room-checkbox')].some(cb => cb.checked);
+                confirmDeleteSelectedButton.disabled = !anyChecked;
+            });
+        });
+
+        // Add selected room names to confirmation popup
+        confirmDeleteSelectedButton.addEventListener('click', function() {
+            const selectedRooms = [...document.querySelectorAll('.room-checkbox:checked')];
+            const roomNames = selectedRooms.map(cb => cb.getAttribute('data-room-name'));
+
+            if (roomNames.length > 0) {
+                // Clear previous list and populate with current selection
+                roomNamesList.innerHTML = ''; // Clear previous list
+                roomNames.forEach(name => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `- ${name}`;
+                    roomNamesList.appendChild(listItem);
+                });
+
+                // Show confirmation popup for multiple delete
+                deleteConfirmationPopupMultiple.style.display = 'flex';
+
+                // Handle delete confirmation for multiple rooms
+                confirmDeleteMultipleButton.onclick = function() {
+                    const selectedRoomIds = selectedRooms.map(cb => cb.getAttribute('data-room-id'));
+                    fetch('/delete_multiple_rooms/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                        },
+                        body: JSON.stringify({ room_ids: selectedRoomIds })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/frontdesk_rooms/?message=Rooms successfully deleted';
+                        } else {
+                            alert('Error deleting rooms: ' + data.error);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                };
+            }
+        });
+
+        // Close confirmation popup on cancel for multiple delete
+        cancelDeleteMultipleButton.addEventListener('click', function() {
+            deleteConfirmationPopupMultiple.style.display = 'none';
+        });
+
+        attachDeleteListeners();
+    });
+</script>
+
+
+
+
+
+{% endblock content %}

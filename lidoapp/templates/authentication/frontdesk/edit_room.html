@@ -1,0 +1,673 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+
+{% block title %} Edit {{ room.room_name }} | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+    {% block mainnav %}{% endblock mainnav %}
+    {% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+    {% include 'message_notification.html' %}
+
+<div class="content-container row">
+        <div class="col-md-3">
+            <div class="form-section-left">
+                <div class="add-room-form">
+                    <h3>Edit Room: {{ room.room_name }}</h3>
+                    <hr>
+                    <form id="editRoomForm" method="POST" action="{% url 'edit_room' room.id %}" enctype="multipart/form-data">
+
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input type="text" id="room_name" name="room_name" value="{{ room.room_name }}" required placeholder=" ">
+                            <label for="room_name">Room Name *</label>
+                            <div class="error-message">Room Name is required.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="room_price" name="room_price" value="{{ room.room_price|floatformat:2 }}" required placeholder=" ">
+                            <label for="room_price">Room Price *</label>
+                            <div class="error-message" id="required-error-message">Room Price is required.</div>
+                            <div class="error-message" id="range-error-message">Room Price must be between ₱100 and ₱20,000.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="number" id="room_capacity" name="room_capacity" value="{{ room.room_capacity }}" min="1" required placeholder=" " />
+                            <label for="room_capacity">Room Capacity *</label>
+                            <div class="error-message" id="capacity-required-error">Room Capacity is required.</div>
+                            <div class="error-message" id="capacity-range-error">Room Capacity cannot be set to 0.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="room_size" name="room_size" value="{{ room.room_size }}" required placeholder=" ">
+                            <label for="room_size">Room Size (in ft²) *</label>
+                        </div>
+                 
+                        <div class="form-group">
+                            <label for="bed_type">Bed Type *</label>
+                            <select id="bed_type" name="bed_type" required>
+                                <option value="" disabled>Select Bed Type</option>
+                                {% for bed_choice in room.BED_TYPE_CHOICES %}
+                                    <option value="{{ bed_choice.0 }}" {% if room.bed_type == bed_choice.0 %}selected{% endif %}>
+                                        {{ bed_choice.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="error-message">Bed Type is required.</div>
+                        </div>
+
+                        <a class="btn-one" style="width: 100%; margin-bottom: 10px;" href="{% url 'frontdesk_rooms' %}">
+                            Go Back <span></span>
+                        </a>                    
+                        <button id="saveChangesButton" class="btn-one" style="width: 100%;" type="submit" disabled>Save Changes <span></span></button>
+
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="custom-checkbox">
+                <div class="form-section-right">
+                    <h3>Room Amenities <span style="float: right; font-weight: bold; color: red; font-size: 15px;">* Required</span></h3>
+                    <hr>
+                    <div id="amenities-container" class="two-column">
+                        <div class="amenity-column">
+                            {% for amenity in amenities|slice:":6" %} <!-- First 6 items in the left column -->
+                            <label>
+                                <input type="checkbox" name="room_amenities" value="{{ amenity.amenity_type }}"
+                                {% if amenity.amenity_type in selected_amenities %}checked{% endif %}> {{ amenity }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <div class="amenity-column">
+                            {% for amenity in amenities|slice:"6:" %} <!-- Remaining items in the right column -->
+                            <label>
+                                <input type="checkbox" name="room_amenities" value="{{ amenity.amenity_type }}"
+                                {% if amenity.amenity_type in selected_amenities %}checked{% endif %}> {{ amenity }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+    <!-- Room Image Container on the Right -->
+    <div class="col-md-5">
+        <div class="room-image-container">
+            <h3>Main Room Image <span style="float: right; font-weight: bold; color: red; font-size: 15px;">* Required</span></h3>
+            <p><i>Click on the box to upload/reupload a new main image. <br>(max size: 10MB)</i></p>
+            <hr>
+
+            <!-- Main Image Upload Box with Placeholder and Plus Icon -->
+            <div class="main-image-box" id="mainImageContainer">
+                <!-- Initially hide the img element -->
+                <img id="main-image-preview" src="{% static 'placeholder.png' %}" style="width: 100%; height: auto; object-fit: contain; display: none;">
+                <i class="fa-solid fa-circle-plus main-add-icon" style="position: absolute; font-size: 48px; color: #999; top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                <input type="file" id="room_image" name="room_image" accept="image/*" onchange="previewMainImage(event)" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+            </div>
+            
+
+            <!-- Display Current Main Image (if it exists) outside the upload box -->
+            {% if room.room_image %}
+            <div class="existing-main-image">
+                <h4>Current Main Image:</h4>
+                <img src="{{ room.room_image.url }}" alt="Current Main Image" style="width: 100px; height: auto;">
+            </div>
+            {% endif %}
+
+
+            <hr>
+            <h3>Additional Images</h3>
+            <p></p>
+            <!-- Additional Images Upload Boxes with Placeholders and Plus Icons -->
+            <div class="additional-images-box">
+                {% for i in range_4 %}
+                <div class="additional-image-box" style="position: relative;">
+                    <img id="additional-image-preview-{{ i }}" src="{% static 'placeholder.png' %}" style="width: 100px; height: 100px; object-fit: cover; display: none;">
+                    <i class="fa-solid fa-circle-plus add-icon" style="position: absolute; font-size: 24px; color: #999; top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                    
+                    <!-- File input with data-slot attribute -->
+                    <input type="file" name="additional_images_{{ i }}" accept="image/*" onchange="previewAdditionalImage(event, {{ i }})" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                </div>
+                {% endfor %}
+            </div>
+            
+            
+            
+            <hr>
+
+            <!-- Existing Additional Images with small preview and file name -->
+            <label>Existing Additional Images</label>
+            <p></p>
+            <div class="existing-additional-images-box">
+                {% for image in additional_images %}
+                <div class="additional-image-box" id="existing-image-box-{{ forloop.counter }}" style="position: relative;">
+                    <img id="existing-image-{{ forloop.counter }}" src="{{ image.image.url }}" alt="Existing Additional Image {{ forloop.counter }}" class="{% if not image.visible %}grayscale{% endif %}" style="width: 100px; height: 100px;">
+                    
+                    <!-- Eye toggle button to show/hide the image -->
+                    <button type="button" class="eye-toggle" onclick="toggleVisibility({{ forloop.counter }})" style="position: absolute; top: 10px; right: 10px;">
+                        <i id="eye-icon-{{ forloop.counter }}" class="fa-solid {% if image.visible %}fa-eye{% else %}fa-eye-slash{% endif %}"></i>
+                    </button>
+                    
+                    <!-- Hidden input to track visibility state of the image -->
+                    <input type="hidden" name="image_visibility_{{ image.id }}" id="image-visibility-{{ forloop.counter }}" value="{% if image.visible %}visible{% else %}hidden{% endif %}">
+                </div>
+                {% empty %}
+                <p>No additional images available.</p>
+                {% endfor %}
+            </div>
+
+            
+            
+        </div>
+    </div>
+
+
+        
+        
+        </form>
+    </div>
+
+    <style>
+        .grayscale {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+
+        
+        button.btn-one:disabled {
+            background-color: #cccccc; /* Light gray background */
+            color: #666666; /* Gray text color */
+            cursor: not-allowed; /* Disabled cursor */
+            opacity: 0.6; /* Slightly transparent */
+        }
+    
+        h3 {
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+    
+        /* Content container for overall layout */
+        .content-container {
+            padding: 20px;
+        }
+    
+        /* Add Room Form styling */
+        .add-room-form {
+            background-color: white;
+            padding: 40px;
+            border: 1px solid #ccc; 
+        }
+    
+        .form-section-right {
+            background-color: white;
+            padding: 40px;
+            border: 1px solid #ccc;
+        }
+    
+        /* Form group styling */
+        .form-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+    
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 0.25px solid rgba(0, 0, 0, 0.3);
+            outline: none;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+    
+        .form-group label {
+            position: absolute;
+            top: 8px;  /* Default position when empty */
+            left: 8px;
+            font-size: 1em;
+            color: #666;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            background: white;
+            padding: 0 4px;
+        }
+    
+        /* Error message styling */
+        .form-group .error-message {
+            color: white;
+            font-size: 13px;
+            display: none; /* Hidden by default */
+            padding: 5px;
+            background-color: #d93025;
+            border: 0.25px solid rgba(0, 0, 0, 0.3);
+            width: 100%;
+            text-align: center;
+            margin-top: -10px;
+        }
+    
+        .form-group.error .error-message {
+            display: block; /* Show error message when in error state */
+        }
+    
+        /* Label transition */
+        .form-group input:focus + label,
+        .form-group input:not(:placeholder-shown) + label,
+        .form-group select:focus + label,
+        .form-group select:not(:empty) + label {
+            top: -10px; /* Move label to the top when focused or filled */
+            left: 5px;
+            font-size: 0.85em;
+            color: #333;
+        }
+    
+        /* Amenity input styling */
+        .amenity-checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    
+        .amenity-checkbox-group label {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Container for amenities with two columns */
+        #amenities-container.two-column {
+            display: flex;
+            gap: 20px; /* Space between the two columns */
+        }
+
+        .amenity-column {
+            flex: 1; /* Each column takes up equal space */
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Space between each checkbox */
+        }
+
+        /* Styling for the checkbox and label */
+        .amenity-column label {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Space between checkbox and label text */
+        }
+
+        /* Checkbox styling */
+        .amenity-column input[type="checkbox"] {
+            width: 24px; /* Width of the checkbox */
+            height: 24px; /* Height of the checkbox */
+            accent-color: var(--bgsecondary); /* Background color of the checkbox */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+    
+        /* Room Image Container */
+        .room-image-container {
+            padding: 40px;
+            background-color: white;
+            border: 1px solid #ccc;
+        }
+
+        .main-image-box, .additional-image-box {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+        }
+    
+        .main-image-box input[type="file"], .additional-image-box input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    
+        .main-image-box img, .additional-image-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .main-add-icon, .add-icon {
+            font-size: 24px;
+            color: #999;
+            position: absolute;
+        }
+    
+        /* Main Image Box */
+        .main-image-box {
+            margin-bottom: 20px;
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    
+        .main-image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    
+        .main-add-icon {
+            position: absolute;
+            font-size: 48px;
+            color: #999;
+            display: none; /* Initially hidden */
+        }
+    
+        .main-image-box input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    
+        /* Additional Images Box */
+        .additional-images-box, .existing-additional-images-box {
+            display: flex;
+            justify-content: space-evenly;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        
+    
+        .additional-image-box {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+        }
+    
+        .additional-image-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    
+        .add-icon {
+            position: absolute;
+            font-size: 24px;
+            color: #999;
+            display: none; /* Initially hidden */
+        }
+    
+        .additional-image-box input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    
+        /* Show icons if no image is present */
+        .main-image-box img[src*="placeholder.png"] + .main-add-icon {
+            display: block;
+        }
+    
+        .additional-image-box img[src*="placeholder.png"] + .add-icon {
+            display: block;
+        }
+
+        
+        .amenity-checkbox-group input[type="checkbox"]:checked {
+            background-color: white; /* Color of the checkbox when checked */
+        }
+        
+        .custom-checkbox input[type="checkbox"] {
+            appearance: none;
+            border: 1px solid #dadce0;
+            background-color: white;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+        }
+    
+        .custom-checkbox input[type="checkbox"]:checked {
+            background-color: var(--bgsecondary);
+            border-color: var(--bgsecondary);
+        }
+    
+        .custom-checkbox input[type="checkbox"]:checked::before {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 15px;
+            color: white;
+        }
+    
+        .custom-checkbox label {
+            margin-left: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #202124;
+            cursor: pointer;
+        }
+    </style>
+
+
+    <script>
+        document.getElementById('editRoomForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const form = this;
+            const formData = new FormData(form);
+        
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    document.getElementById('messageBox').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('An error occurred:', error);
+                document.getElementById('messageBox').style.display = 'block';
+            });
+        });
+    
+        window.addEventListener('load', function() {
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+        
+            const djangoMessages = JSON.parse('{{ messages|safe }}');
+        
+            if (djangoMessages.length > 0) {
+                djangoMessages.forEach((message) => {
+                    messageText.textContent = message.message;
+                    if (message.tags === 'success') {
+                        messageBox.classList.add('success');
+                        messageBox.classList.remove('error');
+                    } else if (message.tags === 'error') {
+                        messageBox.classList.add('error');
+                        messageBox.classList.remove('success');
+                    }
+                    messageBox.style.display = 'block';
+                    setTimeout(() => {
+                        messageBox.style.display = 'none';
+                    }, 5000);
+                });
+            }
+        
+            checkFormValidity(); // Ensure the button state is checked on page load
+        });
+    
+        const roomPriceInput = document.getElementById('room_price');
+        const roomCapacityInput = document.getElementById('room_capacity');
+        const roomNameInput = document.getElementById('room_name');
+        const roomSizeInput = document.getElementById('room_size');
+        const bedTypeInput = document.getElementById('bed_type');
+        const mainImageInput = document.getElementById('room_image');
+        const additionalImageInputs = document.querySelectorAll('.additional-image-box input[type="file"]');
+        const amenityCheckboxes = document.querySelectorAll('input[name="room_amenities"]');
+        const saveButton = document.getElementById('saveChangesButton');
+    
+        let originalAmenities = [...document.querySelectorAll('input[name="room_amenities"]:checked')].map(input => input.value);
+    
+        function amenitiesChanged() {
+            const currentAmenities = [...document.querySelectorAll('input[name="room_amenities"]:checked')].map(input => input.value);
+            return JSON.stringify(originalAmenities) !== JSON.stringify(currentAmenities);
+        }
+    
+        function checkFormValidity() {
+            const roomName = roomNameInput.value.trim();
+            const roomPrice = roomPriceInput.value.trim();
+            const roomCapacity = roomCapacityInput.value.trim();
+            const roomSize = roomSizeInput.value.trim();
+            const bedType = bedTypeInput.value;
+            const mainImageUploaded = mainImageInput.files.length > 0;
+            const additionalImageUploaded = Array.from(additionalImageInputs).some(input => input.files.length > 0);
+            const mainImageRequired = !{{ room.room_image|yesno:"true,false" }} && !mainImageUploaded;
+        
+            // Check if any visibility input changed
+            const visibilityChanged = Array.from(document.querySelectorAll('input[name^="image_visibility_"]')).some(input => input.value === 'hidden');
+        
+            // Enable Save Changes button if required fields are filled, additional image is uploaded, visibility changed, or amenities are changed
+            saveButton.disabled = !(
+                (roomName && roomPrice && roomCapacity && roomSize && bedType && !mainImageRequired) ||
+                additionalImageUploaded || amenitiesChanged() || visibilityChanged
+            );
+        }
+        
+    
+        function previewImage(event, previewId) {
+            const reader = new FileReader();
+            const imagePreview = document.getElementById(previewId);
+            const addIcon = imagePreview.nextElementSibling;
+    
+            reader.onload = function () {
+                imagePreview.src = reader.result;
+                imagePreview.style.display = 'block';
+                if (addIcon) {
+                    addIcon.style.display = 'none';
+                }
+            };
+    
+            if (event.target.files.length > 0) {
+                reader.readAsDataURL(event.target.files[0]);
+            } else {
+                imagePreview.src = "{% static 'placeholder.png' %}";
+                if (addIcon) {
+                    addIcon.style.display = 'block';
+                }
+            }
+        }
+    
+        function previewAdditionalImage(event, slot) {
+            const inputElement = event.target;
+            const previewId = `additional-image-preview-${slot}`;
+            const additionalImagePreview = document.getElementById(previewId);
+            const addIcon = additionalImagePreview.nextElementSibling;
+    
+            if (inputElement.files && inputElement.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function (e) {
+                    additionalImagePreview.src = e.target.result;
+                    additionalImagePreview.style.display = 'block';
+                    if (addIcon) addIcon.style.display = 'none';
+                };
+    
+                reader.readAsDataURL(inputElement.files[0]);
+            } else {
+                additionalImagePreview.src = "{% static 'placeholder.png' %}";
+                additionalImagePreview.style.display = 'none';
+                if (addIcon) addIcon.style.display = 'block';
+            }
+    
+            checkFormValidity(); // Enable Save Changes button if any image is added
+        }
+    
+        // Attach event listeners to form inputs for validation
+        roomNameInput.addEventListener('input', checkFormValidity);
+        roomPriceInput.addEventListener('input', checkFormValidity);
+        roomCapacityInput.addEventListener('input', checkFormValidity);
+        roomSizeInput.addEventListener('input', checkFormValidity);
+        bedTypeInput.addEventListener('change', checkFormValidity);
+        mainImageInput.addEventListener('change', function(event) {
+            previewImage(event, 'main-image-preview');
+            checkFormValidity();
+        });
+    
+        // Event listeners for each additional image input
+        additionalImageInputs.forEach((input, index) => {
+            input.addEventListener('change', function (event) {
+                previewAdditionalImage(event, index); // Pass the index to previewAdditionalImage for each slot
+            });
+        });
+    
+        // Event listeners for amenities checkboxes
+        amenityCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', checkFormValidity);
+        });
+
+        function toggleVisibility(index) {
+            const image = document.getElementById(`existing-image-${index}`);
+            const eyeIcon = document.getElementById(`eye-icon-${index}`);
+            const visibilityInput = document.getElementById(`image-visibility-${index}`);
+            
+            if (visibilityInput.value === 'visible') {
+                image.classList.add('grayscale');
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+                visibilityInput.value = 'hidden';
+            } else {
+                image.classList.remove('grayscale');
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+                visibilityInput.value = 'visible';
+            }
+            
+            // Enable the Save Changes button as visibility has been changed
+            document.getElementById('saveChangesButton').disabled = false;
+        }
+        
+        
+        
+        
+        
+    </script>
+    
+    
+    
+    
+    
+{% endblock content %}

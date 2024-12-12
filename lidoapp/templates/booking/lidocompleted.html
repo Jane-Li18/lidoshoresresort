@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Reservation Success! | Lido Shores Resort{% endblock title %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Style for confirmation page */
+    .lidocompleted-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 50px;
+        background: var(--bgtertiary);
+        border: 1px solid #ccc;
+    }
+    
+    .success-message {
+        text-align: center;
+    }
+
+    .progress-title {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: var(--bgsecondary);
+    }
+
+    .step-progress {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 20px 0;
+        position: relative;
+        width: 80%;
+        margin: 0 auto;
+        margin-bottom: 20px;
+    }
+
+    .step-progress .circle-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-progress .circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .step-progress .circle.active,
+    .step-progress .circle.completed {
+        background-color: var(--bgsecondary);
+    }
+
+    .step-progress .bar {
+        flex: 1;
+        height: 5px;
+        background-color: var(--bgsecondary);
+        position: relative;
+        top: -15px;
+        z-index: 0;
+        margin: 0 -40px;
+    }
+
+    .step-progress .label {
+        margin-top: 5px;
+        font-size: 14px;
+        color: var(--txtprimary);
+    }
+
+    .message-box-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 10px; /* Space between buttons */
+    }
+</style>
+
+<div class="lidocompleted-container" style="margin-top: 100px;">
+    <h2 class="progress-title">Confirmation</h2>
+    <div class="step-progress">
+        <div class="circle-step">
+            <div class="circle completed">1</div>
+            <div class="label">Rooms</div>
+        </div>
+        <div class="bar completed"></div>
+        <div class="circle-step">
+            <div class="circle completed">2</div>
+            <div class="label">Add-Ons</div>
+        </div>
+        <div class="bar completed"></div>
+        <div class="circle-step">
+            <div class="circle completed">3</div>
+            <div class="label">Guest Details</div>
+        </div>
+
+        <div class="bar completed"></div>
+        <div class="circle-step completed">
+            <div class="circle completed">4</div>
+            <div class="label">Confirmation</div>
+        </div>
+    </div>
+
+    <div class="success-message">
+        <p>Your reservation booking has been submitted!</p> 
+        <p>Thank you and kindly save this reservation ID to be presented on your arrival!</p>
+        {% comment %} , and kindly wait for the front desk to confirm it within 2-5 minutes. {% endcomment %}
+        <p>Your Reservation ID: <strong id="reservationID"></strong></p> <!-- Display the reservation ID -->
+        {% if reservation_id %}
+        <a href="{% url 'generate_invoice' reservation_id %}" class="btn-one">Download Invoice <span></span></a>
+        {% else %}
+        <p>Reservation ID not found. Unable to generate invoice.</p>
+        {% endif %}
+        
+        <div class="message-box-buttons">
+            <a href="{% url 'lidohome' %}" class="btn-one">Go Back to Home <span></span></a>
+            <a href="{% url 'lidobooking' %}" class="btn-one">Book Again? <span></span></a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Clear local storage if the backend signals to do so
+    document.addEventListener("DOMContentLoaded", function () {
+        const shouldClearLocalStorage = {{ clear_local_storage|yesno:"true,false" }};
+        if (shouldClearLocalStorage) {
+            try {
+                localStorage.clear();
+                console.log("Local storage cleared after successful payment.");
+            } catch (error) {
+                console.error("Error clearing local storage:", error);
+            }
+        }
+
+        // Display the reservation ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const reservationID = urlParams.get('reservation_ID'); // Get reservation_ID from URL
+        document.getElementById("reservationID").textContent = reservationID || 'N/A'; // Display the reservation ID or 'N/A'
+    });
+</script>
+
+
+{% endblock content %}

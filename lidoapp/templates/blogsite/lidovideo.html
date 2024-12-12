@@ -1,0 +1,31 @@
+{% load static %}
+        <!-- Video section -->
+        <section class="video-section">
+            <div class="auto-container">
+                <div class="content d-flex flex-column flex-xl-row justify-content-lg-around align-items-center row">
+                    <div class="col-lg-5">
+                        <div class="video-slider wow fadeInUp" data-wow-delay="300ms" data-wow-duration="1500ms">
+                            <div class="theme_carousel_wrapper">
+                                <div class="video_carousel owl-theme owl-carousel owl-dot-style-one" data-options='{"loop": false, "center": false, "autoheight":true, "lazyload":true, "nav": false, "mouseDrag": false, "dots": false, "autoplay": false, "autoplayTimeout": 6000, "smartSpeed": 5000, "responsive":{ "0" :{ "items": "1" }, "480" :{ "items" : "1" }, "600" :{ "items" : "1" }, "768" :{ "items" : "1" } , "992":{ "items" : "1" }, "1200":{ "items" : "1" }}}'>
+                                    <div class="video-image">
+                                        <img src="{% static 'assets/images/gallery/thumbnail.jpg' %}" alt="">
+                                        <div class="video-box">
+                                            <div class="video-btn">
+                                                <a href="{% static 'media/video/lidobloghd.mp4' %}" class="overlay-link play-now ripple" data-fancybox="gallery" data-caption="">
+                                                    <i class="fas fa-play"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 offset-lg-1">
+                        <h2 class="wow fadeInUp" data-wow-delay="0ms" data-wow-duration="3500ms">Find your tranquil oasis at <br>Lido Shores Resort | Sariaya</h2>
+                        <p class="wow fadeInUp mt-3" data-wow-delay="0ms" data-wow-duration="4000ms">Lido Shores presents a captivating array of experiences that enchant and astonish guests from around the globe</p>
+                    </div>
+                </div>
+            </div>
+        </section>

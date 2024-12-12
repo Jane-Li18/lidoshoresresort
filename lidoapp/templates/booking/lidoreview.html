@@ -1,0 +1,429 @@
+{% load static %}
+
+<style>
+    /* Container for the form */
+    .lidoreview-container {
+        height: 1120px;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 50px;
+        background: var(--bgtertiary);
+        border: 1px solid #ccc;
+    }
+
+    .review-h3 {
+        font-size: 15px;
+        text-transform: uppercase;
+        margin-bottom: 13px;
+    }
+
+    .flex-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center; /* Aligns items vertically centered */
+    }
+
+    .review-details p {
+        margin: 0; /* Remove default margin */
+    }
+
+    .toggle-list {
+        cursor: pointer;
+        color: var(--bgsecondary);
+        text-decoration: underline;
+    }
+
+    .children-ages,
+    .add-ons-list,
+    .guest-info-list {
+        display: none;
+        margin-top: 10px;
+    }
+
+    .bold {
+        font-weight: bold;
+    }
+
+    .subtotal {
+        font-weight: normal; /* Non-bold style for subtotal */
+    }
+
+    .guest-info {
+        margin-top: 10px; /* Add margin for guest info */
+    }
+
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+</style>
+
+
+
+
+<div class="booking-rooms" id="lidoreview-container" style="display: none">
+    <div class="button-group">
+        <button id="backToGuestDetailsButton" class="btn-one" onclick="showGuestDetails()">
+            &#8249; Guest Details <span></span>
+        </button>
+    </div>
+
+    <h2 class="progress-title">Review Your Booking</h2>
+    <div class="step-progress">
+        <div class="circle-step">
+            <div class="circle completed">1</div>
+            <div class="label">Rooms</div>
+        </div>
+        <div class="bar completed"></div>
+        <div class="circle-step">
+            <div class="circle completed">2</div>
+            <div class="label">Add-Ons</div>
+        </div>
+        <div class="bar completed"></div>
+        <div class="circle-step">
+            <div class="circle completed">3</div>
+            <div class="label">Guest Details</div>
+        </div>
+        <div class="bar active"></div>
+        <div class="circle-step">
+            <div class="circle active">4</div>
+            <div class="label">Review</div>
+        </div>
+        <div class="bar"></div>
+        <div class="circle-step">
+            <div class="circle">5</div>
+            <div class="label">Confirmation</div>
+        </div>
+    </div>
+
+    <div class="review-card">
+        <div class="lidoreview-container">
+
+            <div id="loadingOverlay" style="display: none;">
+                <div class="loading-spinner"></div>
+            </div>
+
+            <div class="review-details" id="reviewDetails">
+                <h3 class="review-h3">Check-in & Check-out:</h3>
+                <div class="flex-container">
+                    <div>
+                        <p><strong>Check-in:</strong></p>
+                        <p><span id="checkInDate">N/A</span></p>
+                        <p><span id="checkInDay">N/A</span></p> <!-- New for formatted date -->
+                        <p><i class="ri-time-line"></i> After 3:00 PM</p>
+                    </div>
+                    <div>
+                        <p><strong>Check-out:</strong></p>
+                        <p><span id="checkOutDate">N/A</span></p>
+                        <p><span id="checkOutDay">N/A</span></p> <!-- New for formatted date -->
+                        <p><i class="ri-time-line"></i> Before 12:00 PM</p>
+                    </div>
+                    <div>
+                        <p><strong>Chosen Room:</strong></p>
+                        <p><span id="roomDetails">N/A</span></p>
+                    </div>
+                </div>
+                <hr>
+
+                <h3 class="review-h3">Total Guest & Nights:</h3>
+                <p id="daysNights">N/A</p>
+                <p id="guestsSummary">N/A</p>
+                <span class="toggle-list" onclick="toggleChildrenAges()"><i><u>Show Ages</u></i></span>
+                <ul id="childrenAgesList" class="children-ages"></ul>
+                <span class="toggle-list" onclick="toggleGuestInfo()"><i><u>Show Guest Info</u></i></span>
+                <ul id="guestInfoList" class="guest-info-list"></ul>
+                <hr>
+
+                <h3 class="review-h3">Contact Info:</h3>
+                <p><strong>Name:</strong> <span id="reviewFullName">N/A</span></p>
+                <p><strong>Email:</strong> <span id="reviewEmail">N/A</span></p>
+                <p><strong>Mobile Phone:</strong> <span id="reviewMobile">N/A</span></p>
+                <p><strong>Telephone Number:</strong> <span id="reviewTelephone">N/A</span></p>
+                <hr>
+
+                <h3 class="review-h3">Address:</h3>
+                <p><strong>Address 1:</strong> <span id="reviewAddress1">N/A</span></p>
+                <p><strong>Address 2:</strong> <span id="reviewAddress2">N/A</span></p>
+                <p><strong>City:</strong> <span id="reviewCity">N/A</span></p>
+                <p><strong>Country:</strong> <span id="reviewCountry">N/A</span></p>
+                <p><strong>Postal Code:</strong> <span id="reviewPostalCode">N/A</span></p>
+                <hr>
+
+                <h3 class="review-h3">Reservation Details:</h3>
+                <p id="reviewSpecialRequests">N/A</p>
+                <hr>
+
+                <h3 class="review-h3">Payment Method:</h3>
+                <p><strong>GCash Number:</strong> <span id="reviewGCashNumber">N/A</span></p>
+                <p><strong>Name on GCash Account:</strong> <span id="reviewGCashAccountName">N/A</span></p>
+                <p><strong>GCash Reference Number:</strong> <span id="reviewGCashReference">N/A</span></p>
+                <p><strong>Receipt File Name:</strong> <span id="reviewReceiptFileName">No file uploaded</span></p>
+                <hr>
+
+                <h3 class="review-h3">Overall Total:</h3>
+                <p class="bold" id="overallTotalPrice">₱0.00</p>
+                <p class="subtotal" id="subtotalPrice">₱0.00</p>
+                <p class="toggle-list" onclick="toggleAddOnDetails()"><i><u>Show Add-ons</u></i></p>
+                <ul id="addOnsList" class="add-ons-list"></ul>
+
+                
+            <button id="proceedToConfirmationButton" class="btn-one" style="float: right; margin-top: 20px;" onclick="showConfirmationSection()">
+                Confirm &#8250; <span></span>
+            </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function populateReviewDetails() {
+        const fullName = (document.getElementById("prefix")?.value || "N/A") + " " +
+                         (document.getElementById("firstName")?.value || "N/A") + " " +
+                         (document.getElementById("lastName")?.value || "N/A");
+        const checkInDate = selectedDates.checkInDate || "N/A"; // Updated to use selectedDates
+        const checkOutDate = selectedDates.checkOutDate || "N/A"; // Updated to use selectedDates
+        const roomDetails = document.getElementById("roomDetails").textContent || "N/A"; // Get the chosen room from summary
+
+        const email = document.getElementById("email")?.value || "N/A";
+        const mobilePhone = document.getElementById("mobilePhone")?.value || "N/A";
+        const telephoneNumber = document.getElementById("phone")?.value || "N/A"; // Ensure telephone is pulled correctly
+        const address1 = document.getElementById("address1")?.value || "N/A";
+        const address2 = document.getElementById("address2")?.value || "N/A";
+        const city = document.getElementById("city")?.value || "N/A";
+        const postalCode = document.getElementById("postalCode")?.value || "N/A";
+        const country = document.getElementById("country")?.value || "N/A";
+        const specialRequests = document.getElementById("specialRequests")?.value || "N/A";
+        const gcashNumber = document.getElementById("gcashNumber")?.value || "N/A";
+        const gcashAccountName = document.getElementById("gcashAccountName")?.value || "N/A";
+        const gcashReference = document.getElementById("gcashReference")?.value || "N/A";
+
+            // Get the uploaded receipt file name
+        const paymentReceipt = document.getElementById("paymentReceipt");
+        
+        const receiptFileName = paymentReceipt.files.length > 0 ? paymentReceipt.files[0].name : "No file uploaded";
+
+        // Populate the review details section
+        document.getElementById("checkInDate").textContent = checkInDate;
+        document.getElementById("checkOutDate").textContent = checkOutDate;
+        document.getElementById("roomDetails").textContent = roomDetails;
+        document.getElementById("reviewFullName").textContent = fullName;
+        document.getElementById("reviewEmail").textContent = email;
+        document.getElementById("reviewMobile").textContent = mobilePhone;
+        document.getElementById("reviewTelephone").textContent = telephoneNumber; // Show telephone
+        document.getElementById("reviewAddress1").textContent = address1;
+        document.getElementById("reviewAddress2").textContent = address2;
+        document.getElementById("reviewCity").textContent = city;
+        document.getElementById("reviewPostalCode").textContent = postalCode;
+        document.getElementById("reviewCountry").textContent = country;
+        document.getElementById("reviewSpecialRequests").textContent = specialRequests;
+        document.getElementById("reviewGCashNumber").textContent = gcashNumber;
+        document.getElementById("reviewGCashAccountName").textContent = gcashAccountName;
+        document.getElementById("reviewGCashReference").textContent = gcashReference;
+
+
+        // Display the file name of the uploaded receipt in the review section
+        document.getElementById("reviewReceiptFileName").textContent = receiptFileName;
+
+        // Calculate days/nights and guests summary
+        const nights = calculateNights(selectedDates.checkInDate, selectedDates.checkOutDate); // Function to calculate nights
+        document.getElementById("daysNights").textContent = `${nights} Night(s)`;
+        const adults = document.getElementById("adultsCount").value || 0;
+        const children = document.getElementById("childrenCount").value || 0;
+        document.getElementById("guestsSummary").textContent = `${adults} Adult${adults > 1 ? 's' : ''}, ${children} Child${children > 1 ? 'ren' : ''}`;
+
+        // Format dates for display
+        const checkInDateObj = new Date(selectedDates.checkInDate);
+        const checkOutDateObj = new Date(selectedDates.checkOutDate);
+        document.getElementById("checkInDay").textContent = formatDate(checkInDateObj);
+        document.getElementById("checkOutDay").textContent = formatDate(checkOutDateObj);
+
+        // Show children's ages if available
+        const childrenAges = Array.from(document.querySelectorAll(".child-age-select")).map((select, index) => {
+            return `Children #${index + 1} - Age of ${select.value}`;
+        }).filter(age => age);
+        
+        const childrenAgesList = document.getElementById("childrenAgesList");
+        childrenAgesList.innerHTML = ""; // Clear previous ages
+        childrenAges.forEach(age => {
+            const li = document.createElement("li");
+            li.textContent = age;
+            childrenAgesList.appendChild(li);
+        });
+
+        // Populate guest info
+        const guestInfoList = document.getElementById("guestInfoList");
+        guestInfoList.innerHTML = ""; // Clear previous guest info
+        const guests = Array.from(document.querySelectorAll(".guest-info")).map((guestDiv) => {
+            const guestFirstName = guestDiv.querySelector("input[id^='guestFirstName']").value || "N/A";
+            const guestLastName = guestDiv.querySelector("input[id^='guestLastName']").value || "N/A";
+            const guestEmail = guestDiv.querySelector("input[id^='guestEmail']").value || "N/A"; // Ensure email is pulled correctly
+            return `${guestFirstName} ${guestLastName} - ${guestEmail}`;
+        });
+
+        guests.forEach(guest => {
+            const li = document.createElement("li");
+            li.textContent = guest;
+            guestInfoList.appendChild(li);
+        });
+
+        // Update overall total and subtotal
+        const addOnPrices = calculateAddOnPrices(); // Function to calculate add-on prices
+        const totalPrice = calculateOverallTotal(); // Function to calculate overall total
+        document.getElementById("overallTotalPrice").textContent = "₱" + totalPrice.toLocaleString();
+        document.getElementById("subtotalPrice").textContent = "Subtotal (Add-Ons): ₱" + addOnPrices.toLocaleString();
+        
+        // Show selected add-ons
+        const addOnsList = document.getElementById("addOnsList");
+        addOnsList.innerHTML = ""; // Clear previous add-ons
+        for (const [name, { quantity, price }] of Object.entries(addOnPrices)) {
+            const li = document.createElement("li");
+            li.textContent = `${name} x${quantity} - ₱${(price * quantity).toLocaleString()}`;
+            addOnsList.appendChild(li);
+        }
+    }
+
+    function formatDate(date) {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    function toggleChildrenAges() {
+        const list = document.getElementById("childrenAgesList");
+        list.style.display = list.style.display === "none" ? "block" : "none";
+    }
+
+    function toggleGuestInfo() {
+        const list = document.getElementById("guestInfoList");
+        list.style.display = list.style.display === "none" ? "block" : "none";
+    }
+
+    function toggleAddOnDetails() {
+        const list = document.getElementById("addOnsList");
+        list.style.display = list.style.display === "none" ? "block" : "none";
+    }
+
+    function calculateNights(checkIn, checkOut) {
+        if (!checkIn || !checkOut) return 0; // Return 0 if either date is not set
+
+        const date1 = new Date(checkIn);
+        const date2 = new Date(checkOut);
+        const timeDiff = Math.abs(date2.getTime() - date1.getTime());
+        const diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Convert milliseconds to days
+
+        return diffDays > 0 ? diffDays : 0; // Ensure at least 1 day is counted
+    }
+
+    function calculateAddOnPrices() {
+        // Logic to calculate add-on prices
+        // This function should return the subtotal for add-ons
+        let total = 0;
+        for (const key in addOnPrices) {
+            total += addOnPrices[key].price * addOnPrices[key].quantity; // Assuming addOnPrices is structured
+        }
+        return total;
+    }
+
+    function calculateOverallTotal() {
+        const nights = calculateNights(selectedDates.checkInDate, selectedDates.checkOutDate);
+        const roomPrice = selectedRoomPrice || 0; // Ensure room price is fetched correctly
+        const totalRoomPrice = roomPrice * nights; // Calculate total room price based on nights
+        const addOnTotalPrice = calculateAddOnPrices(); // Total price of add-ons
+        return totalRoomPrice + addOnTotalPrice; // Total payment calculation
+    }
+
+    document.getElementById("proceedToConfirmationButton").addEventListener("click", function (event) {
+        event.preventDefault(); // Prevent default form submission
+    
+        // Show loading animation
+        document.getElementById("loadingOverlay").style.display = "block";
+    
+        const formData = new FormData();
+        
+        // Collect form data from the review page
+        formData.append('guest_id', '{{ request.session.guest_id }}');
+        const guestCountMatch = document.getElementById("guestsSummary").textContent.match(/\d+/);
+        const guestCount = guestCountMatch ? guestCountMatch[0] : 0;
+        formData.append('check_in_date', document.getElementById("checkInDate").textContent);
+        formData.append('check_out_date', document.getElementById("checkOutDate").textContent);
+        formData.append('room_chosen', document.getElementById("roomDetails").textContent);
+        formData.append('special_requests', document.getElementById("reviewSpecialRequests").textContent);
+        formData.append('total_guest_count', guestCount);
+        
+        const childCountMatch = document.getElementById("guestsSummary").textContent.match(/\d+$/);
+        const childCount = childCountMatch ? childCountMatch[0] : 0;
+        formData.append('total_child_count', childCount);
+        
+        formData.append('gcash_number', document.getElementById("reviewGCashNumber").textContent);
+        formData.append('gcash_account_name', document.getElementById("reviewGCashAccountName").textContent);
+        formData.append('gcash_reference_number', document.getElementById("reviewGCashReference").textContent);
+        formData.append('overall_total_amount', document.getElementById("overallTotalPrice").textContent.replace('₱', '').replace(',', ''));
+    
+        // Send the data using fetch
+        fetch('/submit-reservation/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("loadingOverlay").style.display = "none"; // Hide loading overlay
+            if (data.success) {
+                // Redirect to confirmation page using URL from response
+                window.location.href = data.redirect_url; // Use the redirect URL from response
+            } else {
+                // Show error message
+                window.location.href = '/lidocompleted/?error=true';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById("loadingOverlay").style.display = "none"; // Hide loading overlay
+            window.location.href = '/lidocompleted/?error=true';
+        });        
+    });
+    
+    
+    function showConfirmationSection() {
+        document.getElementById("lidobooking-container").style.display = "none";
+        document.getElementById("lidoaddons-container").style.display = "none";
+        document.getElementById("lidoguestdetails-container").style.display = "none";
+        document.getElementById("lidoreview-container").style.display = "none";
+        document.getElementById("bookingsummary-container").style.display = "none";
+        
+        // Show the confirmation section
+        const confirmationContainer = document.getElementById("lidocompleted-container");
+        if (confirmationContainer) {
+            confirmationContainer.style.display = "block";
+        } else {
+            console.error("Confirmation section not found");
+        }
+    
+        // Update progress to step 5
+        document.getElementById("progressTitle").textContent = "Confirmation";
+        updateProgress(5);
+    }
+    
+    
+</script>

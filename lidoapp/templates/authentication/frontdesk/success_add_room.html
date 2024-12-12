@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Room Added! | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+{% block mainnav %}{% endblock mainnav %}
+{% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+
+<style>
+    /* Style for confirmation page */
+    .roomaddedcomplete-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80vh; /* Adjust this height as needed */
+    }
+
+    .roomaddedcomplete-container {
+        max-width: 600px;
+        width: 100%;
+        background: var(--bgtertiary);
+        padding: 30px;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .success-message {
+        text-align: center;
+    }
+
+    .message-box-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 10px; /* Space between buttons */
+    }
+</style>
+
+<div class="roomaddedcomplete-wrapper">
+    <div class="roomaddedcomplete-container">
+        <div class="success-message">
+            <p>Room has been added successfully!</p> 
+        </div>
+        <div class="message-box-buttons">
+            <a href="{% url 'frontdesk_roomlist' %}" class="btn-one">Back to Room List <span></span></a>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

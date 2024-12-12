@@ -1,0 +1,656 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Guest Profile | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+
+
+<style>
+    .btn-disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+    
+    .profile-wrapper {
+        display: flex;
+        gap: 10px; /* Reduce gap between the containers */
+        margin-top: 50px;
+        justify-content: center;
+    }
+    
+    .guest-profile-container {
+        max-width: 800px;
+        padding: 20px;
+        background: var(--bgtertiary);
+        border: 1px solid #ccc;
+        flex: 2;
+    }
+
+    .guest-profile-picture-container {
+        max-width: 400px;
+        padding: 20px;
+        background: var(--bgtertiary);
+        border: 1px solid #ccc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .guest-profile-circle {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        border: 3px solid var(--bgsecondary); /* Outside border */
+        box-sizing: border-box; /* Ensure border doesn't affect size */
+    }
+    
+    .guest-profile-circle img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; 
+        display: block;
+        background-color: transparent;
+    }
+    
+
+    .guest-name,
+    .guest-id {
+        font-size: 1.1em;
+        text-align: center;
+    }
+
+    /* Existing styles */
+    .form-group {
+        position: relative;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        outline: none;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 1em;
+        color: #666;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 4px;
+    }
+
+    .form-group .error-message {
+        color: white;
+        font-size: 13px;
+        display: none;
+        padding: 5px;
+        background-color: #d93025;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        width: 100%;
+        text-align: center;
+        margin-top: -10px;
+    }
+
+    .form-group.error .error-message {
+        display: block;
+    }
+
+    .form-group.error input {
+        border-color: #d93025;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .form-row > .form-group {
+        flex: 1;
+    }
+
+    h2 {
+        font-size: 14px;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .btn {
+        cursor: pointer;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        border-radius: 0px;
+    }
+
+    /* Align upload and delete buttons in the same row */
+    .profile-actions {
+        display: flex;
+        gap: 10px; /* Space between buttons */
+        justify-content: center; /* Center the buttons */
+        align-items: center; /* Vertically align the buttons */
+        margin-top: 20px; /* Add space above the buttons */
+    }
+    
+    .profile-actions .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        border: 1px solid var(--bgsecondary);
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex; 
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .profile-actions .btn i {
+        font-size: 16px; /* Adjust icon size */
+    }
+    
+    /* Modal styling */
+    .modal-remove-profile {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        padding: 20px;
+        z-index: 1000;
+        text-align: center;
+    }
+    
+    .modal-remove-profile-content {
+        padding: 20px;
+    }
+    
+    .modal-remove-profile-content h3 {
+        margin-bottom: 15px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    
+    .modal-remove-profile-content p {
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    
+    .modal-remove-profile-content .btn-confirm {
+        margin-right: 20px;
+    }
+    
+    .modal-remove-profile-content .btn-cancel {
+        padding: 10px 15px;
+    }
+
+    .guest-id{
+        font-size: 12px;
+        font-style: italic;
+    }
+
+    #guestProfile input[readonly] {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    #guestProfile {
+        opacity: 0.8;
+        transition: opacity 0.3s;
+    }
+    
+    #guestProfile.edit-mode {
+        opacity: 1;
+    }
+    
+    
+</style>
+
+<div class="profile-wrapper">
+
+    <div class="guest-profile-picture-container">
+        
+        <div class="guest-profile-circle" id="profileCircle">
+            {% if guest.profile_picture %}
+                <img id="profilePreview" 
+                     src="{{ guest.profile_picture.url }}?t={{ guest.id }}" 
+                     alt="Profile Picture" 
+                     style="display: block;">
+            {% else %}
+                <span>{{ guest.first_name|slice:":1" }}</span>
+            {% endif %}
+        </div>
+        
+        
+        
+        
+        <div class="guest-name">{{ guest.first_name }}</div>
+        <div class="guest-id">Account Created: {{ guest.created_at|date:"F j, Y" }}</div>
+        
+
+        <input type="file" id="profileUpload" style="display: none;" accept="image/*">
+        <div class="profile-actions">
+            <button class="profile-upload-btn btn"><i class="fa-solid fa-arrow-up-from-bracket"></i>&nbsp;&nbsp;Upload</button>
+            <button class="profile-delete-btn btn"><i class="fa-solid fa-trash"></i>&nbsp;&nbsp;Remove</button>
+        </div>
+        <div id="deletemodal-remove-profile" class="modal-remove-profile" style="display: none;">
+            <div class="modal-remove-profile-content">
+                <h3>Confirm Deletion</h3>
+                <p>Are you sure you want to delete the profile picture?</p>
+                <button class="btn-confirm">Yes</button>
+                <button class="btn-cancel btn-one">No <span></span></button>
+            </div>
+        </div>
+    </div>
+    
+    {% include 'message_notification.html' %}
+    {% block profile %}{% endblock profile %}
+
+    
+
+    <div class="guest-profile-container" id="guestProfile">
+        <!-- Profile Details -->
+        <div class="profile-details">
+            <h2>Guest Details</h2>
+            <hr>
+    
+            <!-- Name Fields -->
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="text" id="firstName" name="firstName" value="{{ guest.first_name }}" placeholder=" " readonly required />
+                    <label for="firstName">First Name *</label>
+                    <div class="error-message">Error: First name is required.</div>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="middleName" name="middleName" value="{{ guest.middle_name }}" placeholder=" " readonly />
+                    <label for="middleName">Middle Name</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="lastName" name="lastName" value="{{ guest.last_name }}" placeholder=" " readonly required />
+                    <label for="lastName">Last Name *</label>
+                    <div class="error-message">Error: Last name is required.</div>
+                </div>
+            </div>
+    
+            <!-- Email -->
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="email" id="email" name="email" value="{{ guest.email }}" placeholder=" " readonly required />
+                    <label for="email">Email Address *</label>
+                    <div class="error-message">Error: Email Address is required.</div>
+                </div>
+            </div>
+    
+            <!-- Password -->
+            <div class="form-row">
+                <div class="form-group">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder=" "
+                        readonly
+                    />
+                    <label for="password">Password *</label>
+                    <div class="error-message">Error: Password must match Confirm Password.</div>
+                </div>
+                <div class="form-group">
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder=" "
+                        readonly
+                    />
+                    <label for="confirmPassword">Confirm Password *</label>
+                    <div class="error-message">Error: Confirm Password is required.</div>
+                </div>
+            </div>
+            
+    
+            <!-- Contact -->
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="tel" id="contactNumber" name="contactNumber" value="{{ guest.contact_number }}" placeholder=" " readonly required />
+                    <label for="contactNumber">Contact Number *</label>
+                    <div class="error-message">Error: Contact number must contain only numbers.</div>
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="telephoneNumber" name="telephoneNumber" value="{{ guest.telephone_number }}" placeholder=" " readonly />
+                    <label for="telephoneNumber">Telephone Number</label>
+                </div>
+            </div>
+    
+            <!-- Address -->
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="text" id="address1" name="address1" value="{{ guest.address1 }}" placeholder=" " readonly required />
+                    <label for="address1">Address Line 1 *</label>
+                    <div class="error-message">Error: Address Line 1 is required.</div>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="city" name="city" value="{{ guest.city }}" placeholder=" " readonly />
+                    <label for="city">City</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="country" name="country" value="{{ guest.country }}" placeholder=" " readonly />
+                    <label for="country">Country </label>
+                </div>
+            </div>
+    
+            <!-- Edit and Save Buttons -->
+            <div class="profile-actions">
+                <button id="edit-btn" class="btn-one" onclick="enableEdit()">Edit Details</button>
+                <button id="save-btn" class="btn-one btn-disabled" onclick="saveDetails()" style="display: none;" disabled>Save</button>
+            </div>
+        </div>
+    </div>
+    
+    
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+        function enableEdit() {
+            const inputs = document.querySelectorAll("#guestProfile input");
+            const saveButton = document.getElementById("save-btn");
+        
+            inputs.forEach((input) => {
+                input.removeAttribute("readonly");
+                input.style.pointerEvents = "auto";
+            });
+        
+            saveButton.style.display = "block";
+            document.getElementById("edit-btn").style.display = "none";
+        
+            inputs.forEach((input) => {
+                input.addEventListener("input", validateFields);
+            });
+        
+            validateFields();
+        }
+        
+        function validateFields() {
+            const requiredInputs = document.querySelectorAll("#guestProfile input[required]");
+            const saveButton = document.getElementById("save-btn");
+            let allValid = true;
+        
+            requiredInputs.forEach((input) => {
+                const errorMessage = input.nextElementSibling.nextElementSibling;
+                if (input.id === "contactNumber" && !/^\d*$/.test(input.value)) {
+                    errorMessage.textContent = "Error: Contact number must contain only numbers.";
+                    errorMessage.style.display = "block";
+                    allValid = false;
+                } else if (input.value.trim() === "") {
+                    errorMessage.textContent = `Error: ${input.name.replace(/([A-Z])/g, " $1")} is required.`;
+                    errorMessage.style.display = "block";
+                    allValid = false;
+                } else {
+                    errorMessage.style.display = "none";
+                }
+            });
+        
+            const password = document.getElementById("password").value.trim();
+            const confirmPassword = document.getElementById("confirmPassword").value.trim();
+        
+            // Validate password and confirm password
+            if (password || confirmPassword) {
+                if (password !== confirmPassword) {
+                    document.querySelector("[for='confirmPassword'] + .error-message").textContent =
+                        "Error: Password and Confirm Password must match.";
+                    document.querySelector("[for='confirmPassword'] + .error-message").style.display = "block";
+                    allValid = false;
+                } else {
+                    document.querySelector("[for='confirmPassword'] + .error-message").style.display = "none";
+                }
+            }
+        
+            // Toggle Save button state
+            saveButton.disabled = !allValid;
+            saveButton.classList.toggle("btn-disabled", !allValid);
+        }
+        
+        function saveDetails() {
+            const inputs = document.querySelectorAll("#guestProfile input");
+            const data = {};
+        
+            inputs.forEach((input) => {
+                data[input.name] = input.value;
+            });
+        
+            const passwordField = document.getElementById("password");
+            const confirmPasswordField = document.getElementById("confirmPassword");
+        
+            if (!passwordField.value.trim()) {
+                // Do not send password if it's blank
+                delete data.password;
+                delete data.confirmPassword;
+            } else if (passwordField.value.trim() !== confirmPasswordField.value.trim()) {
+                showMessage("error", "Password and Confirm Password must match.");
+                return;
+            }
+        
+            fetch("{% url 'update_guest_profile' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify(data),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        showMessage("success", "Details saved successfully!");
+                        setTimeout(() => location.reload(), 1000); // Reload after 1 second
+                    } else {
+                        showMessage("error", data.error || "Failed to save details.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    showMessage("error", "An error occurred while saving details.");
+                });
+        }
+        
+    
+        // Attach the enableEdit function to the global scope
+        window.enableEdit = enableEdit;
+        window.saveDetails = saveDetails;
+
+        // Add listeners to handle label movement
+        document.querySelectorAll(".form-group input").forEach(input => {
+            input.addEventListener("input", () => updateLabelPosition(input));
+            input.addEventListener("focus", () => updateLabelPosition(input));
+            input.addEventListener("blur", () => updateLabelPosition(input));
+            updateLabelPosition(input); // Initialize label position
+        });
+
+        // Update label position dynamically
+        function updateLabelPosition(input) {
+            const formGroup = input.closest(".form-group");
+            const label = formGroup.querySelector("label");
+
+            if (input.value.trim() !== "" || document.activeElement === input) {
+                label.style.top = "-10px";
+                label.style.left = "8px";
+                label.style.fontSize = "0.85em";
+                label.style.color = "#333";
+            } else {
+                label.style.top = "8px";
+                label.style.left = "8px";
+                label.style.fontSize = "1em";
+                label.style.color = "#666";
+            }
+        }
+
+        function updateProfileCircle(profilePictureUrl) {
+            const profilePreview = document.getElementById("profilePreview");
+            const initials = document.querySelector("#profileCircle span");
+        
+            if (profilePreview) {
+                profilePreview.src = `${profilePictureUrl}?t=${new Date().getTime()}`; // Add a timestamp to bust cache
+                profilePreview.style.display = "block";
+            }
+        
+            if (initials) {
+                initials.style.display = "none";
+            }
+        }
+        
+        function uploadProfilePicture(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+        
+            const formData = new FormData();
+            formData.append("profile_picture", file);
+            formData.append("guest_id", "{{ guest.id }}");
+        
+            fetch("{% url 'upload_profile_picture' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        showMessage("success", "Profile picture updated successfully!");
+                        setTimeout(() => {
+                            location.reload(); // Reload page after 1 second
+                        }, 1000);
+                    } else {
+                        showMessage("error", data.error || "Failed to update profile picture.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    showMessage("error", "An error occurred while uploading the profile picture.");
+                });
+        }
+        
+
+        function showMessage(type, message) {
+            const messageBox = document.getElementById('messageBox');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerText = message;
+            messageBox.appendChild(alert);
+            messageBox.style.display = 'block';
+
+            setTimeout(() => {
+                alert.style.opacity = '0'; // Fade out
+                setTimeout(() => {
+                    alert.remove();
+                }, 500);
+            }, 3000);
+        }
+
+            // Function to show the delete modal-remove-profile
+            function showDeleteModal() {
+                const deleteModal = document.getElementById("deletemodal-remove-profile");
+                if (deleteModal) {
+                    deleteModal.style.display = "block";
+                }
+            }
+
+            // Function to close the delete modal
+            function closeDeleteModal() {
+                const deleteModal = document.getElementById("deletemodal-remove-profile");
+                if (deleteModal) {
+                    deleteModal.style.display = "none";
+                }
+            }
+
+    // Function to delete the profile picture
+    function deleteProfilePicture() {
+        fetch("{% url 'delete_profile_picture' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify({ guest_id: "{{ guest.id }}" }),
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    const profilePreview = document.getElementById("profilePreview");
+                    const initials = document.querySelector("#profileCircle span");
+
+                    if (profilePreview) {
+                        profilePreview.style.display = "none";
+                    }
+
+                    if (initials) {
+                        initials.style.display = "block";
+                    }
+
+                    showMessage("success", "Profile picture deleted successfully!");
+                    closeDeleteModal();
+
+                    // Wait for 1 second before reloading the page
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showMessage("error", "Failed to delete profile picture.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                showMessage("error", "An error occurred while deleting the profile picture.");
+                closeDeleteModal();
+            });
+    }
+
+
+            // Bind events after DOM has fully loaded
+            const uploadInput = document.getElementById("profileUpload");
+            if (uploadInput) {
+                uploadInput.addEventListener("change", uploadProfilePicture);
+            }
+
+            const uploadButton = document.querySelector(".profile-upload-btn");
+            if (uploadButton) {
+                uploadButton.addEventListener("click", () => {
+                    uploadInput.click();
+                });
+            }
+
+            const deleteButton = document.querySelector(".profile-delete-btn");
+            if (deleteButton) {
+                deleteButton.addEventListener("click", showDeleteModal);
+            }
+
+            const closeModalButton = document.querySelector(".btn-cancel");
+            if (closeModalButton) {
+                closeModalButton.addEventListener("click", closeDeleteModal);
+            }
+
+            const confirmDeleteButton = document.querySelector(".btn-confirm");
+            if (confirmDeleteButton) {
+                confirmDeleteButton.addEventListener("click", deleteProfilePicture);
+            }
+    });
+</script>
+
+{% endblock content %}

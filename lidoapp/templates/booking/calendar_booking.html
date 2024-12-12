@@ -1,0 +1,1785 @@
+<style>
+    :root {
+        --disabled-color: #ccc; /* Color for past dates */
+    }
+
+    /* Calendar Styling */
+    .check-in, .check-out {
+        position: relative;
+        background-color: var(--bgsecondary); /* Use the same background color */
+        color: white;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .check-in::before, .check-out::before {
+        content: attr(data-label); /* Use "Check-in" or "Check-out" */
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; /* Full width of the cell */
+        height: 100%; /* Full height of the cell */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(51, 51, 51, 0.8); /* 80% opacity for a dark, transparent background */
+        color: white;
+        font-size: 10px;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .in-range {
+        background-color: #6dc06f63;
+    }
+
+    #calendar-container {
+        display: flex;
+        flex-direction: column; /* Stack controls and calendars vertically */
+        align-items: center;
+        padding: 20px;
+        background: white;
+        border: 1px solid #ccc;
+        margin: 15px 0;
+    }
+
+    #calendar-controls {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        margin-bottom: 10px;
+    }
+
+    .btn {
+        cursor: pointer;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        border-radius: 0px;
+    }
+
+    .btn-disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+    
+    .btn-enabled {
+        pointer-events: auto; /* Enable interactions */
+        opacity: 1; /* Fully visible */
+        cursor: pointer;
+    }
+    
+    
+
+    .btn-check:focus + .btn, .btn:focus {
+        box-shadow: none;
+    }
+
+    .month-year {
+        text-align: center;
+        font-size: 20px;
+        margin-bottom: 10px;
+        color: var(--bgsecondary);
+    }
+
+    .calendar {
+        width: 45%;
+        margin: 0 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 4px solid white;
+        text-align: center;
+        background: var(--bgprimary);
+    }
+
+    th {
+        border: none;
+        font-weight: normal;
+        background: var(--bgtertiary);
+        cursor: default;
+    }
+
+    td:not(.disabled):hover {
+        background-color: var(--bgsecondary);
+        color: var(--bgtertiary);
+        cursor: pointer;
+    }
+
+    .disabled {
+        color: var(--disabled-color);
+        pointer-events: none; /* Prevents clicking and removes hover effects */
+    }
+
+    .not-current-month {
+        visibility: hidden; /* Hides empty cells */
+    }
+
+    .calendar-row {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 15px;
+        padding: 10px;
+    }
+
+    #totalNights {
+        padding: 5px 10px;
+    }
+
+    /* Guest Count Booking */
+    .guest_count_booking {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+        background: var(--bgtertiary);
+    }
+
+    .guest_count_booking div {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border-right: 1px solid #ccc;
+        cursor: pointer;
+        position: relative;
+    }
+
+
+
+    .guest_count_booking i {
+        margin-right: 8px;
+    }
+
+    .guest_count_booking .button-title {
+        display: block;
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+    .guest_count_booking .button-subtitle {
+        font-size: 16px;
+        color: #333;
+    }
+
+    .guest-panel {
+        display: none;
+        position: absolute;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        z-index: 10;
+        width: 300px;
+    }
+
+    .guest-panel::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        border-width: 0 10px 10px 10px;
+        border-style: solid;
+        border-color: transparent transparent #fff transparent;
+        z-index: 11;
+    }
+
+    .guest-panel h2 {
+        margin-top: 0;
+    }
+
+    .guest-selection {
+        margin-top: 20px;
+    }
+
+    .guest-category {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .quantity {
+        display: flex;
+        align-items: center;
+    }
+
+    .quantity button {
+        background-color: var(--bgsecondary);
+        color: var(--bgtertiary);
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .quantity input {
+        width: 50px;
+        height: 45px;
+        text-align: center;
+        border: none;
+        background: #f0f0f0;
+    }
+
+    .child-age {
+        margin-top: 20px;
+    }
+
+    .child-age select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 3px;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+    }
+
+    .guest-panel-footer {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .guest-panel-footer button {
+        padding: 10px 30px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 30px;
+        cursor: pointer;
+    }
+
+    .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+
+    .guest_count_booking {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+        background: var(--bgtertiary);
+    }
+    .guest_count_booking div {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border-right: 1px solid #ccc;
+        cursor: pointer;
+        position: relative;
+    }
+    .guest_count_booking i {
+        margin-right: 8px;
+    }
+    .guest_count_booking .button-title {
+        display: block;
+        font-size: 14px;
+        color: #6c757d;
+    }
+    .guest_count_booking .button-subtitle {
+        font-size: 16px;
+        color: #333;
+    }
+    
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9;
+    }
+    .guest-panel {
+        display: none;
+        position: absolute;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        z-index: 10;
+        width: 300px;
+    }
+    .guest-panel::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        border-width: 0 10px 10px 10px;
+        border-style: solid;
+        border-color: transparent transparent #fff transparent;
+        z-index: 11;
+    }
+    .guest-panel h2 {
+        margin-top: 0;
+    }
+    .guest-selection {
+        margin-top: 20px;
+    }
+    .guest-category {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .quantity {
+        display: flex;
+        align-items: center;
+    }
+    .quantity button {
+        background-color: var(--bgsecondary);
+        color: var(--bgtertiary);
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+    }
+    .quantity input {
+        width: 50px;
+        height: 45px;
+        text-align: center;
+        border: none;
+        background: #f0f0f0;
+    }
+    .child-age {
+        margin-top: 20px;
+    }
+
+
+    .guest-panel-footer {
+        display: flex;
+        justify-content: space-between;
+    }
+    .guest-panel-footer button {
+        padding: 10px 30px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 30px;
+        cursor: pointer;
+    }
+    .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Remove the border-right of the last container (div) */
+    .guest_count_booking div:last-child {
+        border-right: none; /* Remove the border-right of the parent div */
+    }
+    
+    /* Add a complete border to the dropdown (select) to ensure it is unaffected */
+    .guest_count_booking div:last-child select {
+        border: 1px solid #ccc; /* Add a full border to the dropdown */
+        width: 100%; /* Optional: Ensure it stretches to the parent width */
+        box-sizing: border-box; /* Ensure padding and borders don't affect the size */
+    }
+    
+    /* Dropdown container styling */
+    #bedTypeDropdown {
+        position: relative;
+        cursor: pointer;
+    }
+    
+    /* Subtitle styling */
+    #selectedBedType {
+        display: inline-block;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        width: auto;
+    }
+    
+    /* Dropdown menu styling */
+    #bedTypeOptions {
+        display: none; /* Hidden by default */
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #ccc;
+        width: 100%;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        z-index: 10;
+        border-radius: none;
+    }
+    
+    #bedTypeOptions li {
+        padding: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        color: #333;
+        text-align: center;
+        border-bottom: 1px solid #ccc;
+    }
+    
+    #bedTypeOptions li:hover {
+        background: #f0f0f0;
+    }
+    
+    /* Hide last border */
+    #bedTypeOptions li:last-child {
+        border-bottom: none;
+    }
+    
+    /* General Mobile Adjustments */
+    @media (max-width: 768px) {
+        #calendar-container {
+            flex-direction: column; /* Stack calendars vertically */
+            padding: 10px; /* Adjust padding */
+        }
+
+        .calendar-row {
+            flex-direction: column; /* Stack the calendars */
+            gap: 15px; /* Add space between calendars */
+        }
+
+        .calendar {
+            width: 100%; /* Full width for smaller screens */
+        }
+
+        .month-year {
+            font-size: 16px; /* Adjust font size */
+        }
+
+        th, td {
+            font-size: 12px; /* Adjust text size in table cells */
+        }
+
+        .guest_count_booking {
+            flex-direction: column; /* Stack guest count options */
+            gap: 10px; /* Add spacing between sections */
+        }
+
+        .guest_count_booking div {
+            border-right: none; /* Remove right borders */
+            border-bottom: 1px solid #ccc; /* Add bottom borders */
+            padding: 10px;
+        }
+
+        .guest_count_booking div:last-child {
+            border-bottom: none; /* Remove last bottom border */
+        }
+
+        .guest-panel {
+            width: 90%; /* Adjust panel width */
+            max-width: 350px;
+        }
+
+        .action-buttons {
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 10px; /* Add spacing between buttons */
+        }
+
+        #totalNights {
+            text-align: center; /* Center text for small screens */
+            margin-bottom: 15px; /* Add spacing below */
+        }
+        
+    }
+
+    /* Extra Small Devices */
+    @media (max-width: 480px) {
+        .calendar {
+            width: 100%; /* Full width for smaller devices */
+        }
+
+        .btn, .btn-one {
+            padding: 8px; /* Adjust button padding */
+            font-size: 14px; /* Smaller button text */
+        }
+
+        .quantity button {
+            padding: 5px; /* Adjust button padding */
+            font-size: 14px; /* Smaller text size */
+        }
+
+        .quantity input {
+            width: 40px; /* Adjust input width */
+            height: 35px; /* Adjust input height */
+        }
+
+        .child-age select {
+            font-size: 14px; /* Adjust text size in dropdown */
+        }
+
+        .month-year {
+            font-size: 14px; /* Adjust month-year display size */
+        }
+
+        th, td {
+            font-size: 10px; /* Reduce table text size */
+        }
+
+        .action-buttons button {
+            width: 100%; /* Full-width buttons */
+        }
+
+        .guest-panel-footer button {
+            padding: 8px 20px; /* Adjust footer button padding */
+            font-size: 14px; /* Smaller button text */
+        }
+    }
+
+    
+    .dim-overlay {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+        z-index: 9998; /* Below the spinner */
+    }
+    
+    .center-spinner {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); /* Center the spinner */
+        border: 6px solid rgba(255, 255, 255, 0.3); /* Light outer border */
+        border-top: 6px solid white; /* Solid border at the top */
+        border-radius: 50%; /* Circle shape */
+        width: 60px;
+        height: 60px;
+        z-index: 9999; /* Above the dim overlay */
+        animation: spin-animation 1s linear infinite; /* Continuous spinning */
+    }
+    
+    @keyframes spin-animation {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+
+    .price-range {
+        position: relative;
+        width: 100%;
+        margin: 0 auto;
+    }
+    
+    #priceSlider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: #ddd;
+        border-radius: 5px;
+        outline: none;
+        margin: 10px 0;
+    }
+    
+    #priceSlider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #333;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    
+    .range-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 14px; /* Default font size for large screens */
+    }
+    
+    /* For tablets and small screens (768px and below) */
+    @media (max-width: 768px) {
+        .price-range {
+            width: 95%; /* Slightly reduce margin on smaller screens */
+        }
+    
+        #priceSlider {
+            height: 8px; /* Make the slider bar thicker for touch devices */
+        }
+    
+        #priceSlider::-webkit-slider-thumb {
+            width: 18px;
+            height: 18px; /* Adjust slider thumb size */
+        }
+    
+        .range-labels {
+            font-size: 12px; /* Reduce font size of labels */
+        }
+    }
+    
+    /* For very small screens (480px and below) */
+    @media (max-width: 480px) {
+        .price-range {
+            width: 100%; /* Make container full width */
+        }
+    
+        #priceSlider {
+            height: 10px; /* Increase slider thickness for touch */
+        }
+    
+        #priceSlider::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px; /* Smaller slider thumb */
+        }
+    
+        .range-labels {
+            font-size: 10px; /* Further reduce label size */
+            margin-top: 5px; /* Adjust spacing */
+        }
+    }
+    
+    .info-icon {
+        cursor: pointer;
+        color: var(--txtprimary);
+    }
+    .info-icon:hover {
+        color: var(--bgsecondary);
+    }
+
+    #priceSlider:disabled {
+        opacity: 0.5; /* Make the slider semi-transparent */
+        cursor: not-allowed; /* Show a not-allowed cursor */
+        background-color: #ddd; /* Match your disabled color scheme */
+    }
+</style>
+
+<h2 class="progress-title" id="progressTitle">Select a Room</h2>
+<div class="step-progress">
+  <div class="circle-step">
+    <div class="circle active">1</div>
+    <div class="label">Rooms</div>
+  </div>
+  <div class="bar"></div>
+  <div class="circle-step">
+    <div class="circle">2</div>
+    <div class="label">Add-Ons</div>
+  </div>
+  <div class="bar"></div>
+  <div class="circle-step">
+    <div class="circle">3</div>
+    <div class="label">Guest Details</div>
+  </div>
+
+  <div class="bar"></div>
+  <div class="circle-step">
+    <div class="circle">4</div>
+    <div class="label">Confirmation</div>
+  </div>
+</div>
+
+
+
+
+<div class="overlay" id="overlay"></div>
+
+<div class="dim-overlay" id="dimOverlay"></div>
+<div class="center-spinner" id="centerSpinner"></div>
+
+
+
+
+<div class="guest-panel" id="guestPanel">
+    <span class="close">&times;</span>
+    <p style="text-align: start">Select Guests</p>
+   
+    <div class="guest-selection">
+        <div class="guest-category">
+            <label>Adults</label>
+            <div class="quantity">
+                <button class="minus">-</button>
+                <input type="text" value="1" id="adultCount" readonly />
+                <button class="plus">+</button>
+            </div>
+        </div>
+        <div class="guest-category">
+            <label>Children</label>
+            <div class="quantity">
+                <button class="minus">-</button>
+                <input type="text" value="0" id="childrenCount" readonly />
+                <button class="plus">+</button>
+            </div>
+        </div>
+        <div class="child-age" id="childAgeInputs"></div>
+    </div>
+    <div class="guest-panel-footer">
+        <button class="btn-one" id="applyGuestButton" disabled>Apply <span></span></button>
+    </div>
+</div>
+
+<div id="calendar-container">
+    <div id="calendar-controls">
+        <button class="btn" id="previous">Previous</button>
+        <button class="btn" id="next">Next</button>
+    </div>
+    <div class="calendar-row">
+        <div class="calendar" id="calendar1">
+            <div class="month-year" id="monthYear1"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Su</th>
+                        <th>Mo</th>
+                        <th>Tu</th>
+                        <th>We</th>
+                        <th>Th</th>
+                        <th>Fr</th>
+                        <th>Sa</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody1"></tbody>
+            </table>
+        </div>
+        <div class="calendar" id="calendar2">
+            <div class="month-year" id="monthYear2"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Su</th>
+                        <th>Mo</th>
+                        <th>Tu</th>
+                        <th>We</th>
+                        <th>Th</th>
+                        <th>Fr</th>
+                        <th>Sa</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody2"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <span id="totalNights">Total Nights: N/A</span>
+
+</div>
+<div class="action-buttons">
+    <button class="btn" id="cancelSelection" style="color: #aaa;"><i class="fa-solid fa-filter-circle-xmark"></i>&nbsp;&nbsp;Clear Filters</button>
+    <button class="btn-one" id="applyCalendarUniqueButton" disabled>Check Availability  <span></span></button>
+</div>  
+
+<div class="d-flex justify-content-center align-items-center vh-10 mb-2">
+    <div class="col-md-8 col-sm-12 col-12 text-center">
+        <label for="priceRange"><i class="fa-solid fa-peso-sign"></i> Price Range: <span id="priceLabel">All</span></label>
+        <div class="price-range">
+            <input type="range" id="priceSlider" name="priceSlider" 
+                min="0" max="5" step="1" value="5" 
+                oninput="updateSliderLabel(this.value)" disabled>
+            <div class="range-labels">
+                <span>₱1,000</span>
+                <span>₱3,000</span>
+                <span>₱5,000</span>
+                <span>₱8,000</span>
+                <span>₱11,000</span>
+                <span>All</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Guest count and date selection area -->
+<div class="guest_count_booking">
+    <div id="guestsButton">
+        <i class="fas fa-user"></i>
+        <span class="button-title">Guests</span>
+        <span class="button-subtitle" id="guestsCount">1 Adult, 0 Children</span>
+    </div>
+    <div id="checkInButton" style="cursor: auto;" >
+        <i class="fas fa-calendar-alt"></i>
+        <span class="button-title">Check-in</span>
+        <span class="button-subtitle" id="checkInDateDisplay">N/A</span>
+    </div>
+    <div id="checkOutButton" style="cursor: auto;" >
+        <i class="fas fa-calendar-alt"></i>
+        <span class="button-title">Check-out</span>
+        <span class="button-subtitle" id="checkOutDateDisplay">N/A</span>
+    </div>
+    <div id="bedTypeDropdown">
+        <i class="fa-solid fa-bed"></i>
+        <span class="button-title">Bed Type</span>
+        <span class="button-subtitle" id="selectedBedType">All</span>
+        <ul id="bedTypeOptions" class="dropdown-menu">
+            <li data-value="all">All</li>
+            <li data-value="king">King</li>
+            <li data-value="queen">Queen</li>
+            <li data-value="double">Double</li>
+            <li data-value="single">Single</li>
+            <li data-value="twin">Twin</li>
+        </ul>
+    </div>
+</div>
+
+
+<input type="hidden" id="checkInInput" value="" name="check_in_date">
+<input type="hidden" id="checkOutInput" value="" name="check_out_date">
+<input type="hidden" id="guestCountInput" value="1">
+
+
+{% include 'message_notification.html' %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        enableapplyGuestButton();
+
+        // Existing declarations and logic...
+        const guestsButton = document.getElementById('guestsButton');
+        const overlay = document.getElementById('overlay');
+        let activeComponent = null;
+    
+        const searchButton = document.getElementById('searchBtn');
+        const checkInInput = document.getElementById('checkInInput');
+        const checkOutInput = document.getElementById('checkOutInput');
+        const guestCountInput = document.getElementById('guestCountInput');
+        const applyGuestButton = document.getElementById('applyGuestButton');
+        const childrenCountInput = document.getElementById('childrenCountUnique');
+    
+        const bedTypeDropdown = document.getElementById('bedTypeDropdown');
+        const bedTypeOptions = document.getElementById('bedTypeOptions');
+        const selectedBedType = document.getElementById('selectedBedType');
+    
+        let initialAdultsValue = 1;
+        let initialChildrenValue = 0;
+        let checkInDate = null;
+        let checkOutDate = null;
+    
+        // Check LocalStorage and Disable "Book Now" Buttons if Necessary
+        const storedCheckInDate = localStorage.getItem('checkInDate');
+        const storedCheckOutDate = localStorage.getItem('checkOutDate');
+        const storedGuestCount = localStorage.getItem('guestCount');
+        const storedBedType = localStorage.getItem('bedType');
+    
+        console.log("Loaded from LocalStorage:", {
+            storedCheckInDate,
+            storedCheckOutDate,
+            storedGuestCount,
+            storedBedType,
+        });
+    
+        if (!storedCheckInDate || !storedCheckOutDate || !storedGuestCount || parseInt(storedGuestCount, 10) <= 0) {
+            console.log("Disabling all 'Book Now' buttons due to missing or invalid localStorage values.");
+            document.querySelectorAll('.room-card-button').forEach(button => {
+                button.disabled = true; // Disable the "Book Now" button
+            });
+        } else {
+            console.log("Enabling/Disabling 'Book Now' buttons based on room availability.");
+            enableBookNowButtons(storedCheckInDate, storedCheckOutDate, parseInt(storedGuestCount, 10), storedBedType?.toLowerCase() || 'all');
+        }
+        
+        // Guest panel popup element
+        const guestPanel = document.createElement('div');
+        guestPanel.className = 'guest-panel';
+        guestPanel.innerHTML = `
+            <h2 style="font-size: 18px;">Select Guests                <i 
+                    class="fa-solid fa-info-circle info-icon" 
+                    data-bs-toggle="tooltip" 
+                    title="<p style='text-align: start'></p>
+                           <p style='float: end'><i>Children under 3ft pay half, above 3ft pay full. Discounts apply only to entrance fees. Children under 1 year old are free.</i></p>">
+                </i></h2>
+        
+            <div class="guest-selection">
+                <div class="guest-category">
+                    <span>Adults</span>
+                    <div class="quantity">
+                        <button id="adultMinusUnique">-</button>
+                        <input id="adultCountUnique" type="text" value="1" readonly />
+                        <button id="adultPlusUnique">+</button>
+                    </div>
+                </div>
+                <div class="guest-category">
+                    <span>Children</span>
+                    <div class="quantity">
+                        <button id="childrenMinusUnique">-</button>
+                        <input id="childrenCountUnique" type="text" value="0" readonly />
+                        <button id="childrenPlusUnique">+</button>
+                    </div>
+                </div>
+                <div id="childrenAgesUnique" class="child-age"></div>
+            </div>
+            <div class="guest-panel-footer">
+                <button class="btn-one" style="border: 1px solid #ccc; width: 100%;" id="applyGuestButtonUnique">Apply <span></span></button>
+            </div>
+        `;
+        document.body.appendChild(guestPanel);
+        
+        // Initialize Bootstrap tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                html: true // Allow HTML in the tooltip content
+            });
+        });
+        
+        // Function to show the guest panel near the Guests button
+        guestsButton.addEventListener('click', function () {
+            const buttonRect = guestsButton.getBoundingClientRect();
+            guestPanel.style.position = 'absolute';
+            guestPanel.style.top = `${buttonRect.bottom + window.scrollY}px`;
+            guestPanel.style.left = `${buttonRect.left + window.scrollX}px`;
+        
+            guestPanel.style.display = 'block';
+            overlay.style.display = 'block';
+            overlay.setAttribute('data-active', 'guestPanel');
+            activeComponent = 'guestPanel';
+        });
+    
+        // Apply Filters to store and send the values to localStorage
+
+    
+        let applyGuestButtonLocked = false; // Global flag to prevent conflicting updates
+        let lastCheckIn = '';
+        let lastCheckOut = '';
+        let lastGuestCount = 0;
+    
+        function enableapplyGuestButton() {
+            const button = document.getElementById('applyCalendarUniqueButton');
+            const checkInValue = document.getElementById('checkInInput').value;
+            const checkOutValue = document.getElementById('checkOutInput').value;
+    
+            if (checkInValue && checkOutValue) {
+                button.disabled = false; // Remove the 'disabled' attribute
+                button.classList.remove('btn-disabled');
+                button.classList.add('btn-enabled');
+            } else {
+                button.disabled = true; // Add the 'disabled' attribute
+                button.classList.add('btn-disabled');
+                button.classList.remove('btn-enabled');
+            }
+        }
+
+        const applyCalendarButton = document.getElementById('applyCalendarUniqueButton');
+        const priceSlider = document.getElementById('priceSlider'); // Price range slider
+
+        // Disable the slider initially
+        priceSlider.disabled = true;
+
+        // Function to update the slider state
+        function updatePriceSliderState() {
+            const checkInValue = checkInInput.value; // Get check-in date value
+            const checkOutValue = checkOutInput.value; // Get check-out date value
+
+            if (checkInValue && checkOutValue) {
+                // Enable slider if both dates are selected
+                priceSlider.disabled = false;
+                priceSlider.classList.remove('btn-disabled');
+                priceSlider.classList.add('btn-enabled');
+            } else {
+                // Disable slider if dates are missing
+                priceSlider.disabled = true;
+                priceSlider.classList.add('btn-disabled');
+                priceSlider.classList.remove('btn-enabled');
+            }
+        }
+
+        const roomsContainer = document.getElementById('availableRooms'); // Container for the filtered rooms
+
+        // Price range mapping
+        function getPriceRange(value) {
+            switch (parseInt(value, 10)) {
+                case 0: return { minPrice: 500, maxPrice: 2999, label: "₱500 - ₱2,999" };
+                case 1: return { minPrice: 3000, maxPrice: 4999, label: "₱3,000 - ₱4,999" };
+                case 2: return { minPrice: 5000, maxPrice: 7999, label: "₱5,000 - ₱7,999" };
+                case 3: return { minPrice: 8000, maxPrice: 10999, label: "₱8,000 - ₱10,999" };
+                case 4: return { minPrice: 11000, maxPrice: 20000, label: "₱11,000+" };
+                case 5: return { minPrice: 0, maxPrice: 999999, label: "All" }; // 'All' option
+                default: return { minPrice: 0, maxPrice: 999999, label: "All" }; // Default
+            }
+        }
+    
+        // Function to fetch filtered rooms
+        function filterRooms(minPrice, maxPrice, guestCount, bedType) {
+            const checkInDate = checkInInput.value; // Get check-in date
+            const checkOutDate = checkOutInput.value; // Get check-out date
+        
+            // Validate that dates are selected
+            if (!checkInDate || !checkOutDate) {
+                console.error("Check-in and check-out dates must be selected before filtering.");
+                return;
+            }
+        
+            // Make an AJAX call to fetch filtered rooms
+            const url = `/get_available_rooms/?check_in_date=${checkInDate}&check_out_date=${checkOutDate}&min_price=${minPrice}&max_price=${maxPrice}&bed_type=${bedType}&guest_count=${guestCount}`;
+            console.log('Fetching rooms with URL:', url);
+        
+            fetch(url)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch rooms, HTTP status: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data.html) {
+                        // Update the rooms container with the filtered HTML
+                        roomsContainer.innerHTML = data.html;
+                        console.log('Rooms updated successfully.');
+        
+                        // Rebind dynamic event listeners (if any)
+                        if (typeof bindDynamicEventListeners === "function") {
+                            bindDynamicEventListeners();
+                        }
+                    } else {
+                        console.error("Error: No rooms found or empty HTML returned.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching filtered rooms:", error);
+                    alert('An error occurred while fetching rooms. Please try again.');
+                });
+        }
+        
+        
+        
+
+        // Dropdown bed type selection
+        document.getElementById('bedTypeOptions').addEventListener('click', function (e) {
+            if (e.target.tagName === 'LI') {
+                selectedBedType.textContent = e.target.textContent; // Update selected bed type
+
+                // Retrieve guest count from localStorage
+                const guestCount = localStorage.getItem('guestCount'); // Fetch guest count from localStorage
+                if (!guestCount) {
+                    console.error('Guest count is not set in localStorage');
+                    return;
+                }
+
+                // Get the price range from the slider
+                const sliderValue = parseInt(priceSlider.value, 10);
+                const { minPrice, maxPrice } = getPriceRange(sliderValue);
+
+                // Now, call filterRooms with guest count, price range, and selected bed type
+                filterRooms(minPrice, maxPrice, guestCount);
+            }
+        });
+
+    
+    
+        priceSlider.addEventListener('input', function () {
+            const sliderValue = parseInt(this.value, 10);
+            const { minPrice, maxPrice } = getPriceRange(sliderValue);
+
+            // Retrieve bed type and guest count from localStorage
+            const bedType = localStorage.getItem('bedType');
+            const guestCount = localStorage.getItem('guestCount');
+
+            // Validate if bed type and guest count exist in localStorage
+            if (!bedType || !guestCount) {
+                console.error('Bed type or guest count is missing in localStorage.');
+                return;
+            }
+
+            // Fetch and display the filtered rooms based on price range, bed type, and guest count
+            filterRooms(minPrice, maxPrice, guestCount, bedType);
+        });
+
+            
+        document.getElementById('applyCalendarUniqueButton').addEventListener('click', function () {
+            // Get input values
+            const checkInDate = document.getElementById('checkInInput').value;
+            const checkOutDate = document.getElementById('checkOutInput').value;
+            const adultCount = parseInt(document.getElementById('adultCountUnique').value, 10);
+            const childrenCount = parseInt(document.getElementById('childrenCountUnique').value, 10);
+            const guestCount = adultCount + childrenCount;
+            const bedType = document.getElementById('selectedBedType').textContent.toLowerCase();
+        
+            // Validate inputs
+            if (!checkInDate || !checkOutDate || !guestCount || !bedType) {
+                alert('Please fill in all fields: check-in, check-out, guest count, and bed type.');
+                return;
+            }
+        
+            // Save values to localStorage
+            localStorage.setItem('checkInDate', checkInDate);
+            localStorage.setItem('checkOutDate', checkOutDate);
+            localStorage.setItem('guestCount', guestCount);
+            localStorage.setItem('childrenCount', childrenCount); // Save children count
+            localStorage.setItem('bedType', bedType);
+        
+            // Show loading overlay (optional)
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+        
+            // Call the function to enable/disable the "BOOK NOW" buttons based on current values
+            enableBookNowButtons(checkInDate, checkOutDate, guestCount, bedType);
+        
+            // Update the guest summary dynamically
+            document.getElementById('guestsCount').textContent = `${adultCount} Adult${adultCount > 1 ? 's' : ''}, ${childrenCount} Child${childrenCount > 1 ? 'ren' : ''}`;
+
+            // Optionally update booking summary
+            if (typeof updateBookingSummary === 'function') {
+                updateBookingSummary();
+            }
+        
+            // Optionally, fetch available rooms or update other sections
+            fetchAvailableRooms();
+        
+            console.log("Updated LocalStorage:", { checkInDate, checkOutDate, guestCount, childrenCount, bedType });
+        });
+        
+        
+
+        function enableBookNowButtons(checkInDate, checkOutDate, guestCount, bedType) {
+            if (!checkInDate || !checkOutDate || !guestCount || guestCount <= 0) {
+                document.querySelectorAll('.room-card-button').forEach(button => {
+                    button.disabled = true;
+                });
+                return;
+            }
+        
+            const roomCards = document.querySelectorAll('.room-card');
+        
+            roomCards.forEach(roomCard => {
+                const roomCapacity = parseInt(roomCard.dataset.roomCapacity, 10) || 0;
+                const roomBedType = roomCard.dataset.bedType?.toLowerCase() || '';
+                const isAvailable = roomCard.dataset.isavailable === 'true';
+                const bookButton = roomCard.querySelector('.room-card-button');
+        
+                if (
+                    (bedType === 'all' || roomBedType === bedType) &&
+                    roomCapacity >= guestCount &&
+                    isAvailable
+                ) {
+                    bookButton.disabled = false;
+                } else {
+                    bookButton.disabled = true;
+                }
+            });
+        }
+        
+        
+        
+
+
+        const formattedDate = new Date(checkInDate).toLocaleDateString();
+
+                
+                function fetchAvailableRooms() {
+                    // Fetch values from localStorage set by the apply button
+                    const checkInDate = localStorage.getItem('checkInDate');
+                    const checkOutDate = localStorage.getItem('checkOutDate');
+                    const totalGuests = localStorage.getItem('guestCount');
+                    const bedType = localStorage.getItem('bedType');
+                
+                    // Validate that the necessary values are stored in localStorage
+                    if (!checkInDate || !checkOutDate || !totalGuests || !bedType) {
+                        alert('Missing required parameters: check-in date, check-out date, guest count, or bed type.');
+                        return;
+                    }
+                
+                    // Make an AJAX request to fetch available rooms based on the stored values
+                    fetch(`/get_available_rooms/?check_in_date=${checkInDate}&check_out_date=${checkOutDate}&total_guests=${totalGuests}&bed_type=${bedType}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const loadingOverlay = document.getElementById('loadingOverlay');
+                            loadingOverlay.style.display = 'none'; // Hide loading overlay
+                
+                            if (data.error) {
+                                alert(data.error); // Show error message
+                            } else {
+                                // Update the room list with the new data
+                                document.getElementById('availableRooms').innerHTML = data.html;
+                                console.log('Rooms updated successfully.');
+                
+                                // Rebind dynamic event listeners if necessary
+                                if (typeof bindDynamicEventListeners === "function") {
+                                    bindDynamicEventListeners();
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            const loadingOverlay = document.getElementById('loadingOverlay');
+                            loadingOverlay.style.display = 'none'; // Hide loading overlay
+                            console.error('Error fetching rooms:', error);
+                            alert('An error occurred while fetching rooms. Please try again.');
+                        });
+                }
+        
+        
+        
+
+        function updateRoomDatesList(checkInDate, checkOutDate) {
+            const roomDatesList = document.getElementById('roomDatesList');
+            roomDatesList.innerHTML = ''; // Clear previous content
+
+            // Check if check-in or check-out date is missing
+            if (!checkInDate || !checkOutDate) {
+                roomDatesList.innerHTML = '<li><span class="room-date"><em>Please choose a room</em></span><span class="room-price"></span></li>';
+                return;
+            }
+
+            const startDate = new Date(checkInDate);
+            const endDate = new Date(checkOutDate);
+
+            // If the dates are invalid
+            if (isNaN(startDate) || isNaN(endDate)) {
+                roomDatesList.innerHTML = '<li><span class="room-date"><em><i class="fa-solid fa-circle-info"></i>&nbsp;&nbsp;Please Choose a Check in and out </em></span><span class="room-price"></span></li>';
+                return;
+            }
+
+            // Add dates to the list
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="room-date">${d.toDateString()}</span>`;
+                roomDatesList.appendChild(li);
+            }
+        }
+
+        // Function to update the booking summary
+        function updateBookingSummary() {
+            const checkInDate = localStorage.getItem('checkInDate') || 'N/A';
+            const checkOutDate = localStorage.getItem('checkOutDate') || 'N/A';
+            const adultCount = localStorage.getItem('adultCount') || '1'; // Retrieve adult count directly
+            const childrenCount = localStorage.getItem('childrenCount') || '0'; // Retrieve children count directly
+        
+            // Update the DOM elements in the booking summary
+            document.getElementById('summaryCheckInDate').textContent = formatDate(checkInDate);
+            document.getElementById('summaryCheckOutDate').textContent = formatDate(checkOutDate);
+            document.getElementById('summaryAdultCount').textContent = `${adultCount} Adult${adultCount > 1 ? 's' : ''}`;
+            document.getElementById('summaryChildrenCount').textContent = `${childrenCount} Child${childrenCount > 1 ? 'ren' : ''}`;
+        
+            console.log("Booking Summary Updated:", { checkInDate, checkOutDate, adultCount, childrenCount });
+        }
+        
+        // Utility function to format dates
+        function formatDate(dateString) {
+            if (!dateString || dateString === 'N/A') return 'N/A';
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+        
+        // Ensure the booking summary is updated on page load
+        updateBookingSummary();
+        
+        // Event listeners to update booking summary dynamically
+        document.addEventListener('storage', function (event) {
+            if (['adultCount', 'childrenCount', 'checkInDate', 'checkOutDate'].includes(event.key)) {
+                updateBookingSummary();
+            }
+        });
+        
+        // Event listeners to enable/disable the Apply button based on user input
+        document.getElementById('checkInInput').addEventListener('change', enableapplyGuestButton);
+        document.getElementById('checkOutInput').addEventListener('change', enableapplyGuestButton);
+        document.getElementById('guestCountInput').addEventListener('change', enableapplyGuestButton);
+        document.getElementById('childrenCountUnique').addEventListener('change', enableapplyGuestButton);
+        
+        // Apply button handler to store data and trigger the event
+        document.getElementById('applyGuestButton').addEventListener('click', function () {
+            const adultCount = parseInt(document.getElementById('guestCountInput').value, 10) || 1;
+            const childrenCount = parseInt(document.getElementById('childrenCountUnique').value, 10) || 0;
+            const checkInDate = document.getElementById('checkInInput').value;
+            const checkOutDate = document.getElementById('checkOutInput').value;
+            const bedType = document.getElementById('bedTypeInput').value;
+        
+            // Save values to localStorage
+            localStorage.setItem('adultCount', adultCount);
+            localStorage.setItem('childrenCount', childrenCount);
+            localStorage.setItem('checkInDate', checkInDate);
+            localStorage.setItem('checkOutDate', checkOutDate);
+            localStorage.setItem('bedType', bedType);
+        
+            console.log("Data stored in localStorage:", {
+                adultCount: localStorage.getItem('adultCount'),
+                childrenCount: localStorage.getItem('childrenCount'),
+                checkInDate: localStorage.getItem('checkInDate'),
+                checkOutDate: localStorage.getItem('checkOutDate'),
+                bedType: localStorage.getItem('bedType')
+            });
+        
+            // Update booking summary dynamically
+            updateBookingSummary();
+            
+            // Optionally, trigger event
+            window.dispatchEvent(new Event('updateRoomFilters'));
+        });
+        
+        // Initial check to disable the Apply button
+        enableapplyGuestButton();
+        
+        // Hide pop-up when clicking the overlay if no validation errors
+        overlay.addEventListener('click', function () {
+            if (activeComponent === 'guestPanel') {
+                if (validateChildrenAges()) {
+                    guestPanel.style.display = 'none';
+                    overlay.style.display = 'none';
+                    overlay.removeAttribute('data-active');
+                    activeComponent = null;
+                }
+            } else if (activeComponent === 'bedType') {
+                // Do nothing for bed type dropdown, overlay remains visible
+            }
+        });
+    
+    // Update guest count display
+    function updateGuestCountDisplay() {
+        const adults = parseInt(document.getElementById('adultCountUnique').value, 10) || 0;
+        const children = parseInt(document.getElementById('childrenCountUnique').value, 10) || 0;
+    
+        // Calculate total guests based on adults and children (children 3 and above count)
+        let totalGuests = adults;
+        const ageSelectors = document.querySelectorAll('#childrenAgesUnique select');
+        ageSelectors.forEach((select) => {
+            const age = parseInt(select.value, 10);
+            if (age >= 3) {
+                totalGuests += 1;  // Include children aged 3 and above in the total guest count
+            }
+        });
+    
+        // Update the display of the adult count and children count
+        document.getElementById('guestsCount').textContent = `${adults} Adult${adults > 1 ? 's' : ''}, ${children} Child${children > 1 ? 'ren' : ''}`;
+    
+        // Store adult count, children count, and total guest count separately in localStorage
+        localStorage.setItem('adultCount', adults);
+        localStorage.setItem('childrenCount', children);
+        localStorage.setItem('guestCount', totalGuests);
+    
+        // Enable or disable the "Apply" button based on the updated guest count
+        enableapplyGuestButton();  
+    }
+    
+
+    
+        // Fetch rooms based on check-in, check-out dates, and guest count
+        function fetchRoomsAutomatically() {
+            const checkInDate = document.getElementById('checkInInput').value;
+            const checkOutDate = document.getElementById('checkOutInput').value;
+            const totalGuests = localStorage.getItem('guestCount');  // Retrieve total guest count from localStorage
+        
+            if (!checkInDate || !checkOutDate || totalGuests === '0') {
+                console.log('Invalid input: Dates or guest count not set.');
+                return;
+            }
+        
+            // Fetch available rooms dynamically based on the selected dates and guest count
+            fetch(`/get_available_rooms/?check_in_date=${checkInDate}&check_out_date=${checkOutDate}&total_guests=${totalGuests}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error(data.error);
+                    } else {
+                        document.getElementById('availableRooms').innerHTML = data.html;
+                        validateDatesAndEnableButtons();
+                        bindDynamicFunctions();
+                    }
+                })
+                .catch(err => console.error('Error fetching rooms:', err));
+        }
+    
+        // Automatically fetch rooms when guest count changes
+        document.getElementById('adultCountUnique').addEventListener('change', fetchRoomsAutomatically);
+        document.getElementById('childrenCountUnique').addEventListener('change', fetchRoomsAutomatically);
+        document.getElementById('childrenCountUnique').addEventListener('input', updateChildDropdowns);
+
+    
+        // Update child dropdowns based on number of children
+        function updateChildDropdowns() {
+            const childrenInput = document.getElementById('childrenCountUnique').value;
+            const childrenAges = document.getElementById('childrenAgesUnique');
+        
+            childrenAges.innerHTML = ''; // Clear existing dropdowns
+        
+            // Add dropdowns equal to the number of children
+            for (let i = 0; i < childrenInput; i++) {
+                const ageDropdown = document.createElement('div');
+                ageDropdown.innerHTML = `
+                    <select>
+                        <option value="">Select Age</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                    <div class="error-message" style="display: none;">Please select an age</div>
+                `;
+                childrenAges.appendChild(ageDropdown);
+            }
+        }
+    
+        // Quantity adjustments for adults (minimum 1)
+        document.getElementById('adultPlusUnique').addEventListener('click', function () {
+            const adultsInput = document.getElementById('adultCountUnique');
+            let currentValue = parseInt(adultsInput.value);
+            adultsInput.value = currentValue + 1;
+            updateGuestCountDisplay();
+        });
+    
+        document.getElementById('adultMinusUnique').addEventListener('click', function () {
+            const adultsInput = document.getElementById('adultCountUnique');
+            let currentValue = parseInt(adultsInput.value);
+            if (currentValue > 1) {
+                adultsInput.value = currentValue - 1;
+            }
+            updateGuestCountDisplay();
+        });
+    
+        // Quantity adjustments for children (can be 0)
+        document.getElementById('childrenPlusUnique').addEventListener('click', function () {
+            const childrenInput = document.getElementById('childrenCountUnique');
+            let currentValue = parseInt(childrenInput.value);
+            childrenInput.value = currentValue + 1;
+    
+            updateChildDropdowns();
+            updateGuestCountDisplay();
+        });
+    
+        document.getElementById('childrenMinusUnique').addEventListener('click', function () {
+            const childrenInput = document.getElementById('childrenCountUnique');
+            let currentValue = parseInt(childrenInput.value);
+            if (currentValue > 0) {
+                childrenInput.value = currentValue - 1;
+    
+                updateChildDropdowns();
+            }
+    
+            updateGuestCountDisplay();
+        });
+    
+        // Ensure guest count is updated correctly when page is loaded
+        updateGuestCountDisplay();
+    
+        // Initial check to disable the Apply button on load
+        enableapplyGuestButton();
+    
+        document.getElementById('applyGuestButtonUnique').addEventListener('click', function () {
+            const adultCount = parseInt(document.getElementById('adultCountUnique').value, 10);
+            const childrenCount = parseInt(document.getElementById('childrenCountUnique').value, 10);
+            const childrenAgesContainer = document.getElementById('childrenAgesUnique');
+            const ageDropdowns = childrenAgesContainer.querySelectorAll('select');
+        
+            let validGuestCount = adultCount; // Start with adults
+            let invalidAges = false;
+        
+            // Calculate valid children count (3 years and above)
+            ageDropdowns.forEach((dropdown) => {
+                const age = parseInt(dropdown.value, 10);
+                if (isNaN(age)) {
+                    invalidAges = true;
+                } else if (age >= 3) {
+                    validGuestCount += 1; // Count children 3 and above
+                }
+            });
+        
+            if (invalidAges) {
+                alert('Please select a valid age for all children.');
+                return;
+            }
+        
+            const bedType = localStorage.getItem('bedType') || 'all'; // Default to 'all' if no selection
+        
+            // Save values to localStorage
+            localStorage.setItem('guestCount', validGuestCount);
+            localStorage.setItem('adultCount', adultCount);
+            localStorage.setItem('childrenCount', childrenCount);
+        
+            // Update guest summary
+            const summaryText = `${adultCount} Adult${adultCount > 1 ? 's' : ''}, ${childrenCount} Child${childrenCount > 1 ? 'ren' : ''}`;
+            document.getElementById('guestsCount').textContent = summaryText;
+        
+            // Enable or disable rooms based on capacity
+            enableBookNowButtons(localStorage.getItem('checkInDate'), localStorage.getItem('checkOutDate'), validGuestCount, bedType);
+        
+            // Optionally fetch available rooms
+            fetchAvailableRooms();
+        
+            console.log("Updated LocalStorage with age-based validation:", { adultCount, childrenCount, validGuestCount, bedType });
+        
+            // Hide the guest panel after applying
+            document.querySelector('.guest-panel').style.display = 'none';
+        });
+        
+
+    
+        // Validate if children's ages are selected
+        function validateChildrenAges() {
+            const childrenInput = document.getElementById('childrenCountUnique').value;
+            const ageSelectors = document.querySelectorAll('#childrenAgesUnique select');
+        
+            if (parseInt(childrenInput, 10) > 0) {
+                let valid = true;
+                ageSelectors.forEach((select) => {
+                    const errorMessage = select.nextElementSibling;
+                    if (!select.value) {
+                        errorMessage.style.display = 'block'; // Show error message
+                        valid = false;
+                    } else {
+                        errorMessage.style.display = 'none'; // Hide error message
+                    }
+                });
+                return valid;
+            }
+            return true; // If no children, validation passes automatically
+        }
+    
+        // Bed Type Dropdown Functionality
+        bedTypeDropdown.addEventListener('click', function (e) {
+            const isVisible = bedTypeOptions.style.display === 'block';
+            bedTypeOptions.style.display = isVisible ? 'none' : 'block';
+            overlay.style.display = isVisible ? 'none' : 'block';
+            overlay.setAttribute('data-active', 'bedType');
+            activeComponent = isVisible ? null : 'bedType';
+            e.stopPropagation();
+        });
+    
+        bedTypeOptions.addEventListener('click', function (e) {
+            if (e.target.tagName === 'LI') {
+                selectedBedType.textContent = e.target.textContent;
+                bedTypeOptions.style.display = 'none';
+                overlay.style.display = 'none';
+                overlay.removeAttribute('data-active');
+                activeComponent = null;
+            }
+            e.stopPropagation(); // Prevent propagation to other event handlers
+        });
+    
+        // Close the dropdown if clicking outside
+        overlay.addEventListener('click', function () {
+            if (activeComponent === 'bedType') {
+                // Do nothing for bed type dropdown, overlay remains visible
+            }
+        });
+    
+        // Close overlay when clicking outside active component
+        document.addEventListener('click', function (e) {
+            if (activeComponent === 'bedType' && !bedTypeDropdown.contains(e.target)) {
+                // Prevent closing bed type dropdown unless an option is selected
+                e.stopPropagation();
+            }
+        });
+    
+            // Calendar functions
+            const now = new Date();
+            let currentMonth = now.getMonth();
+            let currentYear = now.getFullYear();
+        
+            function updateCalendar(calendarId, year, month) {
+                const monthYear = document.getElementById('monthYear' + calendarId);
+                const calendarBody = document.getElementById('calendarBody' + calendarId);
+        
+                monthYear.textContent = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+        
+                let firstDay = new Date(year, month, 1).getDay();
+                let daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+                calendarBody.innerHTML = '';
+                let date = 1;
+        
+                for (let i = 0; i < 6; i++) {
+                    let row = document.createElement('tr');
+                    for (let j = 0; j < 7; j++) {
+                        let cell = document.createElement('td');
+                        if (i === 0 && j < firstDay || date > daysInMonth) {
+                            cell.classList.add('not-current-month');
+                        } else {
+                            cell.textContent = date;
+                            let cellDate = new Date(year, month, date);
+        
+                            if (cellDate < now) {
+                                cell.classList.add('disabled');
+                            } else {
+                                cell.addEventListener('click', () => handleDateClick(cellDate));
+                            }
+        
+                            if (isSameDate(cellDate, checkInDate)) {
+                                cell.classList.add('check-in');
+                                cell.setAttribute("data-label", "Check-in");
+                            } else if (isSameDate(cellDate, checkOutDate)) {
+                                cell.classList.add('check-out');
+                                cell.setAttribute("data-label", "Check out");
+                            } else if (checkInDate && checkOutDate && cellDate > checkInDate && cellDate < checkOutDate) {
+                                cell.classList.add('in-range');
+                            }
+        
+                            date++;
+                        }
+                        row.appendChild(cell);
+                    }
+                    calendarBody.appendChild(row);
+                }
+                handleButtonState(year, month);
+            }
+        
+            function handleDateClick(selectedDate) {
+                if (!checkInDate || (checkInDate && checkOutDate)) {
+                    checkInDate = selectedDate;
+                    checkOutDate = null;
+                } else if (checkInDate && !checkOutDate && selectedDate > checkInDate) {
+                    checkOutDate = selectedDate;
+                } else if (checkInDate && selectedDate <= checkInDate) {
+                    alert('Check-out date must be after the check-in date.');
+                    return;
+                }
+
+                // Update hidden inputs
+                checkInInput.value = checkInDate ? checkInDate.toISOString().split('T')[0] : '';
+                checkOutInput.value = checkOutDate ? checkOutDate.toISOString().split('T')[0] : '';
+
+                // Update slider state immediately
+                updatePriceSliderState();
+        
+                // Update hidden inputs
+                document.getElementById('checkInInput').value = checkInDate ? checkInDate.toISOString().split('T')[0] : '';
+                document.getElementById('checkOutInput').value = checkOutDate ? checkOutDate.toISOString().split('T')[0] : '';
+        
+                displaySelectedDates();
+                calculateTotalNights();
+                updateCalendar('1', currentYear, currentMonth);
+                updateCalendar('2', currentYear, currentMonth + 1);
+                enableapplyGuestButton(); // Update button state after selecting dates
+            }
+        
+            function displaySelectedDates() {
+                const checkInDisplay = document.getElementById('checkInDateDisplay');
+                const checkOutDisplay = document.getElementById('checkOutDateDisplay');
+        
+                const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                checkInDisplay.textContent = checkInDate ? checkInDate.toLocaleDateString('en-US', options) : 'N/A';
+                checkOutDisplay.textContent = checkOutDate ? checkOutDate.toLocaleDateString('en-US', options) : 'N/A';
+            }
+        
+            function calculateTotalNights() {
+                if (checkInDate && checkOutDate) {
+                    const diffTime = Math.abs(checkOutDate - checkInDate);
+                    const totalNights = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert ms to days
+                    document.getElementById('totalNights').textContent = `Total Nights: ${totalNights}`;
+                } else {
+                    document.getElementById('totalNights').textContent = 'Total Nights: N/A';
+                }
+            }
+        
+            function isSameDate(date1, date2) {
+                return date1 && date2 &&
+                    date1.getFullYear() === date2.getFullYear() &&
+                    date1.getMonth() === date2.getMonth() &&
+                    date1.getDate() === date2.getDate();
+            }
+        
+            function handleButtonState(year, month) {
+                const now = new Date();
+                const nowYear = now.getFullYear();
+                const nowMonth = now.getMonth();
+        
+                document.getElementById('next').classList.toggle('btn-disabled', year > nowYear || (year === nowYear && month >= nowMonth + 5));
+                document.getElementById('previous').classList.toggle('btn-disabled', year < nowYear || (year === nowYear && month <= nowMonth));
+            }
+        
+            document.getElementById('next').addEventListener('click', function () {
+                adjustMonths('next');
+            });
+        
+            document.getElementById('previous').addEventListener('click', function () {
+                adjustMonths('previous');
+            });
+        
+            function adjustMonths(direction) {
+                if (direction === 'next') {
+                    currentMonth += 1;
+                    if (currentMonth > 11) {
+                        currentMonth = 0;
+                        currentYear++;
+                    }
+                } else if (direction === 'previous') {
+                    currentMonth -= 1;
+                    if (currentMonth < 0) {
+                        currentMonth = 11;
+                        currentYear--;
+                    }
+                }
+        
+                updateCalendar('1', currentYear, currentMonth);
+                updateCalendar('2', currentYear, currentMonth + 1);
+            }
+        
+        // Reset button event to clear check-in, check-out dates and reset guest counts
+        document.getElementById('cancelSelection').addEventListener('click', function () {
+            // Show dim overlay and spinner
+            const dimOverlay = document.getElementById('dimOverlay');
+            const centerSpinner = document.getElementById('centerSpinner');
+            dimOverlay.style.display = 'block';
+            centerSpinner.style.display = 'block';
+    
+            // Reset dates
+            checkInDate = null;
+            checkOutDate = null;
+    
+            // Clear input fields
+            document.getElementById('checkInInput').value = '';
+            document.getElementById('checkOutInput').value = '';
+    
+            // Clear displayed dates
+            document.getElementById('checkInDateDisplay').textContent = 'N/A';
+            document.getElementById('checkOutDateDisplay').textContent = 'N/A';
+    
+            // Clear guest and children counts
+            document.getElementById('adultCountUnique').value = '1';
+            document.getElementById('childrenCountUnique').value = '0';
+            document.getElementById('guestsCount').textContent = '1 Adult, 0 Children';
+    
+            // Reset bed type to default
+            document.getElementById('selectedBedType').textContent = 'All';
+    
+            // Clear total nights display
+            document.getElementById('totalNights').textContent = 'Total Nights: N/A';
+    
+            // Refresh the calendar to remove highlighted dates
+            updateCalendar('1', currentYear, currentMonth);
+            updateCalendar('2', currentYear, currentMonth + 1);
+    
+            // Disable the "Apply Dates" button
+            enableapplyGuestButton();
+    
+            // Wait for 3 seconds, then reload the page
+            setTimeout(() => {
+                dimOverlay.style.display = 'none'; // Hide dim overlay
+                centerSpinner.style.display = 'none'; // Hide spinner
+                location.reload();
+            }, 500);
+        });
+    
+        // Initialize calendars
+        updateCalendar('1', currentYear, currentMonth);
+        updateCalendar('2', currentYear, currentMonth + 1);
+        
+    });
+    </script>
+    

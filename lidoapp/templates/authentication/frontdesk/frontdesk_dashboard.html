@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Front Desk Dashboard | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+
+{% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+
+<style>
+    h3 {
+        font-size: 20px;
+        text-transform: uppercase;
+    }
+</style>
+
+{% comment %} <!-- Welcome Section -->
+<div class="welcome-container" style="padding: 20px; text-align: center; background-color: var(--bgsecondary); color: var(--txtprimary);">
+    <h1 style="color: var(--bgtertiary);">Welcome, {{ frontdesk.first_name }}!</h1>
+    <p style="color: var(--bgtertiary);">Welcome to your frontdesk dashboard. Here you can monitor sales performance and account creation trends.</p>
+</div> {% endcomment %}
+
+
+
+
+
+
+
+
+{% endblock content %}

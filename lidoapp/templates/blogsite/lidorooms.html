@@ -1,0 +1,110 @@
+{% load static %}
+<style>
+    .lido-rooms {
+        background: url('/static/assets/images/gallery/thumbnail.jpg') no-repeat center center;
+        background-size: cover;
+        padding: 50px;
+        margin-top: 50px;
+      }
+      
+      .lido-rooms-inner {
+        background-color: white;
+        padding: 50px;
+        position: relative;
+      }
+      
+      .lido-text {
+        text-align: right;
+      }
+      
+      .room-details {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        min-height: 50px; /* Ensure the space is reserved */
+      }
+      
+      .room-title, .room-description {
+        flex: 1;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+      }
+      
+      .room-title {
+        text-align: left;
+      }
+      
+      .room-description {
+        text-align: right;
+      }
+      
+      .room-details .vertical-line {
+        width: 1px;
+        background-color: #000;
+        margin: 0 15px;
+        height: 50px;
+      }
+      
+      .fade-in {
+        opacity: 1;
+      }
+      
+      
+      .half-opacity {
+        opacity: 0.3;
+      }
+</style>
+        <!-- Lido Rooms Section -->
+        <section class="lido-rooms">
+            <div class="container lido-rooms-inner">
+                <div class="row">
+                    <!-- Image Slider -->
+                    <div class="col-md-9">
+                        <section class="rooms-carousel wow fadeIn" data-wow-delay="0ms" data-wow-duration="1500ms">
+                            <div class="owl-carousel owl-theme" id="roomsCarousel">
+                                <div class="room-item">
+                                    <div class="room-image">
+                                        <img src="{% static 'assets/images/rooms/Hut/Hut2.jpg' %}" alt="Room 1">
+                                    </div>
+                                    <div class="room-content" data-title="Hut" data-description="Experience luxury in our deluxe rooms with stunning views.">
+                                    </div>
+                                </div>
+                                <div class="room-item">
+                                    <div class="room-image">
+                                        <img src="{% static 'assets/images/rooms/Cove5/Cove1.jpg' %}" alt="Room 2">
+                                    </div>
+                                    <div class="room-content" data-title="Cove" data-description="Spacious and elegant, our executive suites offer top-notch amenities.">
+                                    </div>
+                                </div>
+                                <div class="room-item">
+                                    <div class="room-image">
+                                        <img src="{% static 'assets/images/rooms/Villa2/Villa-main.jpg' %}" alt="Room 3">
+                                    </div>
+                                    <div class="room-content" data-title="Villa" data-description="Indulge in our presidential suite for an unmatched experience.">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <div class="room-details" id="roomDetails">
+                            <div class="room-title"></div>
+                            <div class="vertical-line"></div>
+                            <div class="room-description"></div>
+                        </div>
+                    </div>
+                    <!-- Text Content -->
+                    <div class="col-md-3 d-flex align-items-center justify-content-center">
+                        <div class="lido-text">
+                            <h2>Unwind in our exquisite rooms</h2>
+                            <p>Experience World-class Luxury in Manila.</p>
+                            <div class="link-btn"><a href="{% url 'lidobooking' %}" class="btn-one">Discover More<span></span></a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+
+        <script>
+            
+        </script>

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Sign Up Successful | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+<style>
+    .signup-success-container {
+        background-color: var(--bgtertiary);
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 1200px;
+        margin: 100px auto;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        background-color: var(--bgtertiary);
+    }
+
+    .signup-success-container h1 {
+        margin-bottom: 20px;
+        font-size: 24px;
+    }
+
+    .signup-success-container p {
+        margin-bottom: 30px;
+        font-size: 18px;
+    }
+</style>
+
+<div class="signup-success-container">
+    <h1>Admin Account Created Successfully!</h1>
+    <p>Your admin account has been successfully created.</p>
+    <a href="{% url 'adminlogin' %}" class="btn-one">Go to Admin Login<span></span></a>
+</div>
+{% endblock content %}

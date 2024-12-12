@@ -1,0 +1,1008 @@
+{% load static %}
+<!-- Include jQuery UI for autocomplete functionality -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+
+<style>
+  /* Container for the form */
+  .lidoguestdetails-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 50px;
+    background: var(--bgtertiary);
+    border: 1px solid #ccc;
+  }
+
+  /* Form-group container */
+  .form-group {
+    position: relative;
+  }
+
+  /* The input and select fields */
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  /* The label that will be animated */
+  .form-group label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 1em;
+    color: #666;
+    transition: all 0.2s ease;
+    pointer-events: none; /* Prevent label from interfering with input */
+    background: white;
+    padding: 0 4px;
+  }
+
+  /* When the input is focused or contains text, the label moves up */
+  .form-group input:focus + label,
+  .form-group input:not(:placeholder-shown) + label,
+  .form-group textarea:focus + label,
+  .form-group textarea:not(:placeholder-shown) + label {
+    top: -10px;
+    left: 8px;
+    font-size: 0.85em;
+    color: #333;
+  }
+
+  /* Error message */
+  .form-group .error-message {
+    color: white;
+    font-size: 13px;
+    display: none;
+    padding: 5px;
+    background-color: #d93025;
+    border: 2px solid #d93025;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Show the error message when invalid */
+  .form-group.error .error-message {
+    display: block;
+  }
+
+  /* Highlight input with error */
+  .form-group.error input,
+  .form-group.error textarea {
+    border-color: #d93025;
+  }
+
+  /* Flexbox for arranging rows */
+  .form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 13px;
+  }
+
+  .form-row > .form-group {
+    flex: 1;
+  }
+
+  /* Single field takes full width */
+  .form-row-single {
+    display: block;
+  }
+
+  /* Required note */
+  .required-note {
+    text-align: right;
+    font-size: 0.85em;
+    font-weight: bold;
+    color: red;
+  }
+
+  .guestdetails-h3 {
+    font-size: 15px;
+    text-transform: uppercase;
+    margin-bottom: 13px;
+  }
+
+  /* Payment section styles */
+  .payment-section {
+    margin-top: 20px;
+  }
+
+  .payment-logo {
+    width: 40px; /* Adjust the size of the logos */
+    margin-right: 10px;
+  }
+
+  /* QR Code styles */
+  .qr-code {
+    width: 100px; /* Size of the QR code */
+    margin-left: 20px;
+  }
+
+  /* Flexbox for payment method layout */
+  .payment-method-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Align items to the top */
+  }
+
+  /* Autocomplete suggestion styles */
+  .autocomplete-suggestions {
+    border: 1px solid #ccc;
+    background-color: white;
+    max-height: 150px;
+    overflow-y: auto;
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+  }
+
+  .autocomplete-suggestion {
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  .autocomplete-suggestion:hover {
+    background-color: #ddd;
+  }
+
+
+
+  #loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .loading-spinner {
+      width: 50px;
+      height: 50px;
+  }
+
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }
+
+
+  /* Disable button appearance */
+button:disabled {
+  background-color: #ddd;  /* Gray background */
+  color: #999;  /* Gray text */
+  cursor: not-allowed;  /* Change cursor to show button is not clickable */
+}
+
+
+#paypal-button-container {
+  transition: opacity 0.3s ease;
+}
+
+
+</style>
+
+<div class="booking-rooms" id="lidoguestdetails-container" style="display: none">
+
+</div>
+
+<div class="button-group">
+
+  <button onclick="goToAddons()" class="btn-one">&#8249; Add-ons<span></span></button>
+</div>
+
+<h2 class="progress-title">Guest Details</h2>
+<div class="step-progress">
+  <div class="circle-step">
+    <div class="circle completed">1</div>
+    <div class="label">Rooms</div>
+  </div>
+  <div class="bar completed"></div>
+  <div class="circle-step">
+    <div class="circle completed">2</div>
+    <div class="label">Add-Ons</div>
+  </div>
+  <div class="bar active"></div>
+  <div class="circle-step">
+    <div class="circle active">3</div>
+    <div class="label">Guest Details</div>
+  </div>
+  <div class="bar"></div>
+  <div class="circle-step">
+    <div class="circle">4</div>
+    <div class="label">Confirmation</div>
+  </div>
+</div>
+
+<!-- Policies Section -->
+<div class="lidoguestdetails-container" style="margin-bottom: 20px">
+  <h3 class="guestdetails-h3">Policies:</h3>
+  <div class="policy-card" style="padding: 20px; border: 1px solid #ddd; background-color: #f8f8f8; margin-bottom: 20px;">
+    <strong>Check-in</strong> &nbsp;&nbsp; | &nbsp;&nbsp; <strong>Check-out</strong>
+    <p>after 3:00 pm &nbsp;&nbsp; | &nbsp;&nbsp;before 12:00 pm</p>
+    <br>
+    <p><strong>Guarantee Policy</strong><br />This is a Book-and-Buy arrangement. Full payment through credit card is required upon booking and is non-refundable but may be rebooked subject to applicable charges such as rate difference. Rebooking should be done at least 3 days prior to arrival date. (Hotel Local Time).</p>
+    <br>
+    <p><strong>Cancel Policy</strong><br />This reservation is non-cancellable & non-refundable but may be rebooked subject to applicable rate difference. <br>Rebooking should be done at least 3 days before arrival. Full payment will be forfeited for no-show. Add-Ons will be cancelled automatically.</p>
+  </div>
+
+  <!-- reCAPTCHA v2 (Checkbox) -->
+  <div class="g-recaptcha" data-sitekey="6LdHp40qAAAAAIncGquDVUREB3wgjVcZtGL4GOzV" data-callback="enableAgreeButton" data-expired-callback="resetAgreeButton"></div>
+
+  <!-- Agree Button Section -->
+  <div style="margin-top: 20px;">
+    <button id="agreeButton" class="btn-one" disabled onclick="showguestdetailsSection()">I Agree <span></span></button>
+  </div>
+</div>
+
+
+<div id="guestdetailsSection" style="opacity: 0.5; pointer-events: none;">
+<div class="guestdetails-card">
+  <div class="lidoguestdetails-container">
+
+    <div id="loadingOverlay" style="display: none;">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <h3 class="guestdetails-h3">Contact Info</h3>
+    {% if request.session.guest_id %}
+    <button id="autoFillButton" class="btn-one" style="margin-bottom: 10px;">
+      Auto-fill My Details <span></span>
+    </button>
+    {% endif %}
+    <div class="required-note">* Required</div>
+    <form id="guestDetailsForm" enctype="multipart/form-data" style="margin-bottom: 20px" novalidate>
+      {% csrf_token %}
+      <!-- Prefix, First Name, Last Name in same row -->
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="prefix" placeholder=" " required />
+          <label for="prefix">Prefix *</label>
+          <div class="error-message">Error: Prefix is required.</div>
+          <div id="prefix-suggestions" class="autocomplete-suggestions" style="display: none"></div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="first_name" placeholder=" " required />
+          <label for="first_name">First Name *</label>
+          <div class="error-message">Error: First name is required.</div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="last_name" placeholder=" " required />
+          <label for="last_name">Last Name *</label>
+          <div class="error-message">Error: Last name is required.</div>
+        </div>
+      </div>
+
+      <!--Telephone Number, Contact Phone in same row -->
+      <div class="form-row">
+        <div class="form-group">
+          <input type="tel" id="telephone_number" placeholder=" " />
+          <label for="telephone_number">Telephone</label>
+        </div>
+
+        <div class="form-group">
+          <input type="tel" id="contact_number" placeholder=" " />
+          <label for="contact_number">Contact Number *</label>
+          <div class="error-message">Error: Contact number is required.</div>
+      </div>
+      </div>
+
+      <!-- Email Address in its own row -->
+      <div class="form-row-single">
+        <div class="form-group">
+          <input type="email" id="email" placeholder=" " required />
+          <label for="email">Email Address *</label>
+          <div class="error-message">Error: Valid email address is required.</div>
+        </div>
+      </div>
+
+      <br />
+      <hr />
+      <br />
+
+      <h3 class="guestdetails-h3">Address</h3>
+      <!-- Address 1 and 2 -->
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="address1" placeholder=" " required />
+          <label for="address1">Address 1 *</label>
+          <div class="error-message">Error: Address 1 is required.</div>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="address2" placeholder=" " />
+          <label for="address2">Address 2</label>
+        </div>
+      </div>
+
+      <!-- City, Postal Code in the same row -->
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="city" placeholder=" " />
+          <label for="city">City</label>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="postalCode" placeholder=" " />
+          <label for="postalCode">Zip / Postal Code</label>
+        </div>
+      </div>
+
+      <!-- Country Text Box -->
+      <div class="form-row-country">
+        <div class="form-group form-group-country">
+          <input type="text" id="country" placeholder=" " required />
+          <label for="country">Country *</label>
+          <div class="error-message">Error: Country is required.</div>
+          <div id="suggestions" class="autocomplete-suggestions" style="display: none"></div>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <hr />
+      <br />
+
+      <h3 class="guestdetails-h3">Reservation Details</h3>
+
+      <!-- Special Requests (Note Section with character limit and fixed height) -->
+      <div class="form-row-single">
+        <div class="form-group">
+          <textarea id="specialRequests" rows="3" maxlength="200" placeholder=" " style="height: 150px; resize: none"></textarea>
+          <label for="specialRequests">Special Requests</label>
+          <div id="charCount" style="font-size: 12px; text-align: right">0/200</div>
+        </div>
+      </div>
+
+      <hr>
+      <!-- Payment Section -->
+      <div class="payment-section">
+        <h3 class="guestdetails-h3">Payment Method</h3>
+
+        
+        <p style="font-size: 15px;">Note: Paying through PayPal will allow you to pay the total amount directly. No Payment, No Reservation.</p>
+        <div style="margin-bottom: 20px;">
+          <img src="{% static 'assets/images/components/Visa_Logo.png' %}" class="payment-logo" alt="Visa Logo" />
+          <img src="{% static 'assets/images/components/Mastercard_Logo.png' %}" class="payment-logo" alt="Mastercard Logo" />
+        </div>
+        <div class="payment-method-container">
+          <div>
+
+          </div>
+
+        </div>
+        <div id="paypal-button-container" style="margin-top: 10px"></div>
+      </div>
+
+      
+      <!-- Dynamic guest details container -->
+      <div id="guestDetailsContainer"></div>
+      <!-- Dynamic guest details will be appended here -->
+
+      <!-- Add Guest Details Button -->
+      <button id="addGuestButton" type="button" class="btn-one" style="margin-top: 10px">
+        Add Guest Info <span></span>
+      </button>
+
+      
+    </form>
+  </div>
+</div>
+</div>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script src="https://www.paypal.com/sdk/js?client-id=AZflrFYu7Hzrb8Y453N6quHZ-_quzkcIZguDad2dxZ1scr4_K4T08DWNwE3z1mDCbnpfu-jugzdGp4U2&currency=PHP"></script>
+
+
+
+<script>
+  document.cookie = 'csrftoken={{ csrf_token }}';  // Ensure you're passing CSRF token from server-side template
+
+  // Get CSRF token from cookies
+  function getCSRFToken() {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith('csrftoken=')) {
+        return cookie.substring('csrftoken='.length, cookie.length);
+      }
+    }
+    return '';
+  }
+  
+  // PayPal Buttons setup
+  paypal.Buttons({
+    createOrder: function (data, actions) {
+        const reservationDetails = {
+            check_in_date: localStorage.getItem('checkInDate'),
+            check_out_date: localStorage.getItem('checkOutDate'),
+            room_chosen: JSON.parse(localStorage.getItem('ChosenRoom')).name,
+            adult_count: localStorage.getItem('adultCount') || 1, // Get adult count or default to 1
+            children_count: localStorage.getItem('childrenCount') || 0, // Get children count or default to 0
+            total_guest_count: 
+                (parseInt(localStorage.getItem('adultCount')) || 1) +
+                (parseInt(localStorage.getItem('childrenCount')) || 0), // Calculate total guest count
+            overall_total_amount: document.getElementById("summaryTotalPrice").textContent.replace(/[^\d.]/g, ''),
+            prefix: document.getElementById("prefix").value,
+            first_name: document.getElementById("first_name").value,
+            last_name: document.getElementById("last_name").value,
+            email: document.getElementById("email").value,
+            contact_number: document.getElementById("contact_number").value,
+            address1: document.getElementById("address1").value,
+            address2: document.getElementById("address2").value || '',
+            city: document.getElementById("city").value,
+            postal_code: document.getElementById("postalCode").value || '',
+            country: document.getElementById("country").value,
+            special_requests: document.getElementById("specialRequests").value || '',
+            add_ons: JSON.parse(localStorage.getItem('selectedAddOns')) || {},
+        };
+
+
+        return fetch('/create-booking/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify({
+                totalPrice: reservationDetails.overall_total_amount,
+                reservationDetails: reservationDetails,
+            }),
+        })
+            .then(response => response.json())
+            .then(order => {
+                const approvalLink = order.links.find(link => link.rel === 'approve').href;
+                window.location.href = approvalLink;
+            })
+            .catch(error => console.error('Error creating PayPal order:', error));
+    },
+    onApprove: function (data, actions) {
+      return actions.order.capture().then(function (details) {
+          console.log("Payment captured:", details);
+          alert("Payment successful!");
+  
+          // Clear local storage
+          try {
+              localStorage.clear();
+              console.log("Local storage cleared after payment success.");
+          } catch (error) {
+              console.error("Error clearing local storage:", error);
+          }
+  
+          // Optionally redirect to a success page
+          window.location.href = "/lidocompleted";
+      }).catch(function (err) {
+          console.error('Error capturing payment:', err);
+      });
+  }
+  
+}).render('#paypal-button-container');
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  try {
+      localStorage.clear();
+      console.log("Local storage cleared on success page load.");
+  } catch (error) {
+      console.error("Error clearing local storage on success page:", error);
+  }
+});
+
+
+  
+  
+
+
+
+  function validateFormFields() {
+    const requiredFields = [
+      "prefix",
+      "first_name",
+      "last_name",
+      "contact_number",
+      "email",
+      "address1",
+      "city",
+      "country",
+    ];
+  
+    // Check if each required field has a value
+    for (let field of requiredFields) {
+      const input = document.getElementById(field);
+      if (!input || !input.value.trim()) {
+        return false; // Form is invalid
+      }
+    }
+  
+    return true; // All fields are valid
+  }
+
+  function togglePayPalButton() {
+    const isValid = validateFormFields();
+    const payPalButtonContainer = document.querySelector("#paypal-button-container");
+  
+    if (isValid) {
+      payPalButtonContainer.style.pointerEvents = "auto";
+      payPalButtonContainer.style.opacity = "1";
+    } else {
+      payPalButtonContainer.style.pointerEvents = "none";
+      payPalButtonContainer.style.opacity = "0.5";
+    }
+  }
+  
+  // Attach event listeners to all required fields
+  const requiredInputs = document.querySelectorAll("#guestDetailsForm input[required]");
+  requiredInputs.forEach(input => {
+    input.addEventListener("input", togglePayPalButton);
+  });
+  
+  // Initial validation on page load
+  togglePayPalButton();
+  
+  const selectedAddOns = JSON.parse(localStorage.getItem('SelectedAddOns')) || [];
+
+  
+  
+  // Save Reservation Function
+  function saveReservationToBackend() {
+    // Get guest details and calculate total guest count dynamically
+    const reservationDetails = {
+      check_in_date: localStorage.getItem('checkInDate'),
+      check_out_date: localStorage.getItem('checkOutDate'),
+      room_chosen: JSON.parse(localStorage.getItem('ChosenRoom')).name,
+      adult_count: parseInt(localStorage.getItem('guestCount')), // Adults
+      children_count: parseInt(localStorage.getItem('childrenCount')), // Children
+      total_guest_count: parseInt(localStorage.getItem('guestCount')) + parseInt(localStorage.getItem('childrenCount')),
+      overall_total_amount: document.getElementById("summaryTotalPrice").textContent.replace(/[^\d.]/g, ''),
+      prefix: document.getElementById("prefix").value,
+      first_name: document.getElementById("first_name").value,
+      last_name: document.getElementById("last_name").value,
+      email: document.getElementById("email").value,
+      contact_number: document.getElementById("contact_number").value,
+      address1: document.getElementById("address1").value,
+      address2: document.getElementById("address2").value || '',
+      city: document.getElementById("city").value,
+      postal_code: document.getElementById("postalCode").value || '',
+      country: document.getElementById("country").value,
+      special_requests: document.getElementById("specialRequests").value || '',
+  };
+  
+  
+
+  // Debugging: Check the calculated total_guest_count
+  console.log("Total Guest Count:", reservationDetails.total_guest_count);
+  console.log("Reservation Details Sent to Backend:", reservationDetails);
+  
+    fetch('/submit-reservation/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(reservationDetails),
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Reservation saved successfully!');
+        window.location.href = data.redirect_url;
+      } else {
+        alert('Failed to save reservation: ' + data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error saving reservation:', error);
+    });
+  }
+  
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Reference the summaryTotalPrice element from Booking Summary page
+    const summaryTotalPriceElement = document.getElementById("summaryTotalPrice");
+
+    // Get the total price value and update the guest details section
+    if (summaryTotalPriceElement) {
+        const totalPriceText = summaryTotalPriceElement.textContent;
+
+        // Update the guest details section
+        const summaryOveraltotal = document.getElementById("summaryOveraltotal");
+        if (summaryOveraltotal) {
+            summaryOveraltotal.textContent = totalPriceText;
+        }
+    }
+
+    // Optionally, listen for changes in localStorage if you need to update in real-time
+    window.addEventListener("storage", function (event) {
+        if (event.key === "grandTotal") {
+            const updatedTotal = event.newValue;
+            const summaryOveraltotal = document.getElementById("summaryOveraltotal");
+            if (summaryOveraltotal) {
+                summaryOveraltotal.textContent = `₱${parseFloat(updatedTotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+            }
+        }
+    });
+});
+
+  
+
+
+
+  
+  // Enable the Agree Button when reCAPTCHA is checked
+  function enableAgreeButton() {
+    document.getElementById('agreeButton').disabled = false;
+  }
+
+  // Reset the Agree Button and hide the guest details section when reCAPTCHA is expired or unchecked
+  function resetAgreeButton() {
+    document.getElementById('agreeButton').disabled = true;
+    document.getElementById('guestdetailsSection').style.opacity = '0.5';  // Make section semi-transparent
+    document.getElementById('guestdetailsSection').style.pointerEvents = 'none';  // Disable interaction
+  }
+
+  // Show the guest details section when "I Agree" is clicked
+  function showguestdetailsSection() {
+    document.getElementById('guestdetailsSection').style.opacity = '1';  // Make section fully visible
+    document.getElementById('guestdetailsSection').style.pointerEvents = 'auto';  // Enable interaction
+  }
+      
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("guestDetailsForm");
+    const inputs = form.querySelectorAll("input[required], textarea[required]");
+    const charCount = document.getElementById("charCount");
+    const specialRequests = document.getElementById("specialRequests");
+    const addGuestButton = document.getElementById("addGuestButton");
+    const autoFillButton = document.getElementById("autoFillButton");
+
+
+    // Function to auto-fill the form with logged-in guest details
+    function autoFillGuestDetails() {
+      fetch('/get-guest-details/', {
+          method: 'GET',
+          credentials: 'same-origin',
+      })
+      .then((response) => response.json())
+      .then((data) => {
+          if (data.success) {
+              document.getElementById("first_name").value = data.first_name;
+              document.getElementById("last_name").value = data.last_name;
+              document.getElementById("email").value = data.email;
+              document.getElementById("contact_number").value = data.contact_number;
+              document.getElementById("telephone_number").value = data.telephone_number;
+              document.getElementById("address1").value = data.address1;
+              document.getElementById("city").value = data.city;
+              document.getElementById("country").value = data.country;
+          } else {
+              alert('Could not retrieve guest details: ' + data.error);
+          }
+      })
+      .catch((error) => {
+          console.error('Error fetching guest details:', error);
+      });
+  }
+  
+  document.getElementById("autoFillButton").addEventListener("click", autoFillGuestDetails);
+  
+
+    // Event listener for auto-fill button
+    if (autoFillButton) {
+      autoFillButton.addEventListener("click", autoFillGuestDetails);
+    }
+
+    let guestCount = 0; // Track the number of guests added
+    const maxGuests = parseInt(localStorage.getItem('adultsCount')) || 3; // Set maximum number of guests based on adults inputted
+
+    // Function to check if a field is valid and required
+    function checkValidity(input) {
+      const formGroup = input.closest(".form-group");
+      const errorMessage = formGroup.querySelector(".error-message");
+    
+      if (input.hasAttribute("required")) {
+        // Only apply to required fields
+        if (input.value.trim() === "") {
+          formGroup.classList.add("error");
+          errorMessage.style.display = "block";
+        } else {
+          formGroup.classList.remove("error");
+          errorMessage.style.display = "none";
+        }
+      }
+    
+      // Check if the email is valid
+      if (input.id === "email" && input.value.trim() !== "") {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation
+        if (!emailPattern.test(input.value)) {
+          formGroup.classList.add("error");
+          errorMessage.textContent = "Error: Valid email address is required.";
+          errorMessage.style.display = "block";
+        } else {
+          formGroup.classList.remove("error");
+          errorMessage.style.display = "none";
+        }
+      }
+    }
+    
+    // Check form validity and enable/disable buttons, including PayPal
+    function checkFormValidity() {
+      let isValid = true;
+      inputs.forEach((input) => {
+        if (input.hasAttribute("required") && input.value.trim() === "") {
+          isValid = false;
+        }
+      });
+    
+      addGuestButton.disabled = guestCount >= maxGuests; // Disable add guest button if max reached
+      const paypalButtonContainer = document.getElementById("paypal-button-container");
+    
+      // Enable or disable the PayPal button
+      if (paypalButtonContainer) {
+        if (isValid) {
+          paypalButtonContainer.style.pointerEvents = "auto"; // Enable PayPal button
+          paypalButtonContainer.style.opacity = "1"; // Reset opacity
+        } else {
+          paypalButtonContainer.style.pointerEvents = "none"; // Disable PayPal button
+          paypalButtonContainer.style.opacity = "0.5"; // Dim PayPal button
+        }
+      }
+    
+      // Disable addGuestButton based on guest count
+      if (guestCount >= maxGuests) {
+        addGuestButton.style.backgroundColor = "#ccc"; // Gray background
+        addGuestButton.style.cursor = "not-allowed"; // Not allowed cursor
+        addGuestButton.disabled = true; // Disable button
+      } else {
+        addGuestButton.style.backgroundColor = ""; // Default background
+        addGuestButton.style.cursor = "pointer"; // Pointer cursor
+        addGuestButton.disabled = false; // Enable button
+      }
+    }
+    
+    // Attach `input` event listeners to dynamically validate form
+    document.addEventListener("DOMContentLoaded", function () {
+      const inputs = document.querySelectorAll("input[required], textarea[required]");
+      inputs.forEach((input) => {
+        input.addEventListener("input", () => {
+          checkValidity(input);
+          checkFormValidity();
+        });
+      });
+    
+      // Initial form validity check
+      checkFormValidity();
+    });
+    
+
+    // Validate fields on blur (when user leaves the field)
+    inputs.forEach((input) => {
+      input.addEventListener("blur", () => {
+        checkValidity(input);
+        checkFormValidity();
+      });
+    });
+
+    // Character count for Special Requests
+    specialRequests.addEventListener("input", function () {
+      const count = specialRequests.value.length;
+      charCount.textContent = `${count}/200`;
+    });
+
+    // Only allow numeric input for phone, contact, and postal code
+    document.getElementById("telephone_number").addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "");
+    });
+    document.getElementById("contact_number").addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "");
+    });
+    document.getElementById("postalCode").addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "");
+    });
+
+    // Define the countries array
+    const countries = [
+      "Philippines", "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia",
+      "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin",
+      "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
+      "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros",
+      "Congo (Congo-Brazzaville)", "Congo (Congo-Kinshasa)", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark",
+      "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia",
+      "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada",
+      "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran",
+      "Iraq", "Ireland", "Israel", "Italy", "Ivory Coast", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati",
+      "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
+      "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
+      "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar (Burma)", "Namibia", "Nauru",
+      "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman",
+      "Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar",
+      "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino",
+      "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+      "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden",
+      "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago",
+      "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States",
+      "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+    ];
+
+    const countryInput = document.getElementById("country");
+    const suggestionsContainer = document.getElementById("suggestions");
+
+    // Function to filter and show suggestions for countries
+    function showCountrySuggestions(value) {
+      suggestionsContainer.innerHTML = ""; // Clear previous suggestions
+      const filteredCountries = countries.filter((country) =>
+        country.toLowerCase().startsWith(value.toLowerCase())
+      );
+      if (filteredCountries.length > 0) {
+        suggestionsContainer.style.display = "block";
+        filteredCountries.forEach((country) => {
+          const suggestionItem = document.createElement("div");
+          suggestionItem.className = "autocomplete-suggestion";
+          suggestionItem.textContent = country;
+          suggestionItem.onclick = function () {
+            countryInput.value = country; // Set the input value to the clicked suggestion
+            suggestionsContainer.style.display = "none"; // Hide suggestions
+            checkValidity(countryInput); // Check validity after selection
+          };
+          suggestionsContainer.appendChild(suggestionItem);
+        });
+      } else {
+        suggestionsContainer.style.display = "none"; // Hide if no matches
+      }
+    }
+
+    // Event listener for the country input
+    countryInput.addEventListener("input", function () {
+      const value = this.value;
+      showCountrySuggestions(value); // Show suggestions when typing
+    });
+
+    // Event listener to always show suggestions when the input is focused
+    countryInput.addEventListener("focus", function () {
+      showCountrySuggestions(this.value); // Show suggestions even if there's no input
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener("click", function (e) {
+      if (
+        !countryInput.contains(e.target) &&
+        !suggestionsContainer.contains(e.target)
+      ) {
+        suggestionsContainer.style.display = "none";
+      }
+    });
+
+    // Define the prefixes array
+    const prefixes = [
+      "Mr.",
+      "Ms.",
+      "Mrs.",
+      "Mx.",
+      "Dr.",
+      "Prof.",
+      "Sir",
+      "Madam",
+      "Captain",
+      "Chief",
+      "Lady",
+      "Lord",
+    ];
+
+    const prefixInput = document.getElementById("prefix");
+    const prefixSuggestionsContainer = document.getElementById("prefix-suggestions");
+
+    // Function to filter and show suggestions for prefixes
+    function showPrefixSuggestions(value) {
+      prefixSuggestionsContainer.innerHTML = ""; // Clear previous suggestions
+      const filteredPrefixes = prefixes.filter((prefix) =>
+        prefix.toLowerCase().startsWith(value.toLowerCase())
+      );
+      if (filteredPrefixes.length > 0) {
+        prefixSuggestionsContainer.style.display = "block";
+        filteredPrefixes.forEach((prefix) => {
+          const suggestionItem = document.createElement("div");
+          suggestionItem.className = "autocomplete-suggestion";
+          suggestionItem.textContent = prefix;
+          suggestionItem.onclick = function () {
+            prefixInput.value = prefix; // Set the input value to the clicked suggestion
+            prefixSuggestionsContainer.style.display = "none"; // Hide suggestions
+            checkValidity(prefixInput); // Check validity after selection
+          };
+          prefixSuggestionsContainer.appendChild(suggestionItem);
+        });
+      } else {
+        prefixSuggestionsContainer.style.display = "none"; // Hide if no matches
+      }
+    }
+
+    // Event listener for the prefix input
+    prefixInput.addEventListener("input", function () {
+      const value = this.value;
+      showPrefixSuggestions(value); // Show suggestions when typing
+    });
+
+    // Event listener to always show suggestions when the input is focused
+    prefixInput.addEventListener("focus", function () {
+      showPrefixSuggestions(this.value); // Show suggestions even if there's no input
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener("click", function (e) {
+      if (
+        !prefixInput.contains(e.target) &&
+        !prefixSuggestionsContainer.contains(e.target)
+      ) {
+        prefixSuggestionsContainer.style.display = "none";
+      }
+    });
+
+    // Initial check to disable the button based on existing inputs
+    checkFormValidity();
+
+    // Dynamic guest details functionality
+    document.getElementById("guestDetailsContainer").style.display = "none"; // Hide guest details container initially
+
+    addGuestButton.addEventListener("click", function () {
+      if (guestCount < maxGuests) {
+        guestCount++;
+        const guestDiv = document.createElement("div");
+        guestDiv.className = "guest-info";
+        guestDiv.innerHTML = `
+                    <h1 style="font-size: 20px; text-transform: uppercase; margin: 15px 10px;">Guest ${guestCount} <span class="remove-guest" style="float: right; cursor: pointer;" "><i class="fa-solid fa-trash-can"></i></span></h1>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="guestFirstName${guestCount}" placeholder="" required />
+                            <label for="guestFirstName${guestCount}">First Name *</label>
+                            <div class="error-message">Error: First name is required.</div>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="guestLastName${guestCount}" placeholder="" required />
+                            <label for="guestLastName${guestCount}">Last Name *</label>
+                            <div class="error-message">Error: Last name is required.</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="email" id="guestEmail${guestCount}" placeholder="" required />
+                            <label for="guestEmail${guestCount}">Email Address *</label>
+                            <div class="error-message">Error: Valid email address is required.</div>
+                        </div>
+                    </div>
+                `;
+        document.getElementById("guestDetailsContainer").appendChild(guestDiv);
+        guestDiv.style.display = "block"; // Show the new guest info
+        document.getElementById("guestDetailsContainer").style.display = "block"; // Show container if hidden
+
+        // Add event listener for remove guest
+        guestDiv.querySelector(".remove-guest").addEventListener("click", function () {
+          guestDiv.remove();
+          guestCount--; // Decrement the guest count
+          checkFormValidity(); // Check form validity again
+          if (guestCount === 0) {
+            document.getElementById("guestDetailsContainer").style.display = "none"; // Hide container if no guests
+          }
+        });
+
+        // Disable the add guest button if max reached
+        if (guestCount >= maxGuests) {
+          addGuestButton.disabled = true;
+          addGuestButton.style.backgroundColor = "#ccc"; // Gray background
+          addGuestButton.style.cursor = "not-allowed"; // Not allowed cursor
+        }
+      } else {
+        alert("You have reached the maximum number of guests.");
+      }
+    });
+
+    
+
+
+  
+  });
+</script>
+

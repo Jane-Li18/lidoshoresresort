@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Transactions | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+<style>
+    .transaction-container {
+        background-color: var(--bgtertiary);
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 1200px;
+        margin: 50px auto; 
+    }
+
+    .transaction-h2 {
+        font-size: 15px;
+        text-transform: uppercase;
+        margin-bottom: 13px;
+    }
+
+    table {
+        width: 100%;
+    }
+</style>
+
+<div class="container transaction-container">
+    <h2 class="transaction-h2">Your Reservations</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Reservation ID</th>
+                <th>Guest</th>
+                <th>Check-in Date</th>
+                <th>Check-out Date</th>
+                <th>Room</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Invoice</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation in reservations %}
+            <tr>
+                <td>{{ reservation.reservation_ID }}</td>
+                <td>{{ reservation.guest.first_name }} {{ reservation.guest.last_name }}</td>
+                <td>{{ reservation.check_in_date }}</td>
+                <td>{{ reservation.check_out_date }}</td>
+                <td>{{ reservation.room_chosen }}</td>
+                <td>₱{{ reservation.overall_total_amount|floatformat:0|intcomma }}</td>
+                <td>{{ reservation.status }}</td>
+                <td>
+                    {% if reservation.invoice_file %}
+                        <a href="{{ reservation.invoice_file.url }}" download>Download</a>
+                    {% else %}
+                        <div style="color: red;">Expired</div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">No reservations found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock content %}

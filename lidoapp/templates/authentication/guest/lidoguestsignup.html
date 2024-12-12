@@ -1,0 +1,1209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign Up | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+
+<style>
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.5); /* Dark overlay */
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 30px;
+        width: 500px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        border-radius: 0px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+
+    .modal-footer button {
+        width: 100%;
+        padding: 10px;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .modal-footer .btn-cancel {
+        background-color: #d93025; /* Red for cancel */
+    }
+
+    .modal-footer .btn-confirm {
+        background-color: var(--bgsecondary); /* Secondary background color */
+    }
+
+    .modal-content button {
+        border-radius: 0px;
+    }
+
+    /* Existing Styles */
+    .nice-select, .custom-select {
+        width: 100%;
+        height: 85%;
+        align-items: center;
+        display: flex;
+    }
+
+    .nice-select .option {
+        line-height: 30px;
+        min-height: 30px;
+    }
+
+    .signup-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: calc(100vh - 150px);
+        background-color: var(--bgprimary);
+        position: relative;
+    }
+
+    @media (max-width: 768px) {
+        .signup-container {
+            height: 100vh;
+        }
+    }
+
+    .input-container input:focus,
+    .input-container select:focus {
+        border-color: var(--bgsecondary);
+        outline: none;
+    }
+
+    .signup-box, .basic-info-box, .email-box, .password-box, .review-box, .terms-box {
+        background-color: #ffffff;
+        padding: 40px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        width: 1000px;
+        display: flex;
+        align-items: center;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    }
+
+    .loading-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 4px;
+        width: 0;
+        background-color: var(--bgsecondary);
+        transition: width 1.5s ease-in-out;
+        visibility: hidden;
+    }
+
+    .signup-box-left, .basic-info-left, .email-box-left, .password-box-left, .review-box-left, .terms-box-left {
+        flex: 1;
+        padding-right: 20px;
+        text-align: left;
+    }
+
+    .signup-box-left img, .basic-info-left img, .email-box-left img, .password-box-left img, .review-box-left img, .terms-box-left img {
+        width: 75px;
+    }
+
+    .signup-box-left h1, .basic-info-left h1, .email-box-left h1, .password-box-left h1, .review-box-left h1, .terms-box-left h1 {
+        font-size: 24px;
+        font-weight: 400;
+        color: var(--txtprimary);
+        margin: 20px 0;
+    }
+
+    .signup-box-left p, .basic-info-left p, .email-box-left p, .password-box-left p, .review-box-left p, .terms-box-left p {
+        font-size: 16px;
+        color: var(--txtprimary);
+        margin-top: 0;
+    }
+
+    .signup-box-right, .basic-info-right, .email-box-right, .password-box-right, .review-box-right, .terms-box-right {
+        flex: 1;
+    }
+
+    .input-container {
+        position: relative;
+        margin-bottom: 30px;
+    }
+
+    .input-container input,
+    .input-container select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #dadce0;
+        box-sizing: border-box;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.3s ease-in-out;
+    }
+
+    .input-container input.error,
+    .input-container select.error {
+        border-color: #d93025; /* Red border color for error state */
+    }
+
+    .input-container label {
+        position: absolute;
+        top: 43%;
+        left: 10px;
+        transform: translateY(-50%);
+        color: #80868b;
+        background: var(--bgtertiary);
+        padding: 0 4px;
+        pointer-events: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .input-container input:focus {
+        border-color: var(--bgsecondary);
+        outline: none;
+    }
+
+    .input-container input:focus + label,
+    .input-container input:not(:placeholder-shown) + label,
+    .input-container select:focus + label,
+    .input-container select:not([value=""]) + label {
+        top: 0px;
+        font-size: 12px;
+        color: var(--bgsecondary);
+    }
+
+    .input-container .error-message {
+        color: #d93025;
+        font-size: 12px;
+        display: none;
+        position: absolute;
+        top: 100%; /* Display the error message just below the input */
+        left: 0;
+    }
+
+    /* Specifically adjust the error message for the gender dropdown */
+    .input-container.gender-container .error-message {
+        top: calc(100% + 5px);  /* Position the error message slightly below the dropdown */
+    }
+
+    .signup-box-right button, .basic-info-right button, .email-box-right button, .password-box-right button, .review-box-right button, .terms-box-right button {
+        width: 100%;
+        padding: 10px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 20px;
+        background-color: var(--bgsecondary);
+        transition: background-color 0.3s;
+    }
+
+    .signup-box-right button:focus,
+    .signup-box-right button:active,
+    .basic-info-right button:focus,
+    .basic-info-right button:active,
+    .email-box-right button:focus,
+    .email-box-right button:active,
+    .password-box-right button:focus,
+    .password-box-right button:active,
+    .review-box-right button:focus,
+    .review-box-right button:active,
+    .terms-box-right button:focus,
+    .terms-box-right button:active {
+        background-color: var(--bgsecondary);
+    }
+
+    .footer-links {
+        font-size: 12px;
+        color: #5f6368;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .footer-links a {
+        color: #5f6368;
+        text-decoration: none;
+    }
+
+    .footer-links a:hover {
+        text-decoration: underline;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .signup-box, .basic-info-box, .email-box, .password-box, .review-box, .terms-box {
+            flex-direction: column;
+            width: 90%;
+            padding: 20px;
+        }
+
+        .signup-box-left, .basic-info-left, .email-box-left, .password-box-left, .review-box-left, .terms-box-left {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .signup-box-right, .basic-info-right, .email-box-right, .password-box-right, .review-box-right, .terms-box-right {
+            width: 100%;
+        }
+
+        .footer-links {
+            justify-content: center;
+            margin-top: 20px;
+        }
+    }
+
+    .input-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        height: 50px;
+    }
+
+    .input-group .input-container {
+        flex: 1;
+    }
+
+    /* Adjusting the width of the select dropdown */
+    .input-container select#month, .input-container input#day, .input-container input#year {
+        width: 100%;
+    }
+
+    .input-container select#month {
+        width: 100%;
+    }
+
+    .info-link {
+        display: inline-block;
+        margin-top: 30px;
+        font-size: 14px;
+        color: var(--bgsecondary);
+        text-decoration: none;
+    }
+
+    .info-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Ensure custom gender fields are slightly lower to avoid overlapping */
+    #customGenderContainer, #referAsContainer {
+        margin-top: 10px;
+    }
+
+    #customGenderContainer {
+        margin-top: 100px;
+    }
+
+    /* Email instruction under the input */
+    .email-instruction {
+        font-size: 12px;
+        color: #80868b;
+        margin-top: -10px;
+        margin-bottom: 30px;
+    }
+
+    /* Password box styles */
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+
+    .custom-checkbox input[type="checkbox"] {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 1px solid #dadce0;
+        background-color: white;
+        cursor: pointer;
+        position: relative;
+        outline: none;
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked {
+        background-color: var(--bgsecondary);
+        border-color: var(--bgsecondary);
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked::before {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        color: white;
+    }
+
+    .custom-checkbox label {
+        margin-left: 8px;
+        font-size: 14px;
+        color: #202124;
+        cursor: pointer;
+    }
+
+    /* Terms box styling */
+    .terms-box-left, .review-box-left {
+        flex: 1;
+        padding-right: 20px;
+        text-align: left;
+    }
+
+    .terms-box-right, .review-box-right {
+        flex: 1;
+    }
+
+    .terms-box-right{
+        font-size: 13px;
+    }
+
+    .terms-box {
+        top: 50%;
+        transform: translateY(-40%);
+    }
+</style>
+
+{% block profile %}{% endblock profile %}
+<div class="signup-container">
+    <!-- Sign Up Section -->
+    <div class="signup-box" id="nameSection">    
+        <div class="loading-line" id="signupLoadingLine"></div>
+        <div class="signup-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Create a Lido Shores Account</h1>
+            <p>Enter your details</p>
+        </div>
+        <div class="signup-box-right">
+            <form id="signupForm" method="post" action="{% url 'guestsignup' %}">
+                {% csrf_token %}
+                <div class="input-container">
+                    <input type="text" name="first_name" id="first_name" placeholder=" " required>
+                    <label for="first_name">First name</label>
+                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter your first name</div>
+                </div>
+                <div class="input-container">
+                    <input type="text" name="middle_name" id="middle_name" placeholder=" ">
+                    <label for="middle_name">Middle name (optional)</label>
+                </div>
+                <div class="input-container">
+                    <input type="text" name="last_name" id="last_name" placeholder=" " required>
+                    <label for="last_name">Last name</label>
+                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter your last name</div>
+                </div>
+                <button type="submit" class="btn-one">Next<span></span></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Basic Information Section -->
+    <div class="basic-info-box hidden" id="basicInfoSection">
+        <div class="loading-line" id="basicInfoLoadingLine"></div>
+        <div class="basic-info-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Basic Information</h1>
+            <p>Enter your birthday and gender</p>
+        </div>
+        <div class="basic-info-right">
+            <form id="basicInfoForm" method="post" action="#">
+                {% csrf_token %}
+                <div class="input-group">
+                    <div class="input-container">
+                        <select class="custom-select nice-select" name="month" id="month" required>
+                            <option value="" disabled selected>Month</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                    <div class="input-container">
+                        <input type="text" class="form-control" name="day" id="day" placeholder=" " required>
+                        <label for="day">Day</label>
+                    </div>
+                    <div class="input-container">
+                        <input type="text" class="form-control" name="year" id="year" placeholder=" " required>
+                        <label for="year">Year</label>
+                    </div>
+                </div>
+                <div class="input-container">
+                    <div class="error-message" id="birthdayError"><i class="fa-solid fa-circle-exclamation"></i> Please fill in a complete birthday</div>
+                </div>
+                <div class="input-container gender-container">
+                    <select class="custom-select nice-select" name="gender" id="gender" required>
+                        <option value="" disabled selected>Gender</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                        <option value="Rather not say">Rather not say</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                    <div class="error-message" id="genderError" style="top: 45px;"><i class="fa-solid fa-circle-exclamation"></i> Please select your gender</div>
+                </div>
+
+                <!-- Custom Gender Section -->
+                <div class="input-container hidden" id="customGenderContainer">
+                    <input type="text" name="custom_gender" id="custom_gender" placeholder=" " required>
+                    <label for="custom_gender">What is your gender?</label>
+                    <div class="error-message" id="customGenderError"><i class="fa-solid fa-circle-exclamation"></i> Please indicate the gender you most identify with</div>
+                </div>
+
+                <div class="input-container hidden" id="referAsContainer">
+                    <select class="custom-select nice-select" name="refer_as" id="refer_as" required>
+                        <option value="" disabled selected>Please refer to me as</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" style="top: 45px;"><i class="fa-solid fa-circle-exclamation"></i> Please select a pronoun</div>
+                </div>
+
+                </br>
+                <a href="{% url 'faqlido' %}" class="info-link">Why we ask for birthday and gender</a>
+                <button type="submit" class="btn-one" id="nextButton">Next<span></span></button>
+                <button type="button" class="btn-one" id="backToNameSection">Back<span></span></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Section -->
+    <div class="email-box hidden" id="emailSection">
+        <div class="loading-line" id="emailLoadingLine"></div>
+        <div class="email-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>How you’ll sign in</h1>
+            <p>Create an email address for signing in to your Lido Shores Account</p>
+        </div>
+        <div class="email-box-right">
+            <form id="emailForm" method="post" action="#">
+                {% csrf_token %}
+                <div class="input-container">
+                    <input type="text" name="email" id="email" placeholder=" " required>
+                    <label for="email">Email</label>
+                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter a Lido Shores address.</div>
+                </div>
+                <div class="email-instruction">You can use letters, numbers & periods</div>
+                <button type="submit" class="btn-one">Next<span></span></button>
+                <button type="button" class="btn-one" id="backToBasicInfoSection">Back<span></span></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Section -->
+    <div class="password-box hidden" id="passwordSection">
+        <div class="loading-line" id="passwordLoadingLine"></div>
+        <div class="password-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Create a strong password</h1>
+            <p>Create a strong password with a mix of letters, numbers and symbols</p>
+        </div>
+        <div class="password-box-right">
+            <form id="passwordForm" method="post" action="#">
+                {% csrf_token %}
+                <div class="input-container">
+                    <input type="password" name="password" id="password" placeholder=" " required>
+                    <label for="password">Password</label>
+                    <div class="error-message" id="passwordError"><i class="fa-solid fa-circle-exclamation"></i> Enter a password</div>
+                </div>
+                <div class="input-container">
+                    <input type="password" name="confirm_password" id="confirm_password" placeholder=" " required>
+                    <label for="confirm_password">Confirm</label>
+                    <div class="error-message" id="confirmPasswordError"><i class="fa-solid fa-circle-exclamation"></i> Confirm your password</div>
+                </div>
+                <div class="checkbox-label">
+                    <div class="custom-checkbox">
+                        <input type="checkbox" id="show_password"> 
+                        <label for="show_password">Show password</label> <!-- Updated label -->
+                    </div>
+                </div>
+                <button type="submit" class="btn-one">Next<span></span></button>
+                <button type="button" class="btn-one" id=" backToEmailSection">Back<span></span></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Review Section -->
+    <div class="review-box hidden" id="reviewSection">
+        <div class="loading-line" id="reviewLoadingLine"></div>
+        <div class="review-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Review your account info</h1>
+            <p>You can use this email address to sign in later</p>
+        </div>
+        <div class="review-box-right">
+            <p><strong id="reviewFullName"></strong></p> <!-- Updated with dynamic values -->
+            <p id="reviewEmail"></p> <!-- Updated with dynamic values -->
+            <button type="button" class="btn-one" id="proceedToTerms">Next<span></span></button>
+            <button type="button" class="btn-one" id=" backToPasswordSection">Back<span></span></button>
+        </div>
+    </div>
+
+    <!-- Privacy and Terms Section -->
+    <div class="terms-box hidden" id="termsSection">
+        <div class="loading-line" id="termsLoadingLine"></div> <!-- Add the loading line -->
+        <div class="terms-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Privacy and Terms</h1>
+        </div>
+        <div class="terms-box-right">
+            <p>To create a Lido Shores Resort Guest Account, you’ll need to agree to our Guest Terms and Privacy Policy. Here’s a brief overview:</p>
+            <ul>
+                <li><strong>Information We Collect:</strong> When you create a Lido Shores Resort Guest Account, we collect details such as your name, contact information, and any preferences you provide. During your stay and when you use our services, we process information like your room preferences, activities, and any special requests.</li>
+                <li><strong>Why We Collect It:</strong> We use this information to enhance your experience, customize your stay, and improve our services. This includes offering personalized recommendations, ensuring your room is prepared to your liking, and addressing any special needs you might have.</li>
+                <li><strong>Combining Data:</strong> To better serve you, we may combine data from different aspects of your stay, such as dining preferences and room service requests, to ensure a seamless experience across our services.</li>
+                <li><strong>Your Control:</strong> You have control over your information and can manage your preferences anytime. If you have concerns, you can always adjust your settings or contact us for support.</li>
+            </ul>
+            <p>Please note that adhering to resort policies is essential for a pleasant stay, such as observing check-in/out times, following pool rules, and taking care of room amenities. For full details, please review our Guest Terms and Privacy Policy.</p>
+        
+            <button type="button" class="btn-one" id="agreeButton">Agree<span></span></button>
+            <button type="button" class="btn-one" id="cancelButton">Cancel<span></span></button>
+        </div>
+    </div>
+</div>
+
+<div class="footer-links">
+    <a href="#">Help</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+</div>
+
+<!-- Modal HTML -->
+<div id="cancelModal" class="modal">
+    <div class="modal-content">
+        <p>Are you sure you want to cancel and discard the <br><strong>Terms & Conditions?</strong></p>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="modalCancel">NO</button>
+            <button class="btn-one" id="modalConfirm">Yes, discard<span></span></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var signupLoadingLine = document.getElementById('signupLoadingLine');
+        var basicInfoLoadingLine = document.getElementById('basicInfoLoadingLine');
+        var emailLoadingLine = document.getElementById('emailLoadingLine');
+        var passwordLoadingLine = document.getElementById('passwordLoadingLine');
+        var reviewLoadingLine = document.getElementById('reviewLoadingLine');
+        var termsLoadingLine = document.getElementById('termsLoadingLine');
+    
+        var signupForm = document.getElementById('signupForm');
+        var basicInfoForm = document.getElementById('basicInfoForm');
+        var emailForm = document.getElementById('emailForm');
+        var passwordForm = document.getElementById('passwordForm');
+    
+        var firstNameInput = document.getElementById('first_name');
+        var lastNameInput = document.getElementById('last_name');
+        var emailInput = document.getElementById('email');
+        var firstNameError = firstNameInput.parentElement.querySelector('.error-message');
+        var lastNameError = lastNameInput.parentElement.querySelector('.error-message');
+        var emailError = emailInput.parentElement.querySelector('.error-message');
+        var nameSection = document.getElementById('nameSection');
+        var basicInfoSection = document.getElementById('basicInfoSection');
+        var emailSection = document.getElementById('emailSection');
+        var passwordSection = document.getElementById('passwordSection');
+        var reviewSection = document.getElementById('reviewSection');
+        var termsSection = document.getElementById('termsSection');
+    
+        var monthInput = document.getElementById('month');
+        var dayInput = document.getElementById('day');
+        var yearInput = document.getElementById('year');
+        var genderInput = document.getElementById('gender');
+        var birthdayError = document.getElementById('birthdayError');
+        var genderError = document.getElementById('genderError');
+        var nextButton = document.getElementById('nextButton');
+    
+        var customGenderContainer = document.getElementById('customGenderContainer');
+        var referAsContainer = document.getElementById('referAsContainer');
+        var customGenderInput = document.getElementById('custom_gender');
+        var referAsInput = document.getElementById('refer_as');
+        var customGenderError = document.getElementById('customGenderError');
+        var referAsError = referAsContainer.querySelector('.error-message');
+    
+        var privacyAndTermsModal = document.getElementById('privacyAndTermsModal');
+        var modalCancel = document.getElementById('modalCancel');
+        var modalConfirm = document.getElementById('modalConfirm');
+
+        var backToBasicInfoSection = document.getElementById('backToBasicInfoSection');
+        var backToEmailSection = document.getElementById('backToEmailSection');
+        var backToPasswordSection = document.getElementById('backToPasswordSection');
+        var backToReviewSection = document.getElementById('backToReviewSection');
+
+        var cancelButton = document.getElementById('cancelButton');
+        var cancelModal = document.getElementById('cancelModal');
+        var modalCancel = document.getElementById('modalCancel');
+        var modalConfirm = document.getElementById('modalConfirm');
+
+            // Show modal when Cancel button is clicked
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
+            cancelModal.style.display = 'flex';  // Show the modal
+        });
+    }
+
+    // Close the modal when the 'No' button is clicked
+    if (modalCancel) {
+        modalCancel.addEventListener('click', function() {
+            cancelModal.style.display = 'none';  // Hide the modal
+        });
+    }
+
+    // Proceed with the "discard" action when the 'Yes, discard' button is clicked
+    if (modalConfirm) {
+        modalConfirm.addEventListener('click', function() {
+            window.location.href = "{% url 'guestlogin' %}";  // Redirect to guest login or another page
+        });
+    }
+        
+    // Back button functionality for Name Section
+    if (backToNameSection) {
+        backToNameSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(basicInfoLoadingLine);
+            setTimeout(function() {
+                basicInfoSection.classList.add('hidden');
+                nameSection.classList.remove('hidden');
+                hideLoadingAnimation(basicInfoLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Basic Info Section
+    if (backToBasicInfoSection) {
+        backToBasicInfoSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(emailLoadingLine);
+            setTimeout(function() {
+                emailSection.classList.add('hidden');
+                basicInfoSection.classList.remove('hidden');
+                hideLoadingAnimation(emailLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Email Section
+    if (backToEmailSection) {
+        backToEmailSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(basicInfoLoadingLine);
+            setTimeout(function() {
+                emailSection.classList.add('hidden');
+                basicInfoSection.classList.remove('hidden');
+                hideLoadingAnimation(basicInfoLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Password Section
+    if (backToPasswordSection) {
+        backToPasswordSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(emailLoadingLine);
+            setTimeout(function() {
+                passwordSection.classList.add('hidden');
+                emailSection.classList.remove('hidden');
+                hideLoadingAnimation(emailLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Review Section
+    if (backToReviewSection) {
+        backToReviewSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(passwordLoadingLine);
+            setTimeout(function() {
+                reviewSection.classList.add('hidden');
+                passwordSection.classList.remove('hidden');
+                hideLoadingAnimation(passwordLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+    
+        // Example: Back Button in Basic Info
+        var nextButton = document.getElementById('nextButton');
+        nextButton.addEventListener('click', function(event) {
+            event.preventDefault();
+    
+            var isBirthdayValid = validateBirthday();
+            var isGenderValid = validateGender();
+    
+            if (genderInput.value === 'Custom') {
+                // Validate custom gender fields
+                var isCustomGenderValid = validateInput(customGenderInput, customGenderError);
+                var isReferAsValid = validateInput(referAsInput, referAsError);
+    
+                if (isBirthdayValid && isGenderValid && isCustomGenderValid && isReferAsValid) {
+                    startLoadingAnimation(basicInfoLoadingLine);
+                    setTimeout(function() {
+                        basicInfoSection.classList.add('hidden');
+                        emailSection.classList.remove('hidden');
+                        hideLoadingAnimation(basicInfoLoadingLine); 
+                    }, 1500);
+                }
+            } else {
+                if (isBirthdayValid && isGenderValid) {
+                    startLoadingAnimation(basicInfoLoadingLine);
+                    setTimeout(function() {
+                        basicInfoSection.classList.add('hidden');
+                        emailSection.classList.remove('hidden');
+                        hideLoadingAnimation(basicInfoLoadingLine);
+                    }, 1500);
+                }
+            }
+        });
+    
+        // For Nice Select compatibility
+        $('.nice-select').on('change', function() {
+            var selectedValue = $(this).closest('.input-container').find('select').val();
+            if (selectedValue === 'Custom') {
+                customGenderContainer.classList.remove('hidden');
+                referAsContainer.classList.remove('hidden');
+                genderInput.blur(); // To allow access to the gender dropdown again
+            } else if ($(this).attr('id') === 'gender') {
+                customGenderContainer.classList.add('hidden');
+                referAsContainer.classList.add('hidden');
+            }
+        });
+    
+        nextButton.addEventListener('click', function(event) {
+            event.preventDefault();
+    
+            var isBirthdayValid = validateBirthday();
+            var isGenderValid = validateGender();
+    
+            if (genderInput.value === 'Custom') {
+                // Validate the custom gender fields if "Custom" is selected
+                var isCustomGenderValid = validateInput(customGenderInput, customGenderError);
+                var isReferAsValid = validateInput(referAsInput, referAsError);
+    
+                if (isBirthdayValid && isGenderValid && isCustomGenderValid && isReferAsValid) {
+                    startLoadingAnimation(basicInfoLoadingLine);
+                    setTimeout(function() {
+                        basicInfoSection.classList.add('hidden');
+                        emailSection.classList.remove('hidden');
+                        hideLoadingAnimation(basicInfoLoadingLine); // Hide the loading bar after transition
+                    }, 1500);
+                }
+            } else {
+                // Proceed with the usual validation if "Custom" is not selected
+                if (isBirthdayValid && isGenderValid) {
+                    startLoadingAnimation(basicInfoLoadingLine);
+                    setTimeout(function() {
+                        basicInfoSection.classList.add('hidden');
+                        emailSection.classList.remove('hidden');
+                        hideLoadingAnimation(basicInfoLoadingLine); // Hide the loading bar after transition
+                    }, 1500);
+                }
+            }
+        });
+    
+        // Validate email on "Next" click in the email section
+        emailForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            // Clear any previous error before starting new validation
+            clearError(emailInput, emailError);
+    
+            // Start the loading animation immediately
+            startLoadingAnimation(emailLoadingLine);
+    
+            if (!validateEmail(emailInput, emailError)) {
+                hideLoadingAnimation(emailLoadingLine);
+                return;
+            }
+    
+            // Check if email exists for sign-up
+            fetch('{% url "check_signup_email" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: new URLSearchParams({ 'email': emailInput.value })
+            }).then(response => response.json())
+            .then(data => {
+                clearError(emailInput, emailError); // Clear error before setting a new one
+                if (data.exists) {
+                    // Show the error message and stop the loading animation if email is taken
+                    emailError.innerHTML = `<i class="${data.icon_class}"></i> ${data.error}`;
+                    emailError.style.display = 'block';
+                    emailInput.style.borderColor = '#d93025';
+                    hideLoadingAnimation(emailLoadingLine);
+                } else {
+                    // Hide the error message if the email is valid
+                    emailError.style.display = 'none';
+                    emailInput.style.borderColor = '#dadce0';
+    
+                    // Complete the loading animation and proceed to the next section
+                    setTimeout(function() {
+                        emailSection.classList.add('hidden');
+                        passwordSection.classList.remove('hidden');
+                        hideLoadingAnimation(emailLoadingLine); // Hide the loading bar after transition
+                    }, 1500);
+                }
+            }).catch(error => {
+                // Handle any fetch errors
+                console.error('Fetch error:', error);
+                hideLoadingAnimation(emailLoadingLine);
+                alert('There was an error checking your email. Please try again.');
+            });
+        });
+    
+        // Input validation and error clearing on input change
+        firstNameInput.addEventListener('input', function() {
+            clearError(firstNameInput, firstNameError);
+        });
+    
+        lastNameInput.addEventListener('input', function() {
+            clearError(lastNameInput, lastNameError);
+        });
+    
+        emailInput.addEventListener('input', function() {
+            clearError(emailInput, emailError);
+        });
+    
+        monthInput.addEventListener('change', function() {
+            clearError(monthInput, birthdayError);
+        });
+    
+        dayInput.addEventListener('input', function() {
+            clearError(dayInput, birthdayError);
+        });
+    
+        yearInput.addEventListener('input', function() {
+            clearError(yearInput, birthdayError);
+        });
+    
+        genderInput.addEventListener('change', function() {
+            clearError(genderInput, genderError);
+        });
+    
+        customGenderInput.addEventListener('input', function() {
+            clearError(customGenderInput, customGenderError);
+        });
+    
+        referAsInput.addEventListener('change', function() {
+            clearError(referAsInput, referAsError);
+        });
+    
+        // Show password functionality
+        const showPasswordCheckbox = document.getElementById('show_password');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+    
+        showPasswordCheckbox.addEventListener('change', function() {
+            if (showPasswordCheckbox.checked) {
+                passwordInput.type = 'text';
+                confirmPasswordInput.type = 'text';
+            } else {
+                passwordInput.type = 'password';
+                confirmPasswordInput.type = 'password';
+            }
+        });
+    
+        // Populate Review Section
+        function populateReviewSection() {
+            const reviewFullName = document.getElementById('reviewFullName');
+            const reviewEmail = document.getElementById('reviewEmail');
+    
+            const firstName = firstNameInput.value.trim();
+            const middleName = document.getElementById('middle_name').value.trim();
+            const lastName = lastNameInput.value.trim();
+            const email = emailInput.value.trim();
+    
+            const fullName = middleName ? `${firstName} ${middleName} ${lastName}` : `${firstName} ${lastName}`;
+            reviewFullName.textContent = fullName;
+            reviewEmail.textContent = email;
+        }
+    
+        // Handle transitions and data transfer between form sections
+        passwordForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            const isPasswordValid = validatePassword(passwordInput, passwordError);
+            const isConfirmPasswordValid = validateConfirmPassword(confirmPasswordInput, confirmPasswordError, passwordInput);
+    
+            if (isPasswordValid && isConfirmPasswordValid) {
+                startLoadingAnimation(passwordLoadingLine);
+    
+                setTimeout(function() {
+                    populateReviewSection(); // Move data to the review section
+                    passwordSection.classList.add('hidden');
+                    reviewSection.classList.remove('hidden');
+                    hideLoadingAnimation(passwordLoadingLine);
+                }, 1500);
+            }
+        });
+    
+        // Transition from Review to Terms and Privacy Section
+        const proceedToTermsButton = document.getElementById('proceedToTerms');
+        proceedToTermsButton.addEventListener('click', function() {
+            startLoadingAnimation(reviewLoadingLine);
+    
+            setTimeout(function() {
+                reviewSection.classList.add('hidden');
+                termsSection.classList.remove('hidden');
+                hideLoadingAnimation(reviewLoadingLine);
+            }, 1500);
+        });
+    
+        // Final account creation on "Agree" button click
+        const agreeButton = document.getElementById('agreeButton');
+        agreeButton.addEventListener('click', function() {
+            startLoadingAnimation(termsLoadingLine);
+    
+            // Combine month, day, and year into a single birthdate string in the format YYYY-MM-DD
+            const monthMap = {
+                'January': '01',
+                'February': '02',
+                'March': '03',
+                'April': '04',
+                'May': '05',
+                'June': '06',
+                'July': '07',
+                'August': '08',
+                'September': '09',
+                'October': '10',
+                'November': '11',
+                'December': '12'
+            };
+            
+            const month = monthMap[monthInput.value];
+            const day = dayInput.value.padStart(2, '0');  // Ensure day is two digits
+            const year = yearInput.value;
+    
+            // Combine to form YYYY-MM-DD
+            const birthdate = `${year}-${month}-${day}`;
+    
+            // Gather all form data including the correctly formatted birthdate
+            const formData = new URLSearchParams({
+                'first_name': firstNameInput.value,
+                'middle_name': document.getElementById('middle_name').value,
+                'last_name': lastNameInput.value,
+                'email': emailInput.value,
+                'password': passwordInput.value,
+                'confirm_password': confirmPasswordInput.value,
+                'birthdate': birthdate, // Add the formatted birthdate
+                'gender': genderInput.value,
+                'custom_gender': customGenderInput.value || '',
+                'refer_as': referAsInput.value || ''
+            });
+    
+            // Submit form data
+            fetch('{% url "guestsignup" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                hideLoadingAnimation(termsLoadingLine);
+                if (data.status === 'success') {
+                    window.location.href = '{% url "signup_success" %}';
+                } else {
+                    alert('There was an error creating your account. Please try again.');
+                }
+            }).catch(error => {
+                hideLoadingAnimation(termsLoadingLine);
+                console.error('Fetch error:', error);
+                alert('There was an error creating your account. Please try again.');
+            });
+        });
+    
+        // Helper functions for validation and clearing errors
+        function validateInput(inputElement, errorElement) {
+            if (inputElement.value.trim() === '') {
+                errorElement.style.display = 'block';
+                inputElement.style.borderColor = '#d93025';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                inputElement.style.borderColor = '#dadce0';
+                return true;
+            }
+        }
+    
+        function validateEmail(inputElement, errorElement) {
+            var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(inputElement.value.trim())) {
+                errorElement.style.display = 'block';
+                inputElement.style.borderColor = '#d93025';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                inputElement.style.borderColor = '#dadce0';
+                return true;
+            }
+        }
+    
+        function clearError(inputElement, errorElement) {
+            errorElement.style.display = 'none';
+            inputElement.style.borderColor = '#dadce0';
+        }
+    
+        function validatePassword(passwordInput, passwordError) {
+            if (passwordInput.value.trim() === '') {
+                passwordError.textContent = 'Enter a password';
+                passwordError.style.display = 'block';
+                passwordInput.style.borderColor = '#d93025';
+                return false;
+            } else if (passwordInput.value.length < 8) {
+                passwordError.textContent = 'Use 8 characters or more for your password';
+                passwordError.style.display = 'block';
+                passwordInput.style.borderColor = '#d93025';
+                return false;
+            } else if (!/[A-Z]/.test(passwordInput.value) || !/[a-z]/.test(passwordInput.value) || !/\d/.test(passwordInput.value) || !/[!@#$%^&*]/.test(passwordInput.value)) {
+                passwordError.textContent = 'Please choose a stronger password. Try a mix of letters, numbers, and symbols.';
+                passwordError.style.display = 'block';
+                passwordInput.style.borderColor = '#d93025';
+                return false;
+            } else {
+                passwordError.style.display = 'none';
+                passwordInput.style.borderColor = '#dadce0';
+                return true;
+            }
+        }
+    
+        function validateConfirmPassword(confirmPasswordInput, confirmPasswordError, passwordInput) {
+            if (confirmPasswordInput.value.trim() === '') {
+                confirmPasswordError.textContent = 'Confirm your password';
+                confirmPasswordError.style.display = 'block';
+                confirmPasswordInput.style.borderColor = '#d93025';
+                return false;
+            } else if (confirmPasswordInput.value !== passwordInput.value) {
+                confirmPasswordError.textContent = "Passwords don't match";
+                confirmPasswordError.style.display = 'block';
+                confirmPasswordInput.style.borderColor = '#d93025';
+                return false;
+            } else {
+                confirmPasswordError.style.display = 'none';
+                confirmPasswordInput.style.borderColor = '#dadce0';
+                return true;
+            }
+        }
+    
+        firstNameInput.addEventListener('blur', function() {
+            validateInput(firstNameInput, firstNameError);
+        });
+    
+        lastNameInput.addEventListener('blur', function() {
+            validateInput(lastNameInput, lastNameError);
+        });
+    
+        signupForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            validateInput(firstNameInput, firstNameError);
+            validateInput(lastNameInput, lastNameError);
+    
+            if (firstNameInput.value.trim() !== '' && lastNameInput.value.trim() !== '') {
+                startLoadingAnimation(signupLoadingLine);
+    
+                setTimeout(function() {
+                    nameSection.classList.add('hidden');
+                    basicInfoSection.classList.remove('hidden');
+                    hideLoadingAnimation(signupLoadingLine);
+                }, 1500);
+            }
+        });
+    
+        function validateBirthday() {
+            var day = dayInput.value.trim();
+            var year = yearInput.value.trim();
+            var month = monthInput.value;
+    
+            if (day === "" || year === "" || !month) {
+                birthdayError.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Please fill in a complete birthday';
+                birthdayError.style.display = "block";
+                dayInput.classList.add('error');
+                yearInput.classList.add('error');
+                monthInput.classList.add('error');
+                return false;
+            }
+    
+            var dayInt = parseInt(day, 10);
+            var yearInt = parseInt(year, 10);
+            if (isNaN(dayInt) || isNaN(yearInt) || dayInt < 1 || dayInt > 31 || yearInt < 1900 || yearInt > new Date().getFullYear()) {
+                birthdayError.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Please enter a valid date';
+                birthdayError.style.display = "block";
+                dayInput.classList.add('error');
+                yearInput.classList.add('error');
+                monthInput.classList.add('error');
+                return false;
+            }
+    
+            birthdayError.style.display = "none";
+            dayInput.classList.remove('error');
+            yearInput.classList.remove('error');
+            monthInput.classList.remove('error');
+            return true;
+        }
+    
+        function validateGender() {
+            if (!genderInput.value) {
+                genderError.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Please select your gender';
+                genderError.style.display = "block";
+                genderInput.classList.add('error');
+                return false;
+            }
+            genderError.style.display = "none";
+            genderInput.classList.remove('error');
+            return true;
+        }
+    
+        function startLoadingAnimation(loadingLine) {
+            loadingLine.style.visibility = 'visible';
+            loadingLine.style.width = '100%';
+    
+            loadingLine.addEventListener('transitionend', function() {
+                if (loadingLine.style.width === '100%') {
+                    setTimeout(() => {
+                        loadingLine.style.width = '0';
+                        loadingLine.style.visibility = 'hidden';  // Ensure it hides completely after animation
+                    }, 500);
+                }
+            });
+        }
+    
+        function hideLoadingAnimation(loadingLine) {
+            loadingLine.style.visibility = 'hidden';
+            loadingLine.style.width = '0';
+        }
+    });
+    
+</script>
+
+{% endblock content %}

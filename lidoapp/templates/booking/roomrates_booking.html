@@ -1,0 +1,906 @@
+{% load humanize %}
+{% load static %}
+
+<div class="available-rooms">
+    {% if rooms %}
+        <div class="rooms-list">
+            {% for room in rooms %}
+            <div class="room-card" 
+            data-room="{{ room.room_name }}" 
+            data-bed-type="{{ room.bed_type }}" 
+            data-room-capacity="{{ room.room_capacity }}" 
+            data-isavailable="{{ room.is_available|yesno:'true,false' }}">
+                    <div class="image-container">
+                        <img src="{{ room.room_image.url }}" 
+                             data-images='[
+                                 {"src": "{{ room.room_image.url }}"}
+                                 {% for image in room.additional_images.all %}
+                                     {% if image.visible %}
+                                         ,{"src": "{{ image.image.url }}"}
+                                     {% endif %}
+                                 {% endfor %}
+                             ]'
+                             class="room-preview"
+                             onclick="openUniqueImagePreviewModal(this.getAttribute('data-images'));">
+                        <div class="image-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="room-card-content">
+                        <h3>{{ room.room_name }}</h3>
+                        
+                        <p>
+                           {% if room.bed_type == 'king' %}<i class="fa-solid fa-crown"></i> King Bed
+                           {% elif room.bed_type == 'queen' %}<i class="fa-solid fa-chess-queen"></i> Queen Bed
+                           {% elif room.bed_type == 'double' %}<i class="fa-solid fa-user-group"></i> Double Bed
+                           {% elif room.bed_type == 'single' %}<i class="fa-solid fa-user-tie"></i> Single Bed
+                           {% elif room.bed_type == 'twin' %}<i class="fa-solid fa-check-double"></i> Twin Bed
+                           {% else %}{{ room.bed_type|capfirst }}{% endif %} | 
+                           {{ room.room_capacity }} person(s) | 
+                           {{ room.room_size }} m²
+                        </p>
+                        
+                        <p style="font-size: 13px;"><i class="fa-regular fa-eye"></i><em> Click the image to show preview</em></p>
+                        <p>
+                            <a href="#" class="room-details-link" onclick="openRoomDetailsModal(this)"
+                            data-room="{{ room.room_name }}"
+                            data-price="{{ room.room_price|intcomma }}"
+                            data-subtitle="{{ room.room_capacity }} person(s) | {{ room.room_size }} m²"
+                            data-bed-type="{% if room.bed_type == 'king' %}King Bed{% elif room.bed_type == 'queen' %}Queen Bed{% elif room.bed_type == 'double' %}Double Bed{% elif room.bed_type == 'single' %}Single Bed{% elif room.bed_type == 'twin' %}Twin Bed{% else %}{{ room.bed_type|capfirst }}{% endif %}"
+                            data-capacity="{{ room.room_capacity }}"
+                            data-size="{{ room.room_size }}"
+                            data-amenities='[
+                            {% for amenity in room.room_amenities.all %}
+                                "{{ amenity.get_amenity_display }}"{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        ]'                                           
+                        data-images='[
+                            {"src": "{{ room.room_image.url }}"}
+                            {% for image in room.additional_images.all %}
+                                {% if image.visible %}
+                                    ,{"src": "{{ image.image.url }}"}
+                                {% endif %}
+                            {% endfor %}
+                        ]'>Room Details</a>
+                      </p>
+                      <p class="deposit-required"><i class="fas fa-credit-card"></i> Deposit Required</p>
+                    </div>
+                    <div class="room-card-price">
+                        {% if room.is_new %}
+                        <div class="new-banner">NEW</div>
+                        {% endif %}
+                        <h4>₱{{ room.room_price|intcomma }}</h4>
+                        <p>per night<br>excluding taxes and fees</p>
+                        <button class="btn-one room-card-button" 
+                        onclick="bookRoom('{{ room.room_name }}', {{ room.room_price }}, {{ room.room_capacity }}, '{{ room.bed_type }}')" 
+                        {% if room.is_available %} {% else %} disabled {% endif %}>
+                    BOOK NOW <span></span>
+                </button>
+                    </div>
+                    
+                    
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="room-card-content">
+            <p style="text-align: center;">No rooms available at the moment.</p>
+        </div>
+    {% endif %}
+</div>
+
+
+
+<div id="roomDetailsModal" class="room-modal-info">
+    <span class="close-room-modal" onclick="closeRoomDetailsModal()">&times;</span>
+    <div class="room-modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <!-- Left side: Room Name, Bed Type, Capacity, Size -->
+            <div style="text-align: left;">
+                <h3 id="modalRoomName" style="font-size: 23px; font-weight: 600"></h3>
+                <p id="modalBedTypeCapacitySize" style="font-size: 14px; color: #666;"></p>
+            </div>
+            <!-- Right side: Room Price and "Per Night" -->
+            <div style="text-align: right;">
+                <h3 id="modalRoomPrice" style="font-size: 23px;"></h3>
+                <p style="font-size: 14px; color: #666;">per night</p>
+            </div>
+        </div>
+        
+        <hr>
+        <div style="margin-bottom: 1em; font-size: 15px;"><em id="modalRoomPolicy">Please be mindful of check-in and check-out times, and enjoy your stay in our well-equipped rooms.</em></div>
+        <div style="margin-bottom: 1em; font-size: 15px;"><em id="modalRoomInfo">Our rooms offer the best combination of comfort and style, featuring high-quality amenities, comfortable bedding, and modern facilities. Ideal for both leisure and business travelers.</em></div>
+        
+        <hr>
+        <h3 style="text-transform: uppercase; margin: 10px 0;" >Room Amenities</h3>
+        <div id="roomAmenitiesContainer" class="amenities-grid"></div>
+        <h3 style="text-transform: uppercase; margin: 10px 0;" >Room Images</h3>
+        <div id="roomImagesContainer" class="room-images-container"></div>
+        
+    </div>
+</div>
+
+
+
+
+<!-- Dedicated Image Preview Modal -->
+<div id="uniqueImagePreviewModal" class="lightbox">
+    <span class="close-room-modal" onclick="closeUniqueImageModal()">&times;</span>
+    <img id="uniqueModalImage" src="">
+    <div class="arrow left" onclick="navigatePreviousImage()" id="uniqueLeftArrow"><i class="fa-solid fa-circle-arrow-left"></i></div>
+    <div class="arrow right" onclick="navigateNextImage()" id="uniqueRightArrow"><i class="fa-solid fa-circle-arrow-right"></i></div>
+</div>
+
+
+<style>
+    #uniqueImagePreviewModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1001;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    #uniqueModalImage {
+        max-width: 90%;
+        max-height: 80%;
+        margin: auto;
+        display: block;
+    }
+    
+    .arrow {
+        position: absolute;
+        top: 50%;
+        font-size: 40px;
+        color: white;
+        cursor: pointer;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .arrow.left {
+        left: 20px;
+    }
+    
+    .arrow.right {
+        right: 20px;
+    }
+    
+    .close-room-modal {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 30px;
+        color: #fff;
+        cursor: pointer;
+    }
+    
+    .room-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease-in-out;
+        background: var(--bgtertiary);
+        position: relative;
+    }
+    
+    .image-container {
+        position: relative;
+        width: 250px;
+        height: 200px;
+        overflow: hidden;
+    }
+    
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        cursor: pointer;
+        border: 1px solid #ccc;
+    }
+    
+    .image-icon {
+        position: absolute;
+        bottom: 15px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 1px 5px;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
+    
+    .deposit-required {
+        font-weight: bold;
+        color: var(--txtprimary);
+        margin-top: 10px;
+    }
+    
+    .room-card-content {
+        text-align: left;
+        flex: 1;
+        margin-left: 20px;
+    }
+    
+    .room-card-content h3 {
+        margin: 0 0 10px;
+        font-size: 25px;
+        color: var(--txtprimary);
+    }
+    
+    .room-card-content p {
+        margin-bottom: 5px 0;
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .room-card-price {
+        text-align: right;
+    }
+    
+    .room-card-price h4 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--bgsecondary);
+    }
+    
+    .room-card-price p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .room-card-button {
+        background-color: var(--bgsecondary);
+        color: white;
+        padding: 10px 20px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+    
+    .room-card-button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    
+    #imageModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    #modalImage {
+        max-width: 90%;
+        max-height: 80%;
+        margin: auto;
+        display: block;
+    }
+    
+
+    
+    .close-room-modal {
+        position: absolute;
+        top: 0px;
+        right: 20px;
+        font-size: 50px;
+        color: #fff;
+        cursor: pointer;
+    }
+    
+    .room-modal-info {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    .room-modal-content {
+        background: var(--bgprimary);
+        padding: 40px;
+        width: 80%;
+        max-width: 950px;
+        text-align: left;
+    }
+    
+    
+    .modal-subtitle {
+        font-size: 16px;
+        color: #666;
+    }
+    
+    .amenities-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .amenities-list li {
+        font-size: 14px;
+        color: #333;
+        display: flex;
+        align-items: center;
+    }
+    
+    .amenities-list li i {
+        color: green;
+        margin-right: 5px;
+    }
+    
+    .room-images-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .amenities-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); /* 5 columns */
+        gap: 10px;
+    }
+    
+    .amenities-grid div {
+        font-size: 14px;
+        color: #333;
+        display: flex;
+        align-items: center;
+    }
+    
+    .amenities-grid i {
+        color: green;
+        margin-right: 5px;
+    }
+    
+    .room-images-container img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        position: relative;
+    }
+    
+    .room-images-container img:hover {
+        transform: scale(1.1);
+    }
+    
+    .room-images-container img:hover::after {
+        content: "\f06e";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 24px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .new-banner {
+        position: absolute;
+        top: 0px;
+        right: -0px;
+        background-color: red;
+        color: white;
+        padding: 5px 10px;
+        font-size: 14px;
+        font-weight: bold;
+        text-transform: uppercase;
+        /* border-radius: 3px; */
+        transform: rotate(1deg);
+        z-index: 1;
+        /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+
+    /* General Mobile Adjustments */
+    @media (max-width: 768px) {
+        .room-card {
+            flex-direction: column; /* Stack items vertically */
+            align-items: flex-start;
+        }
+        
+        .image-container {
+            width: 100%; /* Full width for images on small screens */
+            height: auto; /* Maintain aspect ratio */
+            margin-bottom: 15px; /* Add spacing below the image */
+        }
+        
+        .room-card-content {
+            margin-left: 0; /* Reset margin for stacked layout */
+            width: 100%; /* Take full width */
+        }
+
+        .room-card-price {
+            width: 100%; /* Full width for pricing section */
+            text-align: left; /* Align text to the left */
+            margin-top: 15px; /* Add spacing above the price */
+        }
+
+        .room-card-button {
+            width: 100%; /* Full-width buttons for easier tapping */
+            margin-top: 10px;
+        }
+
+        .room-card-content h3 {
+            font-size: 18px; /* Adjust font size for smaller screens */
+        }
+
+        .room-card-content p {
+            font-size: 12px; /* Adjust text size */
+        }
+
+        .room-images-container img {
+            width: 100%; /* Make images responsive */
+            height: auto;
+        }
+
+        .amenities-grid {
+            grid-template-columns: repeat(2, 1fr); /* Adjust amenities to fit smaller screens */
+        }
+    }
+
+    /* Extra Small Devices */
+    @media (max-width: 480px) {
+        .room-card {
+            padding: 10px; /* Reduce padding */
+        }
+
+        .room-card-content h3 {
+            font-size: 16px;
+        }
+
+        .room-card-content p {
+            font-size: 10px;
+        }
+
+        .room-card-price h4 {
+            font-size: 18px;
+        }
+    }
+
+    /* Modal Responsiveness */
+    .room-modal-content {
+        width: 90%; /* Reduce width for smaller screens */
+        padding: 20px; /* Adjust padding */
+    }
+
+    .room-images-container {
+        justify-content: center; /* Center images */
+    }
+
+    .room-images-container img {
+        width: 60px; /* Smaller images in modal */
+        height: 60px;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let currentIndex = 0;
+        let images = [];
+        let uniqueCurrentIndex = 0;
+        let uniqueImages = [];
+    
+        // Open the unique image preview modal
+        window.openUniqueImagePreviewModal = function (dataImages, startIndex) {
+            try {
+                uniqueImages = JSON.parse(dataImages).map((img) => img.src.trim());
+                console.log("Unique modal images:", uniqueImages);
+        
+                // Set the current index to the clicked image's index
+                uniqueCurrentIndex = startIndex || 0;
+        
+                if (uniqueImages.length > 0) {
+                    document.getElementById("uniqueModalImage").src = uniqueImages[uniqueCurrentIndex];
+                    document.getElementById("uniqueImagePreviewModal").style.display = "flex";
+                    updateUniqueNavigation();
+                } else {
+                    console.error("No images to display in the unique modal.");
+                }
+            } catch (error) {
+                console.error("Error parsing images for unique modal:", error);
+            }
+        };
+        
+    
+        // Close the unique image modal
+        window.closeUniqueImageModal = function () {
+            document.getElementById("uniqueImagePreviewModal").style.display = "none";
+        };
+    
+        // Navigate to the previous image
+        window.navigatePreviousImage = function () {
+            if (uniqueCurrentIndex > 0) {
+                uniqueCurrentIndex--;
+                document.getElementById("uniqueModalImage").src = uniqueImages[uniqueCurrentIndex];
+                updateUniqueNavigation();
+            }
+        };
+        
+        window.navigateNextImage = function () {
+            if (uniqueCurrentIndex < uniqueImages.length - 1) {
+                uniqueCurrentIndex++;
+                document.getElementById("uniqueModalImage").src = uniqueImages[uniqueCurrentIndex];
+                updateUniqueNavigation();
+            }
+        };
+        
+    
+        // Update navigation arrows visibility
+        function updateUniqueNavigation() {
+            const leftArrow = document.getElementById("uniqueLeftArrow");
+            const rightArrow = document.getElementById("uniqueRightArrow");
+    
+            leftArrow.style.display = uniqueCurrentIndex > 0 ? "block" : "none";
+            rightArrow.style.display = uniqueCurrentIndex < uniqueImages.length - 1 ? "block" : "none";
+        }
+    
+    // Function to open Image Modal
+    window.openImageModal = function (src, roomImages) {
+        try {
+            // Debug incoming roomImages
+            console.log("Raw roomImages array:", roomImages);
+    
+            // Normalize and filter roomImages
+            images = roomImages.map((img) => img.split("?")[0]).filter(Boolean);
+            console.log("Normalized and filtered images:", images);
+    
+            // Find the current index
+            currentIndex = images.indexOf(src.split("?")[0]);
+            console.log("Current Index:", currentIndex, "Source:", src);
+    
+            if (currentIndex === -1) {
+                console.error("Image not found in array:", src);
+                currentIndex = 0; // Fallback to the first image
+            }
+    
+            // Set initial image and show modal
+            document.getElementById("modalImage").src = images[currentIndex];
+            document.getElementById("imageModal").style.display = "flex";
+    
+            updateImageNavigation();
+        } catch (error) {
+            console.error("Error in openImageModal:", error);
+        }
+    };
+    
+    window.addEventListener('filterUpdated', () => {
+        const checkInDate = localStorage.getItem('checkInDate');
+        const checkOutDate = localStorage.getItem('checkOutDate');
+        const guestCount = parseInt(localStorage.getItem('guestCount'), 10);
+        const bedType = localStorage.getItem('bedType').toLowerCase();
+    
+        enableBookNowButtons(checkInDate, checkOutDate, guestCount, bedType);
+    });
+    
+
+    // Function to close Image Modal
+    window.closeModal = function () {
+        document.getElementById("imageModal").style.display = "none";
+    };
+
+    window.previousImage = function () {
+        if (currentIndex > 0) {
+            currentIndex--;
+            document.getElementById("modalImage").src = images[currentIndex];
+            updateImageNavigation();
+            console.log("Navigated to previous image. Current Index:", currentIndex, "Image URL:", images[currentIndex]);
+        } else {
+            console.log("Already at the first image.");
+        }
+    };
+    
+    window.nextImage = function () {
+        if (currentIndex < images.length - 1) {
+            currentIndex++;
+            document.getElementById("modalImage").src = images[currentIndex];
+            updateImageNavigation();
+            console.log("Navigated to next image. Current Index:", currentIndex, "Image URL:", images[currentIndex]);
+        } else {
+            console.log("Already at the last image.");
+        }
+    };
+    
+        
+    function updateImageNavigation() {
+        const leftArrow = document.getElementById("leftArrow");
+        const rightArrow = document.getElementById("rightArrow");
+    
+        if (images.length > 1) {
+            leftArrow.style.display = currentIndex > 0 ? "block" : "none";
+            rightArrow.style.display = currentIndex < images.length - 1 ? "block" : "none";
+        } else {
+            leftArrow.style.display = "none";
+            rightArrow.style.display = "none";
+        }
+        console.log("Navigation updated: LeftArrow:", leftArrow.style.display, "RightArrow:", rightArrow.style.display);
+    }
+    
+    
+        // Function to open Room Details Modal
+        window.openRoomDetailsModal = function (element) {
+            // Populate Room Details
+            document.getElementById("modalRoomName").textContent = element.getAttribute("data-room");
+            document.getElementById("modalRoomPrice").textContent = `₱${element.getAttribute("data-price")}`;
+            document.getElementById("modalBedTypeCapacitySize").textContent = 
+                `${element.getAttribute("data-bed-type")} | ${element.getAttribute("data-capacity")} person(s) | ${element.getAttribute("data-size")} m²`;
+        
+            // Populate Room Amenities
+            const amenities = JSON.parse(element.getAttribute("data-amenities") || "[]");
+            const amenitiesContainer = document.getElementById("roomAmenitiesContainer");
+            amenitiesContainer.innerHTML = ""; // Clear existing amenities
+            amenities.forEach((amenity) => {
+                const div = document.createElement("div");
+                div.innerHTML = `<i class="fa-regular fa-circle-check"></i> ${amenity}`;
+                amenitiesContainer.appendChild(div);
+            });
+        
+            // Populate Room Images
+            const imagesArray = JSON.parse(element.getAttribute("data-images") || "[]");
+            const imagesContainer = document.getElementById("roomImagesContainer");
+            imagesContainer.innerHTML = ""; // Clear existing images
+            imagesArray.forEach((image, index) => {
+                const img = document.createElement("img");
+                img.src = image.src;
+                img.classList.add("room-thumbnail");
+                img.onclick = () => {
+                    // Open the unique image preview modal with the correct index
+                    openUniqueImagePreviewModal(JSON.stringify(imagesArray), index);
+                };
+                imagesContainer.appendChild(img);
+            });
+        
+            // Display the Room Details Modal
+            document.getElementById("roomDetailsModal").style.display = "flex";
+        };
+        
+        
+        
+    
+    // Function to close Room Details Modal
+    window.closeRoomDetailsModal = function () {
+        document.getElementById("roomDetailsModal").style.display = "none";
+    };
+    
+    
+        // Function to bind modal close and navigation buttons
+        function bindModalNavigation() {
+            // Bind "X" Close Buttons
+            document.querySelectorAll(".close-room-modal").forEach((closeBtn) => {
+                closeBtn.removeEventListener("click", closeRoomDetailsModal);
+                closeBtn.removeEventListener("click", closeModal);
+                closeBtn.addEventListener("click", function () {
+                    closeModal();
+                    closeRoomDetailsModal();
+                });
+            });
+    
+            // Bind Navigation Arrows
+            const leftArrow = document.getElementById("leftArrow");
+            const rightArrow = document.getElementById("rightArrow");
+    
+            if (leftArrow) {
+                leftArrow.addEventListener("click", previousImage);
+            }
+            if (rightArrow) {
+                rightArrow.addEventListener("click", nextImage);
+            }
+        }
+
+            // Rebind events after dynamic updates
+    window.bindDynamicEventListeners = function () {
+        document.querySelectorAll(".room-details-link").forEach((link) => {
+            link.removeEventListener("click", handleRoomDetailsClick);
+            link.addEventListener("click", handleRoomDetailsClick);
+        });
+
+        document.querySelectorAll(".room-preview").forEach((preview) => {
+            preview.removeEventListener("click", handleRoomPreviewClick);
+            preview.addEventListener("click", handleRoomPreviewClick);
+        });
+
+        bindModalNavigation();
+    };
+    
+        // Fetch and update room availability dynamically
+        function updateRoomAvailability(checkInDate, checkOutDate, guestCount, bedType) {
+            const params = new URLSearchParams({
+                check_in_date: checkInDate,
+                check_out_date: checkOutDate,
+                total_guests: guestCount,
+                bed_type: bedType
+            });
+        
+            fetch(`/get_available_rooms/?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        document.querySelector('.rooms-list').innerHTML = data.html;
+                        bindDynamicEventListeners(); // Rebind event listeners for new content
+                        enableBookNowButtons(checkInDate, checkOutDate, guestCount, bedType);
+                    }
+                })
+                .catch(error => console.error('Error fetching rooms:', error));
+        }
+        
+    
+        // Handle "Apply Dates" button click
+        document.getElementById("applyCalendarUniqueButton").addEventListener("click", function () {
+            const checkInDate = document.getElementById("checkInInput").value;
+            const checkOutDate = document.getElementById("checkOutInput").value;
+            const guestCount = parseInt(document.getElementById("guestCountInput").value, 10);
+            const bedType = document.getElementById("selectedBedType").textContent.toLowerCase();
+        
+            if (!checkInDate || !checkOutDate || isNaN(guestCount) || !bedType) {
+                alert("Please fill in all fields.");
+                return;
+            }
+        
+            // Store values in localStorage
+            localStorage.setItem("checkInDate", checkInDate);
+            localStorage.setItem("checkOutDate", checkOutDate);
+            localStorage.setItem("guestCount", guestCount);
+            localStorage.setItem("bedType", bedType);
+        
+            // Add for summary
+            localStorage.setItem("summaryCheckInDate", checkInDate);
+            localStorage.setItem("summaryCheckOutDate", checkOutDate);
+            localStorage.setItem("summaryGuestCount", guestCount);
+            
+            // Update the booking summary dynamically
+            updateBookingSummary();
+            
+            // Fetch available rooms based on stored criteria
+            fetchAvailableRooms();
+        });
+        
+        
+        
+        
+    
+        // Initial bind for preloaded rooms and modals
+        bindDynamicEventListeners();
+        bindModalNavigation();
+
+
+        window.bindDynamicEventListeners = function () {
+            // Rebind room details modal
+            document.querySelectorAll(".room-details-link").forEach((link) => {
+                link.removeEventListener("click", handleRoomDetailsClick);
+                link.addEventListener("click", handleRoomDetailsClick);
+            });
+        
+            // Rebind room preview
+            document.querySelectorAll(".room-preview").forEach((preview) => {
+                preview.removeEventListener("click", handleRoomPreviewClick);
+                preview.addEventListener("click", handleRoomPreviewClick);
+            });
+        
+            // Rebind modal close button
+            document.querySelectorAll(".close-room-modal").forEach((closeBtn) => {
+                closeBtn.removeEventListener("click", closeModal);
+                closeBtn.addEventListener("click", closeModal);
+            });
+        
+            // Rebind left and right arrows
+            const leftArrow = document.querySelector(".arrow.left");
+            const rightArrow = document.querySelector(".arrow.right");
+        
+            if (leftArrow) {
+                leftArrow.removeEventListener("click", previousImage);
+                leftArrow.addEventListener("click", previousImage);
+            }
+        
+            if (rightArrow) {
+                rightArrow.removeEventListener("click", nextImage);
+                rightArrow.addEventListener("click", nextImage);
+            }
+        
+            console.log("Dynamic event listeners for image modal and room preview bound.");
+        };
+        
+        function handleRoomDetailsClick(event) {
+            event.preventDefault();
+            openRoomDetailsModal(this);
+        }
+    
+        function handleRoomPreviewClick() {
+            const imageData = this.getAttribute("data-images");
+            try {
+                const roomImages = JSON.parse(imageData).map((img) => img.src);
+                images = roomImages; // Assign to the global images array
+                currentIndex = 0;    // Start with the first image
+                document.getElementById("modalImage").src = images[currentIndex];
+                document.getElementById("imageModal").style.display = "flex";
+                updateImageNavigation();
+            } catch (error) {
+                console.error("Failed to parse images:", error);
+                console.error("Image data:", imageData);
+            }
+        }
+        
+    
+        // Initial binding for preloaded content
+        bindDynamicEventListeners();
+        
+        
+        function debugRoomElements() {
+            document.querySelectorAll(".room-details-link").forEach((link, index) => {
+                console.log(`Room ${index + 1}:`, {
+                    room: link.getAttribute("data-room"),
+                    price: link.getAttribute("data-price"),
+                    bedType: link.getAttribute("data-bed-type"),
+                    capacity: link.getAttribute("data-capacity"),
+                    size: link.getAttribute("data-size"),
+                    amenities: link.getAttribute("data-amenities"),
+                    images: link.getAttribute("data-images"),
+                });
+            });
+        }
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            bindRoomDetailsListeners();
+            
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const checkInDate = localStorage.getItem('checkInDate');
+            const checkOutDate = localStorage.getItem('checkOutDate');
+            const guestCount = parseInt(localStorage.getItem('guestCount'), 10); // Parse guest count as number
+            const bedType = localStorage.getItem('bedType')?.toLowerCase(); // Ensure lowercase
+            
+            console.log("Loaded from localStorage:", { checkInDate, checkOutDate, guestCount, bedType });
+            
+            if (checkInDate && checkOutDate && guestCount) {
+                enableBookNowButtons(checkInDate, checkOutDate, guestCount, bedType);
+            }
+        
+            // Find all room cards
+            const roomCards = document.querySelectorAll('.room-card');
+            
+            roomCards.forEach(roomCard => {
+                const roomBedType = roomCard.dataset.bedType.toLowerCase();
+                const roomCapacity = parseInt(roomCard.dataset.roomCapacity, 10);
+                const bookButton = roomCard.querySelector('.room-card-price .room-card-button');
+        
+                // Check if the room matches the criteria and is available
+                const isAvailable = roomCard.querySelector('.room-card-price .room-card-button').disabled === false;
+        
+                if ((bedType === 'all' || roomBedType === bedType) && roomCapacity >= guestCount && isAvailable) {
+                    console.log(`Enabling Book Button for Room: ${roomBedType}`);
+                    bookButton.disabled = false;
+                } else {
+                    console.log(`Disabling Book Button for Room: ${roomBedType}`);
+                    bookButton.disabled = true;
+                }
+            });
+        });
+        
+        
+        
+    });
+    
+</script>

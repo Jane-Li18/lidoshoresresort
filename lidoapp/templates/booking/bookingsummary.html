@@ -1,0 +1,503 @@
+<style>
+    /* CSS for Booking Summary */
+.booking-summary-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.booking-summary {
+    border: 1px solid #ccc;
+    padding: 20px;
+    background-color: white;
+    height: fit-content;
+    transition: all 0.3s;
+}
+
+.sticky {
+    position: fixed;
+    top: 20px;
+    width: calc(28% - 35px); /* This will be overridden dynamically */
+}
+
+.stop-sticky {
+    position: absolute;
+    bottom: 0;
+    width: 390px;
+    top: auto;
+}
+
+
+.booking-summary h3 {
+    margin-top: 0;
+    font-size: 20px;
+    color: var(--txtprimary);
+}
+
+.booking-summary p {
+    margin: 15px 0;
+    font-size: 16px;
+}
+
+.booking-summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin: -20px 0px;
+}
+
+/* The background overlay (optional) */
+.remove-booking-modal {
+    position: fixed;  /* Stay fixed at the viewport */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;  /* Hidden by default */
+    background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
+    z-index: 1000;  /* Ensures it's on top */
+}
+
+/* The modal content container */
+.remove-booking-modal-content {
+    position: absolute;  
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);  
+    background-color: #fff;
+    padding: 20px;
+    width: 400px;  
+    max-width: 100%;
+    text-align: center;
+    animation: fadeIn 0.3s ease; /* Optional: smooth fade-in animation */
+}
+
+/* Optional: Add a smooth fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.room-dates-toggle {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.room-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+
+.room-date {
+    font-size: 12px;
+    color: #333;
+}
+
+.room-price {
+    font-size: 14px;
+    color: #666;
+    margin-left: 10px;
+}
+</style>
+
+
+<div class="booking-summary-wrapper" id="bookingSummaryWrapper">
+<div class="booking-summary" id="bookingSummary">
+<h3>Your Booking Summary</h3>
+<hr>
+<div class="summary-row">
+    <div>
+        <p><strong>Check-in:</strong> <br><span id="summaryCheckInDate">N/A</span></p>
+        <p style="font-size: 13px;"><i class="ri-time-line"></i> After 3:00 PM</p>
+        <p id="summaryAdultCount">1 Adult</p>
+    </div>
+    <div>
+        <p><strong>Check-out:</strong> <br><span id="summaryCheckOutDate">N/A</span></p>
+        <p style="font-size: 13px;"><i class="ri-time-line"></i> Before 12:00 PM</p>
+        <p id="summaryChildrenCount">0 Child</p>
+    </div>
+</div>
+
+
+<hr>
+<div class="room-details-container">
+    <p id="RoomName"><i>No room chosen</i></p>
+    <p id="roomTotalPrice" style="margin-left: 10px;">₱0.00</p>
+</div>
+<p class="room-dates-toggle" id="roomDatesToggle" style="font-size: 13px; margin: 1px 0px;">Show Dates</p>
+<ul class="room-list" id="roomDatesList">
+    <li><span class="room-date"><em><i class="fa-solid fa-circle-info"></i>&nbsp;&nbsp;Please choose a room</em></span><span class="room-price"></span></li>
+</ul>
+<hr>
+<div class="addons-section" id="addonsSection">
+    <p>Add-Ons</p>
+    <div id="summaryAddOns" ></div>
+</div>
+<hr>
+<div class="summary-row">
+    <p class="total-price">Total:</p>
+    <p class="total-price" id="summaryTotalPrice">₱0.00</p>
+</div>        
+
+<div class="edit-remove-buttons" style="text-align: center; margin-top: 20px;">
+    <button id="removeBookingButton" onclick="openRemoveBookingModal()" class="btn-one">Remove Booking <span></span></button>
+</div>
+</div>
+</div>
+
+<!-- Remove Booking Confirmation Modal -->
+<div id="removeBookingModal" class="remove-booking-modal" style="display: none;">
+<div class="remove-booking-modal-content">
+<p>Are you sure you want to <br>remove the current booking?</p>
+<hr>
+<button id="confirm" class="btn-one" onclick="confirmRemoveBooking()">Confirm <span></span></button>
+<button id="cancel" class="btn-one" onclick="closeRemoveBookingModal()">Cancel <span></span></button>
+</div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const bookingSummary = document.getElementById("bookingSummary");
+        const bookingSummaryWrapper = document.getElementById("bookingSummaryWrapper");
+        const footerOffset = 100;
+        let originalWidth = bookingSummary.offsetWidth;
+
+        // Initial setup and rendering
+        updateBookingSummary();
+        updateRoomDatesList();
+
+        // Sticky booking summary
+        window.addEventListener("scroll", updateStickyPosition);
+        window.addEventListener("resize", () => {
+            originalWidth = bookingSummaryWrapper.offsetWidth;
+            updateStickyPosition();
+        });
+
+        function updateStickyPosition() {
+            const wrapperRect = bookingSummaryWrapper.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            if (wrapperRect.top < 20 && wrapperRect.bottom > windowHeight - footerOffset) {
+                bookingSummary.classList.add("sticky");
+                bookingSummary.classList.remove("stop-sticky");
+                bookingSummary.style.width = `${originalWidth}px`;
+            } else if (wrapperRect.bottom <= windowHeight - footerOffset) {
+                bookingSummary.classList.remove("sticky");
+                bookingSummary.classList.add("stop-sticky");
+                bookingSummary.style.width = `${originalWidth}px`;
+            } else {
+                bookingSummary.classList.remove("sticky");
+                bookingSummary.classList.remove("stop-sticky");
+                bookingSummary.style.width = "auto";
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString || dateString === "N/A") return "N/A";
+            const options = { weekday: "short", year: "numeric", month: "short", day: "numeric" };
+            return new Date(dateString).toLocaleDateString("en-US", options);
+        }
+
+        // Update booking summary
+        function updateBookingSummary() {
+            const checkInDate = localStorage.getItem("checkInDate");
+            const checkOutDate = localStorage.getItem("checkOutDate");
+            const adultCount = localStorage.getItem("adultCount") || "1"; // Retrieve adult count directly
+            const childrenCount = localStorage.getItem("childrenCount") || "0"; // Retrieve children count directly
+            const chosenRoom = JSON.parse(localStorage.getItem("ChosenRoom"));
+        
+            // Update the check-in and check-out dates
+            document.getElementById("summaryCheckInDate").textContent = formatDate(checkInDate) || "N/A";
+            document.getElementById("summaryCheckOutDate").textContent = formatDate(checkOutDate) || "N/A";
+        
+            // Update the counts for adults and children
+            document.getElementById("summaryAdultCount").textContent = `${adultCount} Adult${adultCount > 1 ? "s" : ""}`;
+            document.getElementById("summaryChildrenCount").textContent = `${childrenCount} Child${childrenCount > 1 ? "ren" : ""}`;
+        
+            // Update room details (if needed)
+            updateRoomName(chosenRoom);
+            console.log("Current ChosenRoom:", chosenRoom); // Debugging log
+        }
+
+        window.addEventListener("storage", function (event) {
+            if (event.key === "adultCount" || event.key === "childrenCount") {
+                updateBookingSummary();
+            }
+        });
+
+        // Update room details
+        function updateRoomName(room) {
+            const roomNameElement = document.getElementById("RoomName");
+            const roomTotalPriceElement = document.getElementById("roomTotalPrice");
+
+            if (!room) {
+                roomNameElement.innerHTML = "<i>No room chosen</i>";
+                roomTotalPriceElement.textContent = "₱0.00";
+                return;
+            }
+
+            const checkInDate = localStorage.getItem("checkInDate");
+            const checkOutDate = localStorage.getItem("checkOutDate");
+            const totalDays = calculateTotalDays(checkInDate, checkOutDate);
+            const subtotal = totalDays * room.price;
+
+            roomNameElement.textContent = room.name;
+            roomTotalPriceElement.textContent = `₱${subtotal.toLocaleString()}`;
+            document.getElementById("summaryTotalPrice").textContent = `₱${subtotal.toLocaleString()}`;
+        }
+
+        function calculateTotalDays(startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+            return Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+        }
+
+        // Update room dates list dynamically
+        function updateRoomDatesList() {
+            const roomDatesList = document.getElementById("roomDatesList");
+            roomDatesList.innerHTML = ""; // Clear previous content
+
+            const checkInDate = localStorage.getItem("checkInDate");
+            const checkOutDate = localStorage.getItem("checkOutDate");
+            const chosenRoom = JSON.parse(localStorage.getItem("ChosenRoom"));
+
+            if (!checkInDate || !checkOutDate || !chosenRoom || !chosenRoom.price) {
+                const noDatesItem = document.createElement("li");
+                noDatesItem.innerHTML = '<span class="room-date"><em><i class="fa-solid fa-circle-info"></i>&nbsp;&nbsp;Please choose a room</em></span>';
+                roomDatesList.appendChild(noDatesItem);
+                return;
+            }
+
+            const startDate = new Date(checkInDate);
+            const endDate = new Date(checkOutDate);
+
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate >= endDate) {
+                const invalidDatesItem = document.createElement("li");
+                invalidDatesItem.innerHTML = '<span class="room-date"><em><i class="fa-solid fa-circle-info"></i>&nbsp;&nbsp;Invalid date range. Please choose again.</em></span>';
+                roomDatesList.appendChild(invalidDatesItem);
+                return;
+            }
+
+            for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+                const dateItem = document.createElement("li");
+                dateItem.innerHTML = `
+                    <span class="room-date"><i class="fa-solid fa-check"></i>&nbsp;&nbsp;${d.toDateString()}</span>
+                    <span class="room-price">₱${chosenRoom.price.toLocaleString()}</span>
+                `;
+                roomDatesList.appendChild(dateItem);
+            }
+        }
+
+        // Remove booking modal
+        function openRemoveBookingModal() {
+            document.getElementById("removeBookingModal").style.display = "block";
+        }
+
+        function closeRemoveBookingModal() {
+            document.getElementById("removeBookingModal").style.display = "none";
+        }
+
+        function confirmRemoveBooking() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        // Event listeners
+        document.getElementById("removeBookingButton").addEventListener("click", openRemoveBookingModal);
+        document.getElementById("confirm").addEventListener("click", confirmRemoveBooking);
+        document.getElementById("cancel").addEventListener("click", closeRemoveBookingModal);
+
+        document.getElementById("roomDatesToggle").addEventListener("click", () => {
+            const roomDatesList = document.getElementById("roomDatesList");
+            roomDatesList.style.display = (roomDatesList.style.display === "none" || roomDatesList.style.display === "") ? "block" : "none";
+        });
+
+        // Global bookRoom function
+        window.bookRoom = function (roomName, roomPrice, roomCapacity, bedType) {
+            const chosenRoom = {
+                name: roomName,
+                price: roomPrice,
+                capacity: roomCapacity,
+                bedType: bedType,
+            };
+        
+            localStorage.setItem("ChosenRoom", JSON.stringify(chosenRoom));
+            const roomBookedEvent = new Event("roomBooked");
+            window.dispatchEvent(roomBookedEvent);
+        
+            document.querySelector(".available-rooms").style.display = "none";
+            document.querySelector(".calendar-booking").style.display = "none";
+            document.querySelector(".addons-booking").style.display = "block";
+        
+            // Debugging log to confirm the room details are saved
+            console.log("ChosenRoom saved to localStorage:", chosenRoom);
+        };
+        
+
+        window.addEventListener("roomBooked", function () {
+            updateBookingSummary();
+            updateRoomDatesList();
+        });
+
+        updateBookingSummary();
+
+
+
+        const summaryAddOnsContainer = document.getElementById("summaryAddOns");
+        const summaryTotalPriceElement = document.getElementById("summaryTotalPrice");
+        
+        // Function to validate and save add-ons to localStorage
+        function applyAllAddons() {
+            const addonCards = document.querySelectorAll('.addons-card');
+            let selectedAddOns = JSON.parse(localStorage.getItem('selectedAddOns')) || {};
+        
+            addonCards.forEach(card => {
+                const addonName = card.querySelector('.addon-name').textContent.trim();
+                const quantityInput = card.querySelector('.quantity input');
+                const quantity = parseInt(quantityInput.value);
+                const price = parseFloat(card.querySelector('.addon-price').textContent.replace('₱', '').replace(/,/g, ''));
+                const maxStock = parseInt(quantityInput.getAttribute('data-stock'));
+        
+                if (quantity > 0) {
+                    if (quantity > maxStock) {
+                        console.warn(`Cannot add more than available stock for ${addonName}`);
+                        return;
+                    }
+        
+                    if (selectedAddOns[addonName]) {
+                        const newQuantity = selectedAddOns[addonName].quantity + quantity;
+                        if (newQuantity > maxStock) {
+                            console.warn(`Cannot add more than available stock for ${addonName}`);
+                            return;
+                        }
+                        selectedAddOns[addonName].quantity = newQuantity;
+                    } else {
+                        selectedAddOns[addonName] = {
+                            quantity: quantity,
+                            price: price
+                        };
+                    }
+                }
+            });
+        
+            // Save updated add-ons to localStorage and render them
+            localStorage.setItem('selectedAddOns', JSON.stringify(selectedAddOns));
+            renderAddOns();
+            console.log('Add-ons saved to localStorage:', selectedAddOns);
+        }
+        
+        // Function to render add-ons in the booking summary
+        function renderAddOns() {
+            const selectedAddOns = JSON.parse(localStorage.getItem("selectedAddOns")) || {};
+        
+            // Clear the container first
+            summaryAddOnsContainer.innerHTML = "";
+        
+            if (Object.keys(selectedAddOns).length === 0) {
+                summaryAddOnsContainer.innerHTML = '<p style="font-size: 12px;">No add-ons selected</p>';
+                updateTotalPrice();
+                return;
+            }
+        
+            let addOnsTotalPrice = 0;
+        
+            Object.entries(selectedAddOns).forEach(([addonName, addonData]) => {
+                const totalAddonPrice = addonData.quantity * addonData.price;
+                addOnsTotalPrice += totalAddonPrice;
+        
+                const addonElement = document.createElement("div");
+                addonElement.className = "addon-summary-item";
+                addonElement.style.display = "flex";
+                addonElement.style.alignItems = "center";
+                addonElement.style.marginBottom = "10px";
+        
+                addonElement.innerHTML = `
+                    <i class="fa fa-trash" style="cursor: pointer; margin-right: 10px;" data-addon="${addonName}"></i>
+                    <span style="font-size: 12px;">${addonName} (x${addonData.quantity})</span>
+                    <span style="margin-left: auto;">₱${totalAddonPrice.toLocaleString("en-US", { minimumFractionDigits: 0 })}</span>
+                `;
+        
+                summaryAddOnsContainer.appendChild(addonElement);
+            });
+        
+            addTrashListeners();
+            updateTotalPrice(addOnsTotalPrice); // Ensure this is called to update both totals
+        }
+        
+        // Add event listeners for the trash icons
+        function addTrashListeners() {
+            const trashIcons = summaryAddOnsContainer.querySelectorAll(".fa-trash");
+        
+            trashIcons.forEach(icon => {
+                icon.addEventListener("click", function () {
+                    const addonName = this.getAttribute("data-addon");
+                    decrementAddon(addonName);
+                });
+            });
+        }
+        
+        // Decrement the quantity of an add-on or remove it
+        function decrementAddon(addonName) {
+            const selectedAddOns = JSON.parse(localStorage.getItem("selectedAddOns")) || {};
+        
+            if (selectedAddOns[addonName]) {
+                selectedAddOns[addonName].quantity -= 1;
+        
+                // If the quantity reaches 0, remove the item
+                if (selectedAddOns[addonName].quantity <= 0) {
+                    delete selectedAddOns[addonName];
+                }
+        
+                // Update localStorage and re-render the add-ons
+                localStorage.setItem("selectedAddOns", JSON.stringify(selectedAddOns));
+                renderAddOns();
+        
+                console.log(`Updated add-ons after removal:`, selectedAddOns);
+            }
+        }
+        
+        function updateTotalPrice(addOnsTotal = 0) {
+            const chosenRoom = JSON.parse(localStorage.getItem("ChosenRoom")) || {};
+            const checkInDate = localStorage.getItem("checkInDate");
+            const checkOutDate = localStorage.getItem("checkOutDate");
+        
+            let roomTotal = 0;
+        
+            if (chosenRoom.name) {
+                const totalDays = calculateTotalDays(checkInDate, checkOutDate);
+                roomTotal = totalDays * chosenRoom.price;
+            }
+        
+            const grandTotal = roomTotal + addOnsTotal;
+        
+            // Update Booking Summary
+            document.getElementById("summaryTotalPrice").textContent = `₱${grandTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+            localStorage.setItem("grandTotal", grandTotal);
+        }
+        
+
+        // Ensure it is called whenever add-ons or room details change
+        document.addEventListener("DOMContentLoaded", function () {
+            renderAddOns();
+            updateTotalPrice();
+        });
+
+
+        
+        // Attach applyAllAddons to the button
+        document.querySelector(".btn-one[onclick='applyAllAddons()']").onclick = applyAllAddons;
+        
+    
+        // Initial render
+        renderAddOns();
+        updateTotalPrice();
+    });
+</script>
+

@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Admin Dashboard | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+{% block profile %}{% endblock profile %}
+
+{% include 'authentication/admin/lidoadminnavbar.html' %}
+
+<style>
+    h2 {
+        font-size: 18px;
+        text-transform: uppercase;
+    }
+
+    p{
+        font-size: 14px;
+    }
+    .table-container {
+        margin-top: 10px;
+    }
+    .pagination-buttons {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .pagination-buttons button {
+        padding: 5px 10px;
+        background-color: var(--bgsecondary);
+        color: var(--txtprimary);
+        border: none;
+        cursor: pointer;
+    }
+    .pagination-buttons button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+            border: 1px solid #ccc;
+        background: var(--bgtertiary);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        text-align: center;
+    }
+
+    th{
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .welcome-container{
+        padding: 10px; 
+        text-align: center; 
+        background-color: var(--bgsecondary); 
+        color: var(--txtprimary);
+    }
+
+    .dashboard-container{
+        padding: 50px 0 30px 0; 
+        display: flex; 
+        flex-direction: row; 
+        justify-content: center; 
+        gap: 10px;
+    }
+
+    .linechart-container{
+        width: 45%; 
+        background-color: var(--bgtertiary); 
+        padding: 20px;     
+        border: 1px solid #ccc;
+        text-align: center;
+    }
+
+    .details-container{
+        width: 45%; 
+        background-color: var(--bgtertiary); 
+        padding: 20px;     
+        border: 1px solid #ccc;
+        text-align: center;
+        font-size: 13.5px;
+    }
+</style>
+
+<!-- Welcome Section -->
+<div class="welcome-container">
+    <div style="color: var(--bgtertiary);">Welcome to your admin dashboard. Here you can monitor sales performance and account creation trends.</div>
+</div>
+
+<div class="dashboard-container">
+
+    <!-- Line Chart for Daily Sales (Left Side) -->
+    <div class="linechart-container">
+        <h2>Reservation Sales</h2>
+        <p>Daily sales trends over time using reservation data.</p>
+        <hr>
+        <canvas id="salesLineChart"></canvas>
+    </div>
+
+    <!-- Details Area (Right Side) -->
+    <div class="details-container" id="salesDetails">
+        <h2>Sales Details</h2>
+        <p>Hover over points on the chart to view reservation details for a specific date.</p>
+        <div id="salesDetailsContent">
+        </div>
+    </div>
+
+
+</div>
+
+
+    {% include 'authentication/admin/revenue_admin.html' %}
+    {% include 'authentication/admin/scheduling.html' %}
+
+
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+<script>
+    
+    // Fetch sales data and reservation details from Django context
+    const salesData = {{ sales_data|safe }};
+    const reservationDetailsData = {{ reservation_details_data|safe }};
+    const accountData = {{ account_data|safe }};  // For Pie Chart
+
+    // Format the dates and sales for the Line Chart
+    const labels = salesData.map(sale => new Date(sale.check_in_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }));
+    const salesTotals = salesData.map(sale => sale.total_sales);
+
+    // Pagination variables
+    let currentReservations = [];
+    let currentPage = 0;
+    const pageSize = 5;
+
+    // Function to get reservation details based on the hovered date
+    function getReservationDetails(date) {
+        const selectedDate = new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        currentReservations = reservationDetailsData.filter(reservation => {
+            const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            return checkInDate === selectedDate;
+        });
+        displayReservations();
+    }
+
+    // Function to display reservation details in a table format
+    function displayReservations() {
+        const salesDetailsContent = document.getElementById('salesDetailsContent');
+        const start = currentPage * pageSize;
+        const end = Math.min(start + pageSize, currentReservations.length);
+        const reservationsToDisplay = currentReservations.slice(start, end);
+    
+        // Create a formatter for currency with thousand separators
+        const formatter = new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+        });
+    
+        let html = `
+            <table>
+                <tr>
+                    <th>Room</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+        `;
+        reservationsToDisplay.forEach(res => {
+            html += `
+                <tr>
+                    <td>${res.room_chosen}</td>
+                    <td>${new Date(res.check_in_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                    <td>${new Date(res.check_out_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                    <td>${formatter.format(res.overall_total_amount)}</td>
+                    <td>${res.status}</td>
+                </tr>
+            `;
+        });
+        html += '</table>';
+    
+        // Add pagination buttons
+        html += `
+            <div class="pagination-buttons">
+                <button onclick="previousPage()" ${currentPage === 0 ? 'disabled' : ''}>Previous</button>
+                <button onclick="nextPage()" ${end >= currentReservations.length ? 'disabled' : ''}>Next</button>
+            </div>
+        `;
+    
+        salesDetailsContent.innerHTML = html;
+    }
+    
+    function previousPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            displayReservations();
+        }
+    }
+
+    function nextPage() {
+        if ((currentPage + 1) * pageSize < currentReservations.length) {
+            currentPage++;
+            displayReservations();
+        }
+    }
+
+    // Line Chart for Daily Sales
+    var ctxLine = document.getElementById('salesLineChart').getContext('2d');
+    var salesLineChart = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Daily Sales (PHP)',
+                data: salesTotals,
+                fill: false,
+                borderColor: '#83b17b',
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            onHover: (event, chartElement) => {
+                if (chartElement.length > 0) {
+                    var index = chartElement[0].index;
+                    var label = salesLineChart.data.labels[index];
+                    getReservationDetails(label);
+                }
+            }
+        }
+    });
+
+    // Pie Chart for Guest and Admin Accounts
+    var ctxPie = document.getElementById('accountPieChart').getContext('2d');
+    var accountPieChart = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: ['Guests', 'Admins'],
+            datasets: [{
+                data: accountData,
+                backgroundColor: ['rgba(131, 177, 123, 0.4)', 'rgba(131, 177, 123, 0.3)'],
+                borderColor: ['#83b17b'],
+                borderWidth: 1
+            }]
+        }
+    });
+</script>
+
+{% endblock content %}

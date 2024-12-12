@@ -1,0 +1,332 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock title %}</title>
+    <!-- Stylesheets -->
+    <link href="{% static 'assets/css/bootstrap.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+    <!-- Responsive File -->
+    <link href="{% static 'assets/css/responsive.css' %}" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&amp;family=Open+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+
+    {% comment %} Website Icon Link {% endcomment %}
+    <link rel="shortcut icon" href="{% static 'assets/images/components/Logo.png' %}" type="image/x-icon">
+    <link rel="icon" href="{% static 'assets/images/components/Logo.png' %}" type="image/x-icon">
+
+    <!-- Responsive -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!--[if lt IE 9]><script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script><![endif]-->
+    <!--[if lt IE 9]><script src="js/respond.js"></script><![endif]-->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css" crossorigin="" />
+    <!-- Owl Carousel CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" rel="stylesheet">
+
+    {% comment %} Remixicons Link {% endcomment %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css" crossorigin="" />
+    
+
+    {% comment %} FontAwesome Pro Link {% endcomment %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</head>
+<body class="gray_bg">
+    <div class="page-wrapper">
+        {% if messages %}
+        <div role="alert">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        
+      {% endif %}
+        {% block mainnav %}
+        <!-- Main Header -->
+        {% include 'blogsite/header/lidomainnav.html' %}
+        <!-- End Main Header -->
+         {% endblock mainnav %}   
+        
+
+        {% block content %} {% endblock content %}
+
+        <!--footer section  -->
+        <footer class="main-footer">
+            <div class="auto-container">
+                <div class="footer-widgets-section">
+                    <div class="row clearfix">
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget footer-logo">
+                                <div class="image">
+                                    <a href={% url 'lidohome' %}><img src="{% static 'assets/images/components/logo-circle.png' %}" alt=""></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget about-widget">
+                                <h3 class="widget-title">About Us</h3>
+                                <div class="widget-content">
+                                    <div class="about-wdget-text">
+                                        The resort is nestled amidst lush greenery, providing a tranquil setting with direct beachfront access.
+                                    </div>
+                                    <ul>
+                                        <li>
+                                            <i class="fa-brands fa-google"></i>
+                                            <a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;tf=1&amp;to=lidoshores.sariaya@gmail.com" target="_blank">
+                                                &nbsplidoshores.sariaya@gmail.com
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <i class="fa-solid fa-phone"></i>
+                                            <a href="639173004577">+639173004577 Viber Only</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget links-widget">
+                                <h3 class="widget-title">Top Links</h3>
+                                <div class="widget-content">
+                                    <ul>
+                                        <li><a href="#">Contact Us</a></li>
+                                        <li><a href="#">Privacy Policy</a></li>
+                                        <li><a href="#">Terms & Conditions</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget contact-widget">
+                                <h2 class="widget-title">Sariaya, <span>Quezon Province</span></h2>
+                                <div class="contact-widget-text">Brgy. Talaan, Aplaya, Sariaya, Calabarzon, 4322, Philippines</div>
+                                <div class="contact-widget-social-links">
+                                    <ul>
+                                        <li><a href="https://web.facebook.com/lidoshores"><i class="fab fa-facebook-f"></i></a></li>
+                                        <li>
+                                            <a href="https://www.instagram.com/lidoshores/" target="_blank">
+                                                <i class="fa-brands fa-instagram"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;tf=1&amp;to=lidoshores.sariaya@gmail.com" target="_blank">
+                                                <i class="fa-brands fa-google"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="https://chats.viber.com/lidoshores.sariaya" target="_blank">
+                                                <i class="fa-brands fa-viber"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="auto-container">
+                    <div class="wrapper-box">
+                        <div class="copyright-text">
+                            Lido Shores Resort | Sariaya © 2024
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <!--End pagewrapper-->
+
+
+    <!--Scroll to top-->
+    <div class="scroll-to-top"><a href="# " class="back-to-top " data-wow-duration="1.0s " data-wow-delay="1.0s "><i class="fa fa-angle-up "></i></a></div>
+    {% block profile %}
+    <div class="profile">
+        {% if guest %}
+            <a href="{% url 'guestprofile' %}" class="profile-circle">
+                {% if guest.profile_picture %}
+                    <img id="profilePreview" 
+                         src="{{ guest.profile_picture.url }}?t={{ guest.id }}" 
+                         alt="Profile Picture" 
+                         style="display: block;">
+                {% else %}
+                    <span>{{ guest.first_name|slice:":1" }}</span>
+                {% endif %}
+            </a>
+        {% else %}
+            <a href="{% url 'guestlogin' %}" class="profile-circle">
+                <i class="fa-solid fa-user"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endblock profile %}
+    
+    
+
+    <script src="{% static 'assets/js/jquery.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/js/jquery.fancybox.js' %}"></script>
+    <script src="{% static 'assets/js/isotope.js' %}"></script>
+    <script src="{% static 'assets/js/owl.js' %}"></script>
+    <script src="{% static 'assets/js/appear.js' %}"></script>
+    <script src="{% static 'assets/js/wow.js' %}"></script>
+    <script src="{% static 'assets/js/scrollbar.js' %}"></script>
+    <script src="{% static 'assets/js/TweenMax.min.js' %}"></script>
+    <script src="{% static 'assets/js/swiper.min.js' %}"></script>
+    <script src="{% static 'assets/js/jquery.ajaxchimp.min.js' %}"></script>
+    <script src="{% static 'assets/js/parallax-scroll.js' %}"></script>
+    <script src="{% static 'assets/js/jquery-ui-1.9.2.custom.min.js' %}"></script>
+    <script src="{% static 'assets/js/jquery.nice-select.min.js' %}"></script>
+
+    <script src="{% static 'assets/js/booking-form.js' %}"></script>
+    <script src="{% static 'assets/js/script.js' %}"></script>
+
+    <!-- Include Owl Carousel JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+
+    <!-- A plugin for password show/hide  -->
+    <script src="https://unpkg.com/bootstrap-show-password@1.2.1/dist/bootstrap-show-password.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+          
+        $(document).ready(function() {
+            $('[data-fancybox]').fancybox({
+                loop: false,
+                buttons: [
+                    "fullScreen",
+                    "thumbs",
+                    "close"
+                ],
+                youtube: {
+                    controls: 1,
+                    showinfo: 0
+                },
+                vimeo: {
+                    color: 'f00'
+                },
+                afterShow: function(instance, current) {
+                    $('.fancybox-caption').hide(); // Hide the caption which might be showing the count
+                },
+                beforeShow: function(instance, current) {
+                    instance.$refs.inner.css('overflow', 'hidden');
+                }
+            });
+
+            // Initialize the Owl Carousel for rooms
+            $('#roomsCarousel').owlCarousel({
+                loop: true,
+                margin: 10,
+                nav: true,
+                dots: true,
+                center: true,
+                autoplay: true,
+                autoplayTimeout: 5000,
+                autoplayHoverPause: true,
+                smartSpeed: 1000,
+                responsive: {
+                    0: {
+                        items: 1
+                    },
+                    600: {
+                        items: 2
+                    }
+                },
+                onTranslate: function(event) {
+                    var item = event.item.index;
+                    var title = $(event.target).find('.owl-item').eq(item).find('.room-content').data('title');
+                    var description = $(event.target).find('.owl-item').eq(item).find('.room-content').data('description');
+                    $('#roomDetails .room-title').removeClass('fade-in');
+                    $('#roomDetails .room-description').removeClass('fade-in');
+                },
+                onTranslated: function(event) {
+                    var item = event.item.index;
+                    var title = $(event.target).find('.owl-item').eq(item).find('.room-content').data('title');
+                    var description = $(event.target).find('.owl-item').eq(item).find('.room-content').data('description');
+                    setTimeout(function() {
+                        $('#roomDetails .room-title').text(title).addClass('fade-in');
+                        $('#roomDetails .room-description').text(description).addClass('fade-in');
+                    }, 500);
+                }
+            });
+
+            const themeMap = {
+                dark: "light",
+                light: "solar",
+                solar: "dark",
+            };
+          
+            const theme =
+                localStorage.getItem("theme") ||
+                ((tmp = Object.keys(themeMap)[0]), localStorage.setItem("theme", tmp), tmp);
+            const bodyClass = document.body.classList;
+            bodyClass.add(theme);
+          
+            function toggleTheme() {
+                const current = localStorage.getItem("theme");
+                const next = themeMap[current];
+          
+                bodyClass.replace(current, next);
+                localStorage.setItem("theme", next);
+            }
+          
+            document.getElementById("themeButton").onclick = toggleTheme;
+
+            $(document).ready(function() {
+                $('#happeningsCarousel').carousel({
+                    interval: false
+                });
+
+                $(".carousel").swipe({
+                    swipe: function(event, direction, distance, duration, fingerCount, fingerData) {
+                        if (direction == 'left') $(this).carousel('next');
+                        if (direction == 'right') $(this).carousel('prev');
+                    },
+                    allowPageScroll: "vertical"
+                });
+
+                $('#happeningsCarousel').on('slide.bs.carousel', function (e) {
+                    var $e = $(e.relatedTarget);
+                    var idx = $e.index();
+                    var itemsPerSlide = 3;
+                    var totalItems = $('.carousel-item').length;
+
+                    if (idx >= totalItems-(itemsPerSlide-1)) {
+                        var it = itemsPerSlide - (totalItems - idx);
+                        for (var i=0; i<it; i++) {
+                            // append slides to end
+                            if (e.direction=="left") {
+                                $('.carousel-item').eq(i).appendTo('.carousel-inner');
+                            }
+                            else {
+                                $('.carousel-item').eq(0).appendTo('.carousel-inner');
+                            }
+                        }
+                    }
+                });
+            });
+
+            document.addEventListener('DOMContentLoaded', (event) => {
+                document.body.style.overflowX = 'hidden';
+            });
+
+
+
+            
+            
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,709 @@
+{% extends 'base.html' %} 
+{% load static %} 
+
+{% block title %} Book Now | Lido Shores Resort {% endblock title %} 
+
+{% block content %}
+<style>
+  #addonQuantityModal {
+    display: none;
+    position: fixed;
+    z-index: 5000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+
+  .quantity-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+  }
+
+  .quantity-selector button {
+    background-color: var(--bgsecondary);
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  .quantity-selector input {
+    width: 50px;
+    text-align: center;
+    border: 1px solid #ccc;
+    margin: 0 10px;
+  }
+
+  .finalize {
+    background-color: var(--bgsecondary);
+    color: white;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+    text-transform: uppercase;
+  }
+
+  .finalize:hover {
+    background-color: var(--bghover);
+  }
+
+  .total-price {
+    font-weight: bold;
+  }
+
+  .progress-title {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: var(--bgsecondary);
+  }
+
+  .step-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+    width: 100%; /* Ensure it spans the full width */
+    max-width: 1200px; /* Optional: limit the max width */
+    margin: 0 auto;
+    margin-bottom: 20px;
+  }
+
+  .step-progress .circle-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    text-align: center; /* Center-align the text */
+  }
+
+  .step-progress .circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .step-progress .circle.active,
+  .step-progress .circle.completed {
+    background-color: var(--bgsecondary);
+  }
+
+  .step-progress .bar {
+    flex: 1;
+    height: 5px;
+    background-color: #e0e0e0;
+    position: relative;
+    top: -15px;
+    z-index: 0;
+    margin: 0 -40px;
+  }
+
+  .step-progress .bar.active {
+    background-color: var(--bgsecondary);
+  }
+
+  .step-progress .label {
+    margin-top: 5px;
+    font-size: 14px;
+    color: var(--txtprimary);
+  }
+
+  .booking-page {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin-bottom: 300px;
+    margin-top: 50px;
+  }
+
+  .booking-content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1200px;
+    gap: 20px;
+  }
+
+  .booking-rooms {
+    flex: 2;
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .loading-spinner {
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid var(--bgsecondary);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .date-label {
+    font-size: 10px;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 2px 4px;
+    border-radius: 3px;
+    pointer-events: none;
+    width: 90%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .past-date {
+    color: #ccc;
+    pointer-events: none;
+  }
+
+  .room-details-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .room-dates-toggle {
+    cursor: pointer;
+    text-decoration: underline;
+    color: var (--bgsecondary);
+  }
+
+  .room-list {
+    display: none;
+  }
+
+  .room-list.active {
+    display: block;
+    font-size: 13px;
+  }
+
+  .room-list li {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .room-list .room-date {
+    text-align: left;
+    margin-left: 15px;
+  }
+
+  .room-list .room-price {
+    text-align: right;
+    color: var(--txtprimary);
+  }
+
+  .addons-booking {
+    margin-top: 10px;
+  }
+
+  .addons-booking h4 {
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+
+  .addons-booking p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #333;
+  }
+
+  .addons-quantity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .addons-quantity input {
+    width: 50px;
+    text-align: center;
+  }
+
+  .addons-total-price {
+    font-weight: bold;
+    margin-right: 50px;
+    font-size: 20px;
+  }
+
+  
+
+  .apply-addon-button,
+  .cancel-addon-button {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .apply-addon-button {
+    background-color: var(--bgsecondary);
+    color: white;
+  }
+
+  .cancel-addon-button {
+    background-color: #ccc;
+  }
+
+  /* Addon panel similar to guest panel */
+  .addon-panel {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+
+  .addon-panel-content {
+    background-color: var(--bgtertiary);
+    border-radius: 0px;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    position: relative;
+  }
+
+  .addon-panel-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+
+  .bar {
+    flex: 1;
+    height: 5px;
+    background-color: #e0e0e0;
+    position: relative;
+    top: -15px;
+  }
+
+  .bar.active,
+  .bar.completed {
+    background-color: #6ba447; /* Active and completed bar color */
+  }
+
+  .label {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #333;
+  }
+
+
+  /* General Mobile Adjustments */
+  @media (max-width: 768px) {
+      .booking-page {
+          flex-direction: column; /* Stack the booking content vertically */
+          padding: 10px; /* Adjust padding */
+      }
+
+      .booking-content {
+          flex-direction: column; /* Stack sections vertically */
+          gap: 15px; /* Adjust gap */
+          width: 100%; /* Full width */
+      }
+
+      .step-progress {
+        flex-wrap: nowrap; /* Prevent wrapping */
+        overflow-x: auto; /* Enable horizontal scrolling if needed */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
+    }
+
+    .step-progress .circle-step {
+        flex: none; /* Prevent shrinking */
+        margin-right: 10px; /* Add space between steps */
+    }
+
+    .step-progress::-webkit-scrollbar {
+        height: 5px; /* Slim scrollbar for horizontal scrolling */
+    }
+
+    .step-progress::-webkit-scrollbar-thumb {
+        background: #ccc; /* Color for scrollbar thumb */
+        border-radius: 5px;
+    }
+
+    .step-progress::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+      .available-rooms {
+          width: 100%; /* Full width for room list */
+          padding: 0;
+      }
+
+      .room-details-container {
+          flex-direction: column; /* Stack details vertically */
+          align-items: flex-start;
+      }
+
+      .addons-booking {
+          text-align: left; /* Align text to the left */
+      }
+
+      .addons-quantity {
+          flex-direction: row; /* Display quantity selector inline */
+          justify-content: center;
+          gap: 5px; /* Adjust gap */
+      }
+
+      .remove-booking-modal-content {
+          width: 90%; /* Adjust modal width for smaller screens */
+          padding: 15px; /* Reduce padding */
+      }
+
+      .addon-panel-content {
+          width: 90%; /* Adjust panel width for small screens */
+          padding: 15px; /* Reduce padding */
+      }
+
+      .progress-title {
+          font-size: 20px; /* Adjust font size */
+          text-align: center;
+      }
+  }
+
+  /* Extra Small Devices */
+  @media (max-width: 480px) {
+      .step-progress .circle {
+          width: 25px; /* Smaller circles */
+          height: 25px;
+          font-size: 12px;
+      }
+
+      .progress-title {
+          font-size: 18px;
+      }
+
+      .addon-panel-content, 
+      .remove-booking-modal-content {
+          padding: 10px; /* Reduce padding further */
+          font-size: 14px; /* Adjust text size */
+      }
+
+      .quantity-selector input {
+          width: 40px; /* Adjust input size */
+      }
+
+      .finalize {
+          font-size: 12px; /* Smaller button text */
+          padding: 8px; /* Adjust button padding */
+      }
+  }
+
+
+  .loading-spinner {
+      width: 40px; /* Smaller spinner */
+      height: 40px;
+  }
+
+
+  .calendar-booking, .addons-booking, .guestdetails-booking {
+    transition: opacity 0.5s ease-in-out;
+  }
+
+.calendar-booking.hidden, .addons-booking.hidden, .guestdetails-booking.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+
+
+</style>
+
+<div id="loadingOverlay" class="loading-overlay" style="display: none">
+  <div class="loading-spinner"></div>
+</div>
+
+{% block mainnav %}{% endblock mainnav %}
+<!--Scroll to top-->
+<div class="scroll-to-top">
+  <a href="#" class="back-to-top" data-wow-duration="1.0s" data-wow-delay="1.0s"
+    ><i class="fa fa-angle-up"></i
+  ></a>
+</div>
+<div class="profile">
+  <a href="#" class="#" data-wow-duration="1.0s" data-wow-delay="1.0s"
+    ><i class="fa-solid fa-user"></i
+  ></a>
+</div>
+
+<section class="page-title-one style-two">
+  <div
+    class="page-title-one-bg"
+    data-parallax='{"y": -50}'
+    style="background-image: url(/static/assets/images/gallery/Cafe6.jpg)"
+  ></div>
+  <div class="auto-container">
+    <div class="page-title-one-content">
+      <div class="page-title-one-bread-crumb-area">
+        <ul class="page-title-one-bread-crumb resort-info">
+          <li class="resort-name">Lido Shores Resort</li>
+          <li>Brgy. Talaan, Aplaya, Sariaya, Calabarzon, 4322, Philippines</li>
+          <li>
+            <a href="https://chats.viber.com/lidoshores.sariaya" target="_blank"
+              >&nbsp+639173004577</a
+            >
+          </li>
+          <li>
+            <a href="https://www.lidoshoresresort.com" target="_blank"
+              ><i class="fa-solid fa-globe"></i>
+              https://www.lidoshoresresort.com</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="booking-page">
+  <div class="booking-content">
+    <div class="booking-rooms" id="lidobooking-container">
+      
+      <!-- Calendar Booking Section -->
+      <div id="calendarBooking" class="calendar-booking">
+        {% include 'booking/calendar_booking.html' %}
+      </div>
+
+      <!-- Add-ons Section -->
+      <div id="addonsBooking" class="addons-booking" style="display: none;">
+        {% include 'booking/addons_booking.html' %}
+      </div>
+
+
+      <div class="guestdetails-booking" id="guestdetailsBooking" style="display: none">
+        {% include 'booking/guest_details_booking.html'%} 
+      </div>
+
+
+
+      <!-- Room results will be dynamically updated here -->
+      <div class="available-rooms">
+        <div id="availableRooms">
+            <!-- Rooms will be dynamically rendered here -->
+            {% include 'booking/roomrates_booking.html' with rooms=rooms %}
+        </div>
+      </div>
+
+
+    
+        {% include 'booking/lidoreview.html'%} 
+    
+    
+      <!-- Hidden Inputs to store values in the parent template -->
+      <input type="hidden" id="checkInInput" name="check_in_date" value="{{ check_in_date }}">
+      <input type="hidden" id="checkOutInput" name="check_out_date" value="{{ check_out_date }}">
+      <input type="hidden" id="guestCountInput" name="total_guests" value="{{ total_guests }}">
+
+    </div>
+
+    {% include 'booking/bookingsummary.html'%}
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script>
+  // Show Guest Details when the "Guest Details" button is clicked
+document.querySelector('.btn-one[style="float:right;"]').addEventListener('click', function() {
+  // Show the Guest Details section
+  document.getElementById("guestdetailsBooking").style.display = "block";
+
+  // Hide the other sections (Add-ons or Calendar Booking)
+  document.getElementById("addonsBooking").style.display = "none";
+  document.getElementById("calendarBooking").style.display = "none";
+
+  // Update the progress bar to show the "Guest Details" step as active
+  updateProgressBar(3); // Assuming step 3 is "Guest Details"
+});
+
+{% comment %} function bookRoom(roomName, roomPrice, roomCapacity, bedType) {
+    const chosenRoom = {
+        name: roomName,
+        price: roomPrice,
+        capacity: roomCapacity,
+        bedType: bedType,
+    };
+    localStorage.setItem("ChosenRoom", JSON.stringify(chosenRoom));
+    console.log("Saved Room:", chosenRoom);
+
+    const checkInDate = localStorage.getItem("checkInDate");
+    const checkOutDate = localStorage.getItem("checkOutDate");
+
+    if (!checkInDate || !checkOutDate) {
+        alert("Please select check-in and check-out dates.");
+        return;
+    }
+
+    // Dispatch custom event
+    const roomBookedEvent = new CustomEvent("roomBooked", {
+        detail: {
+            chosenRoom,
+            checkInDate,
+            checkOutDate,
+        },
+    });
+    window.dispatchEvent(roomBookedEvent);
+
+    // Transition to the "Add-ons" section
+    document.querySelector(".available-rooms").style.display = "none";
+    document.querySelector(".calendar-booking").style.display = "none";
+    document.querySelector(".addons-booking").style.display = "block";
+
+    document.querySelector(".step-progress .circle-step:nth-child(2) .circle").classList.add("active");
+
+    document.getElementById("selectedRoomName").textContent = roomName;
+    document.getElementById("selectedRoomPrice").textContent = `₱${roomPrice.toLocaleString()}`;
+}
+ {% endcomment %}
+
+
+
+
+// Back to Rooms Function (called when Back to Rooms button is clicked)
+function backToRooms() {
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  
+  // Show loading overlay
+  loadingOverlay.style.display = 'flex';
+
+  // Hide Add-ons Booking section and show Calendar Booking section after 1 second
+  setTimeout(() => {
+      document.getElementById("addonsBooking").style.display = "none"; // Hide Add-ons Booking
+      document.getElementById("calendarBooking").style.display = "block"; // Show Calendar Booking
+
+      // Make sure roomrates_booking is displayed and dynamic listeners are added back
+      document.querySelector(".available-rooms").style.display = "block"; // Show room rates
+
+      // Re-bind the "Book Now" event listeners to the dynamically rendered buttons
+      bindBookNowListeners();
+
+      // Hide the loading overlay
+      loadingOverlay.style.display = 'none';
+  }, 1000); // 1-second delay for the loading spinner
+}
+
+
+// Function to go to the Add-ons section from the Guest Details section
+function goToAddons() {
+  const loadingOverlay = document.getElementById('loadingOverlay');
+
+  // Show loading overlay for 1 second
+  loadingOverlay.style.display = 'flex';
+
+  // Hide the Guest Details section and show Add-ons section after 1 second
+  setTimeout(() => {
+      document.getElementById("guestdetailsBooking").style.display = "none"; // Hide Guest Details
+      document.getElementById("addonsBooking").style.display = "block"; // Show Add-ons section
+
+      // Update the progress bar to reflect that we are on the Add-ons step
+      updateProgressBar(2); // Assuming step 2 is "Add-ons"
+
+      // Hide the loading overlay
+      loadingOverlay.style.display = 'none';
+  }, 1000); // 1-second delay for smooth transition
+}
+
+// Function to go to Guest Details from Add-ons section
+function goToGuestDetails() {
+  const loadingOverlay = document.getElementById('loadingOverlay');
+
+  // Show loading overlay for 1 second
+  loadingOverlay.style.display = 'flex';
+
+  // Hide the Add-ons section and show Guest Details section after 1 second
+  setTimeout(() => {
+      document.getElementById("addonsBooking").style.display = "none"; // Hide Add-ons section
+      document.getElementById("guestdetailsBooking").style.display = "block"; // Show Guest Details section
+
+      // Update the progress bar to reflect that we are on the Guest Details step
+      updateProgressBar(3); // Assuming step 3 is "Guest Details"
+
+      // Hide the loading overlay
+      loadingOverlay.style.display = 'none';
+  }, 1000); // 1-second delay for smooth transition
+}
+
+// Function to update the progress bar dynamically
+function updateProgressBar(step) {
+  const steps = document.querySelectorAll(".step-progress .circle-step .circle");
+
+  // Activate the current step
+  for (let i = 0; i < step; i++) {
+      steps[i].classList.add("completed");
+  }
+  steps[step - 1].classList.add("active");
+}
+
+
+// Re-bind the "Book Now" event listeners
+function bindBookNowListeners() {
+  const bookNowButtons = document.querySelectorAll('.btn-one.room-card-button');
+
+  bookNowButtons.forEach(button => {
+      // Re-bind the click event to each "Book Now" button
+      button.addEventListener('click', function () {
+          const roomName = this.getAttribute('data-room-name');
+          const roomPrice = this.getAttribute('data-room-price');
+          const roomCapacity = this.getAttribute('data-room-capacity');
+          const roomBedType = this.getAttribute('data-room-bed-type');
+
+          // Call the bookRoom function
+          bookRoom(roomName, roomPrice, roomCapacity, roomBedType); 
+      });
+  });
+}
+
+</script>
+
+
+
+
+{% endblock content %}
