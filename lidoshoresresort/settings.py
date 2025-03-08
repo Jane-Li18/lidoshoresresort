@@ -10,30 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-import os
 from pathlib import Path
-from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project_name.settings')
-
-application = get_wsgi_application()
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-t6+@pd32j1&06@vkxnh)t!z4(b%khlzt+lwbypqwfnxcohz1q*')
+SECRET_KEY = 'django-insecure-t6+@pd32j1&06@vkxnh)t!z4(b%khlzt+lwbypqwfnxcohz1q*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'www.lidoshoresresort.online localhost 127.0.0.1').split()
 
+ALLOWED_HOSTS = ['www.lidoshoresresort.online', 'localhost', '127.0.0.1']
 handler404 = 'django.views.defaults.page_not_found'
-
 
 CSRF_TRUSTED_ORIGINS = ['https://www.lidoshoresresort.online']
 
