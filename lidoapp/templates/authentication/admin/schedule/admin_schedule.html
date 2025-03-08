@@ -1,0 +1,678 @@
+{% extends 'base.html' %}
+
+{% load humanize %}
+{% load static %}
+
+{% block title %}Schedule | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+{% block profile %}{% endblock profile %}
+
+{% include 'authentication/admin/admin_navbar.html' %}
+{% include 'message_notification.html' %}
+
+<div class="container-fluid mt-3">
+<br>
+    <div class="row">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+            <div class="add-add-on-form">
+                <h3>Add Staff <span style="float: right; font-weight: bold; color: red; font-size: 10px;">* required</span></h3>
+                <hr>
+                <form id="addAddOnForm" method="POST" action="{% url 'submit_admin_schedule' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="schedule_id" name="schedule_id" value="" />
+                    <div class="form-group">
+                        <input type="text" id="staff_name" name="staff_name" required placeholder=" " />
+                        <label for="staff_name">Staff Name *</label>
+                        <div class="error-message">Staff Name is required.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="staff_role" name="staff_role" required placeholder=" " />
+                        <label for="staff_role">Staff Role *</label>
+                        <div class="error-message" id="required-error-message">Staff Role is required.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="time_shift" name="time_shift" required placeholder=" " />
+                        <label for="time_shift">Time Shift *</label>
+                        <div class="error-message" id="capacity-required-error">Time Shift is required.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" id="time_ends" name="time_ends" required placeholder=" " />
+                        <label for="time_ends">Time Ends *</label>
+                        <div class="error-message" id="capacity-required-error">Time Ends is required.</div>
+                    </div>
+                    
+
+                    {% comment %} <div class="form-group">
+                        <input type="color" id="color" name="color" value="{{ schedule.color|default:"#007bff" }}" required />
+                        <label for="color">Choose a Color *</label>
+                        <div class="error-message" id="color-error">Color is required.</div>
+                    </div> {% endcomment %}
+
+                    
+                    <hr>
+
+                    <div class="custom-checkbox">
+                            <div id="day-container" class="row">
+                                <div class="day-column">
+                                    <label><input type="checkbox" name="room_amenities[]" value="monday"> Monday</label>
+                                    <label><input type="checkbox" name="room_amenities[]" value="tuesday"> Tuesday</label>
+                                    <label><input type="checkbox" name="room_amenities[]" value="wednesday"> Wednesday</label>
+                                    <label><input type="checkbox" name="room_amenities[]" value="thursday"> Thursday</label>
+                                    <label><input type="checkbox" name="room_amenities[]" value="friday"> Friday</label>
+                                    <label><input type="checkbox" name="room_amenities[]" value="saturday"> Saturday</label>
+                                    <label><input type="checkbox" name="room_amenities[]" value="sunday"> Sunday</label>
+                                </div>
+                            </div>
+                    </div>
+                    <button type="submit" id="saveAddOnButton" class="btn-one" style="width: 100%;" disabled><i class="fa-regular fa-floppy-disk"></i> &nbsp;Save <span></span></button>
+                    <button id="deleteStaffButton" class="btn-one" style="width: 100%; display: none; background-color: #D9544D; color: white; margin-top: 10px;"><i class="fa-solid fa-trash-can"></i> &nbsp;Delete Staff</button>
+
+                    
+            </div>
+        </div>
+    </form>
+
+
+    <div class="col-lg-8 col-md-6 col-sm-12 mb-3">
+        <div class="add-on-image-container">
+            <h3>Calendar</h3>
+            <div id="calendar"></div>
+            <br>
+            <button id="downloadCalendarButton" class="btn-one" style="width: 100%;"><i class="fa-regular fa-floppy-disk"></i> &nbsp;Download Calendar <span></span></button>
+        </div>
+    </div>
+    
+        
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+
+<style>
+    .fc-daygrid-event fc-daygrid-dot-event fc-event fc-event-start fc-event-end fc-event-past{
+        border: 1px solid #ccc;
+
+    }
+    .fc-button {
+        text-transform: uppercase; !important /* Ensure all buttons are uppercase */
+    }
+    .fc-toolbar-title {
+        text-transform: uppercase; /* Ensure title is uppercase if needed */
+    }
+    
+
+    .fc-event {
+        font-size: 14px; /* Adjust font size */
+        padding: 10px;
+        height: auto;
+        white-space: normal; /* Wrap text */
+        text-align: center; /* Center text */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #ccc; /* Add border to each event */
+        border-radius: 4px; /* Optional: Add slight rounding */
+        box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1); /* Optional: Add subtle shadow */
+    }
+    
+    
+    
+    #day-container.two-column {
+        display: flex;
+        gap: 20px; /* Space between the two columns */
+    }
+    
+    .day-column {
+        flex: 1; /* Each column takes up equal space */
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Space between each checkbox */
+    }
+
+
+    .day-column label {
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Space between checkbox and label text */
+    }
+    
+    /* Checkbox styling */
+    .day-column input[type="checkbox"] {
+        /* Custom styles for the checkbox */
+        width: 24px; /* Width of the checkbox */
+        height: 24px; /* Height of the checkbox */
+        accent-color: var(--bgsecondary); /* Background color of the checkbox */
+        cursor: pointer; /* Pointer cursor on hover */
+        margin-right: 10px;
+    }
+
+
+    .custom-checkbox input[type="checkbox"] {
+        appearance: none;
+        border: 1px solid #dadce0;
+        background-color: white;
+        cursor: pointer;
+        position: relative;
+        outline: none;
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked {
+        background-color: var(--bgsecondary);
+        border-color: var (--bgsecondary);
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked::before {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 15px;
+        color: white;
+    }
+
+    .custom-checkbox label {
+        margin-left: 10px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        color: #202124;
+        cursor: pointer;
+    }
+    
+
+
+    #availsContainer-{{ addon.id }} {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        opacity: 0;
+    }
+    
+    #availsContainer-{{ addon.id }}.visible {
+        max-height: 500px; /* Adjust this value as needed based on the content size */
+        opacity: 1;
+    }
+    
+    #availsContainer-{{ addon.id }}.hidden {
+        max-height: 0;
+        opacity: 0;
+    }
+
+    .hidden {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+    
+    .visible {
+        max-height: 500px; /* Adjust based on content size */
+        opacity: 1;
+        transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+    
+    .card {
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: scale(1.02);
+    }
+
+    .card img {
+        border-radius: 10px 10px 0 0;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .btn-danger,
+    .btn-success,
+    .btn-warning {
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .card {
+            margin-bottom: 20px;
+        }
+    }
+    
+    .alert {
+        padding: 20px;
+    }
+
+    button.btn-one:disabled {
+        background-color: #cccccc; /* Light gray background */
+        color: #666666; /* Gray text color */
+        cursor: not-allowed; /* Disabled cursor */
+        opacity: 0.6; /* Slightly transparent */
+    }
+
+    h3 {
+        font-size: 20px;
+        text-transform: uppercase;
+    }
+
+    /* Content container for overall layout */
+    .content-container {
+        padding: 20px;
+    }
+    
+    .add-add-on-form {
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #ccc; 
+    }
+
+    .form-section-right {
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #ccc;
+    }
+
+    /* Form group styling */
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 1em;
+        color: #666;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 4px;
+    }
+
+    /* Error message styling */
+    .form-group .error-message {
+        color: white;
+        font-size: 13px;
+        display: none;
+        padding: 5px;
+        background-color: #d93025;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        width: 100%;
+        text-align: center;
+        margin-top: 1px; /* Adjusted margin to prevent overlap */
+    }
+
+    .form-group.error .error-message {
+        display: block;
+    }
+
+    /* Label transition */
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label,
+    .form-group select:focus + label,
+    .form-group select:not(:empty) + label {
+        top: -10px;
+        left: 5px;
+        font-size: 12px;
+        color: #333;
+    }
+    
+
+    .add-on-image-container {
+        padding: 20px;
+        background-color: white;
+        border: 1px solid #ccc;
+    }
+    
+
+    /* Main Image Box */
+    .main-image-box {
+        margin-bottom: 20px;
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 250px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .main-image-box img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .main-add-icon {
+        position: absolute;
+        font-size: 48px;
+        color: #999;
+        display: none; /* Initially hidden */
+    }
+
+    .main-image-box input[type="file"] {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Additional Images Box */
+    .additional-images-box {
+        display: flex;
+        justify-content: space-evenly;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .additional-image-box {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border: 1px solid #ccc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f9f9f9;
+    }
+
+    .additional-image-box img {
+        display: block;
+    }
+
+    .additional-image-box img[src="{% static 'placeholder.png' %}"] + .add-icon {
+        display: block; /* Show the plus icon if placeholder image is shown */
+    }
+    
+    .additional-image-box img:not([src="{% static 'placeholder.png' %}"]) + .add-icon {
+        display: none; /* Hide the plus icon if an actual image is uploaded */
+    }
+
+    .add-icon {
+        position: absolute;
+        font-size: 24px;
+        color: #999;
+        display: none; /* Initially hidden */
+    }
+
+    .additional-image-box input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Show icons if no image is present */
+    .main-image-box img[src*="placeholder.png"] + .main-add-icon {
+        display: block;
+    }
+
+    
+</style>
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("addAddOnForm");
+        const saveButton = document.getElementById("saveAddOnButton");
+        const requiredFields = form.querySelectorAll("input[required]");
+        const checkboxes = form.querySelectorAll("input[name='room_amenities[]']");
+        const errorMessages = form.querySelectorAll(".error-message");
+    
+        // Initially hide all error messages
+        errorMessages.forEach((errorMessage) => {
+            errorMessage.style.display = "none";
+        });
+    
+        function validateForm() {
+            let allValid = true;
+    
+            // Validate required text and number fields
+            requiredFields.forEach((field, index) => {
+                const errorMessage = errorMessages[index];
+                if (!field.value.trim()) {
+                    allValid = false;
+                    if (field.dataset.touched === "true") {
+                        errorMessage.style.display = "block";
+                    }
+                } else {
+                    errorMessage.style.display = "none";
+                }
+            });
+    
+            // Validate checkboxes (at least one must be checked)
+            const anyCheckboxChecked = Array.from(checkboxes).some((checkbox) => checkbox.checked);
+            if (!anyCheckboxChecked) {
+                allValid = false;
+            }
+    
+            saveButton.disabled = !allValid;
+        }
+    
+        // Mark field as touched on blur and validate
+        requiredFields.forEach((field, index) => {
+            const errorMessage = errorMessages[index];
+    
+            field.addEventListener("focus", () => {
+                errorMessage.style.display = "none"; // Hide error on focus
+            });
+    
+            field.addEventListener("blur", () => {
+                field.dataset.touched = "true"; // Mark as touched
+                if (!field.value.trim()) {
+                    errorMessage.style.display = "block";
+                }
+                validateForm(); // Revalidate the form on blur
+            });
+    
+            field.addEventListener("input", validateForm); // Validate on input
+        });
+    
+        // Add event listeners to checkboxes for validation
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", validateForm);
+        });
+    
+        // Initial validation to set the correct state for the Save button
+        validateForm();
+
+
+// Initialize Flatpickr for the time_shift input
+flatpickr("#time_shift", {
+    enableTime: true,
+    noCalendar: true, // Disable calendar
+    dateFormat: "h:i K", // 12-hour format with AM/PM
+    time_24hr: false, // Use 12-hour format
+    theme: "material_blue", // Add a custom theme (optional, see below)
+    defaultHour: 9, // Default hour for the picker
+    defaultMinute: 0, // Default minute for the picker
+});
+
+// Initialize Flatpickr for the time_ends input
+flatpickr("#time_ends", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "h:i K", // 12-hour format with AM/PM
+    time_24hr: false, // Use 12-hour format
+    theme: "material_blue",
+    defaultHour: 5, // Default hour for the picker (5 PM)
+    defaultMinute: 0,
+});
+
+
+        //CALENDARRRRRRRRRRRRRRRRRRRRRRR
+
+        const calendarEl = document.getElementById("calendar");
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: "dayGridWeek",
+            events: "/get_schedules/", // Fetch events from the backend
+            eventContent: function (arg) {
+                // Create a container for the event details
+                const container = document.createElement("div");
+            
+                // Add Staff Name
+                const nameElement = document.createElement("strong");
+                nameElement.textContent = arg.event.extendedProps.staff_name; // Fetch from extendedProps
+                nameElement.style.display = "block"; // Ensure it's on its own line
+                container.appendChild(nameElement);
+            
+                // Add Role
+                const roleElement = document.createElement("div");
+                roleElement.textContent = arg.event.extendedProps.staff_role; // Fetch from extendedProps
+                roleElement.style.display = "block";
+                container.appendChild(roleElement);
+            
+                // Add Time Shift
+                const timeShiftElement = document.createElement("div");
+                timeShiftElement.textContent = `${arg.event.extendedProps.time_shift}`; // Fetch from extendedProps
+                timeShiftElement.style.display = "block";
+                container.appendChild(timeShiftElement);
+            
+                // Add Time Ends
+                const timeEndsElement = document.createElement("div");
+                timeEndsElement.textContent = `${arg.event.extendedProps.time_ends}`; // Fetch from extendedProps
+                timeEndsElement.style.display = "block";
+                container.appendChild(timeEndsElement);
+            
+                return { domNodes: [container] }; // Return the constructed content
+            },
+            
+
+            eventClick: function (info) {
+                const scheduleId = info.event.id;
+            
+                fetch(`/get_schedule/${scheduleId}/`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            const schedule = data.schedule;
+                            document.getElementById("schedule_id").value = scheduleId; // Set the ID for editing
+                            document.getElementById("staff_name").value = schedule.staff_name;
+                            document.getElementById("staff_role").value = schedule.staff_role;
+                            document.getElementById("time_shift").value = schedule.time_shift;
+                            document.getElementById("time_ends").value = schedule.time_ends;
+                            document.getElementById("color").value = schedule.color;
+            
+                            document.querySelectorAll("input[name='room_amenities[]']").forEach((checkbox) => {
+                                checkbox.checked = schedule.days.includes(checkbox.value);
+                            });
+            
+                            const deleteButton = document.getElementById("deleteStaffButton");
+                            deleteButton.style.display = "block";
+                            deleteButton.onclick = function () {
+                                if (confirm("Are you sure you want to delete this staff?")) {
+                                    fetch(`/delete_schedule/${scheduleId}/`, { method: "DELETE" })
+                                        .then((response) => response.json())
+                                        .then((result) => {
+                                            if (result.success) {
+                                                calendar.getEventById(scheduleId).remove();
+                                                deleteButton.style.display = "none";
+                                            } else {
+                                                alert(result.error);
+                                            }
+                                        });
+                                }
+                            };
+                        } else {
+                            alert(data.error);
+                        }
+                    });
+            },
+        });
+        
+        calendar.render();
+        
+
+
+
+
+        //DOWNLOADDDDDDDDDDDDDDDDDDDDDDDDDd
+        document.getElementById("downloadCalendarButton").addEventListener("click", function () {
+            const calendarEl = document.getElementById("calendar");
+            const options = prompt("Choose format: Excel, PDF, or JPG").toLowerCase();
+        
+            if (options === "excel") {
+                downloadCalendarAsExcel();
+            } else if (options === "pdf") {
+                downloadCalendarAsPDF(calendarEl);
+            } else if (options === "jpg") {
+                downloadCalendarAsJPG(calendarEl);
+            } else {
+                alert("Invalid option. Please choose Excel, PDF, or JPG.");
+            }
+        });
+        
+        function downloadCalendarAsExcel() {
+            const calendarData = [];
+            const events = document.querySelectorAll(".fc-event-title"); // Collect event titles
+            events.forEach((event) => {
+                calendarData.push(event.innerText); // Add each event to the array
+            });
+        
+            // Convert data to a CSV format for Excel
+            const csvContent = "data:text/csv;charset=utf-8," + calendarData.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Lido Shores - Weekly Schedule.csv");
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function downloadCalendarAsPDF(calendarEl) {
+            html2canvas(calendarEl).then((canvas) => {
+                const imgData = canvas.toDataURL("image/png");
+                const pdf = new jspdf.jsPDF("landscape");
+                pdf.addImage(imgData, "PNG", 10, 10, 280, 190);
+                pdf.save("Lido Shores - Weekly Schedule.pdf");
+            });
+        }
+        
+        function downloadCalendarAsJPG(calendarEl) {
+            html2canvas(calendarEl).then((canvas) => {
+                const link = document.createElement("a");
+                link.download = "Lido Shores - Weekly Schedule.jpg";
+                link.href = canvas.toDataURL("image/jpeg");
+                link.click();
+            });
+        }
+        
+    });
+    
+</script>
+
+
+{% endblock content %}

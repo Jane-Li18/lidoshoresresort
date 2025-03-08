@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Walk In Success! | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+
+{% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+
+<style>
+    /* Loading overlay styles */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.5s linear;
+    }
+
+    #loadingOverlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .spinner {
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid var(--bgsecondary);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .lidocompleted-container {
+        max-width: 800px;
+        margin: 50px;
+        padding: 20px;
+        background: var(--bgtertiary);
+        border: 1px solid #ccc;
+    }
+    
+    .center-screen {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .progress-title {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: var(--bgsecondary);
+    }
+
+    .step-progress {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 20px 0;
+        position: relative;
+        width: 80%;
+        margin: 0 auto;
+        margin-bottom: 20px;
+    }
+
+    .step-progress .circle-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-progress .circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .step-progress .circle.active,
+    .step-progress .circle.completed {
+        background-color: var(--bgsecondary);
+    }
+
+    .step-progress .bar {
+        flex: 1;
+        height: 5px;
+        background-color: var(--bgsecondary);
+        position: relative;
+        top: -13px;
+        z-index: 0;
+        margin: 0 -35px;
+    }
+
+    .step-progress .label {
+        margin-top: 5px;
+        font-size: 14px;
+        color: var(--txtprimary);
+    }
+
+    .message-box-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 10px; /* Space between buttons */
+    }
+
+    .success-message {
+        text-align: center;
+    }
+
+    .success-message p {
+        font-size: clamp(1rem, 1.5vw, 1.2rem);
+    }
+
+    .message-box-buttons {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .message-box-buttons a {
+        font-size: clamp(0.8rem, 1.2vw, 1rem);
+    }
+
+
+    /* Responsive Adjustments for Booking Content */
+  @media (max-width: 1024px) {
+      .booking-content {
+          flex-direction: column; /* Stack items vertically */
+          gap: 20px;
+      }
+  }
+  
+  /* General Mobile Adjustments */
+  @media (max-width: 768px) {
+    .lidocompleted-container{
+        margin: 30px;
+    }
+
+      .step-progress .label{
+          font-size: 10px;
+    }
+
+    .step-progress {
+        width: 100%;
+    }
+
+    .step-progress .circle-step {
+        flex: none; /* Prevent shrinking */
+        margin-right: 10px; /* Add space between steps */
+    }
+
+    .step-progress::-webkit-scrollbar {
+        height: 5px; /* Slim scrollbar for horizontal scrolling */
+    }
+
+    .step-progress::-webkit-scrollbar-thumb {
+        background: #ccc; /* Color for scrollbar thumb */
+        border-radius: 5px;
+    }
+
+    .step-progress::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+
+      .progress-title {
+          font-size: 20px; /* Adjust font size */
+          text-align: center;
+      }
+
+  }
+
+  /* Extra Small Devices */
+  @media (max-width: 480px) {
+      .step-progress .circle {
+          width: 25px; /* Smaller circles */
+          height: 25px;
+          font-size: 12px;
+      }
+
+      .progress-title {
+          font-size: 18px;
+      }
+
+      .lidocompleted-container{
+        margin: 10px;
+      }
+  }
+</style>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="center-screen">
+    <div class="lidocompleted-container">
+        <div class="booking-content">
+            <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid var(--bgsecondary); padding: 10px; margin-bottom: 5px;">
+                <ul style="margin: 10px 0; padding-left: 20px; text-align: center">
+                    <li><i class="fa-solid fa-circle-info" style="color: var(--bgsecondary);">&nbsp; </i> Walk-In Booking was Successful!</li>
+                    <br>
+                    <!-- Random Tips Section -->
+                    <li id="randomTip" style="font-size: 14px; color: var(--txtprimary);"></li>
+                    <br>
+                    <li><p style="font-size: 16px;">Your Walk-In ID: <u><strong id="walk-inID"></strong></u></p></li>
+                </ul>
+            </div>
+
+            <div class="message-box-buttons">
+                <a href="{% url 'frontdesk_dashboard' %}" class="btn-one"><i class="fa-solid fa-house-user"></i>&nbsp; Home <span></span></a>
+                <a href="{% url 'walk_in' %}" id="bookAgain" class="btn-one"><i class="fa-solid fa-person-walking-luggage"></i>&nbsp; Walk-In <span></span></a>
+                <a href="{% url 'cottage_rates' %}" class="btn-one"><i class="fa-solid fa-file-invoice"></i>&nbsp; Rates <span></span></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get the walk-in ID from the URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const walkInID = urlParams.get('walk_in_ID');
+
+    // Display the Walk-in ID on the page
+    document.getElementById("walk-inID").textContent = walkInID || 'N/A';
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.classList.add("active");
+
+        // Hide the overlay after 5 seconds
+        setTimeout(() => {
+            loadingOverlay.classList.remove("active");
+        }, 5000);
+
+        // Display the reservation ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const reservationID = urlParams.get("reservation_ID");
+        document.getElementById("reservationID").textContent = reservationID || "N/A";
+    });
+
+
+        // List of random tips
+        const tips = [
+        "Ensure that guest information is accurate and verified before finalizing the booking.",
+        "Recommend guests to take advantage of available add-ons like breakfast or late checkout for better experience.",
+        "Double-check the room availability to avoid overbooking during peak hours.",
+        "Keep a printed list of FAQs to quickly address common guest queries.",
+        "Offer a friendly reminder to guests about house rules and check-out times.",
+        "Ask guests if they have special requests, such as extra beds or early check-in.",
+        "Prepare change or small bills for guests paying in cash.",
+        "Confirm the payment details with the guest and provide a receipt immediately."
+    ];
+
+    // Function to select a random tip
+    function getRandomTip() {
+        const randomIndex = Math.floor(Math.random() * tips.length);
+        return tips[randomIndex];
+    }
+
+    // Display the random tip in the specified list item
+    document.addEventListener("DOMContentLoaded", () => {
+        const randomTipElement = document.getElementById("randomTip");
+        randomTipElement.innerHTML = `<i class="fa-solid fa-lightbulb" style="color: var(--bgsecondary);"></i>&nbsp; ${getRandomTip()}`;
+        
+        // Display the Walk-In ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const walkInID = urlParams.get('walk_in_ID');
+        document.getElementById("walk-inID").textContent = walkInID || 'N/A';
+    });
+</script>
+
+{% endblock content %}

@@ -1,0 +1,189 @@
+{% load static %}
+
+<header class="main-header header-style-one">
+    <!-- Header Upper -->
+    <div class="header-upper">
+        <div class="auto-container" style="max-width: 1500px;">
+            <div class="inner-container upper">
+                <!-- Logo -->
+                <div class="logo-box">
+                    <div class="logo">
+                        <a href="{% url 'admin_dashboard' %}"><img src="{% static 'assets/images/components/adminfulllogo.png' %}" alt=""></a>
+                    </div>
+                </div>
+                <!-- Right Column -->
+                <div class="right-column">
+                    <div class="navbar-right">
+                        <div class="link-btn">
+                            <a href="{% url 'faq_policy' %}" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
+                                <i class="ri-chat-4-line"></i><span></span>
+                            </a>
+                        </div>
+
+                        <div class="link-btn">
+                            <a href="{% url 'lidobooking' %}" class="btn-one">Book Now + <span></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--End Header Upper-->
+
+    <!-- Header Main Menu -->
+    <div class="header-main-menu">
+        <div class="auto-container" style="max-width: 1500px;">
+            <div class="nav-outer">
+                <!-- Mobile Navigation Toggler -->
+                <div class="mobile-nav-toggler" style="width: 20px;">
+                    <img src="{% static 'assets/images/components/hamburger.png' %}" alt="">
+                </div>
+                <!-- Main Menu -->
+                <nav class="main-menu navbar-expand-md navbar-light">
+                    <div class="collapse navbar-collapse show clearfix" id="navbarSupportedContent">
+                        <ul class="navigation">
+                            {% if request.session.admin_id %}
+                            <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                            <li><a href="{% url 'admin_inventory' %}">Inventory</a></li>
+                            <li class="dropdown"><a href="{% url 'admin_add_room' %}">Room Management</a>
+                                <ul>
+                                    <li><a href="{% url 'admin_rooms' %}" style="text-transform: uppercase; font-size: 15px;">Room List</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="{% url 'admin_schedule' %}">Scheduling</a></li>
+                            <li><a href="{% url 'admin_logout' %}" id="logoutBtn">Logout <span></span></a></li>
+                            {% else %}
+                            <!-- Login Button -->
+                            <li><a href="{% url 'admin_login' %}">Login</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!--End Header Main Menu-->
+
+    <!-- Sticky Header -->
+    <div class="sticky-header">
+        <div class="header-upper">
+            <div class="auto-container" style="max-width: 1500px;">
+                <div class="inner-container upper">
+                    <!-- Logo -->
+                    <div class="logo-box">
+                        <div class="logo">
+                            <a href="{% url 'lidohome' %}"><img src="{% static 'assets/images/components/adminfulllogo.png' %}" alt=""></a>
+                        </div>
+                    </div>
+                    <!-- Right Column -->
+                    <div class="right-column">
+                        <div class="navbar-right">
+                            <div class="link-btn">
+                                <a href="{% url 'faq_policy' %}" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
+                                    <i class="ri-chat-4-line"></i><span></span>
+                                </a>
+                            </div>
+
+                            <div class="link-btn">
+                                <a href="{% url 'lidobooking' %}" class="btn-one">Book Now + <span></span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header-main-menu">
+            <div class="auto-container" style="max-width: 1500px;">
+                <div class="nav-outer">
+                    <!-- Mobile Navigation Toggler -->
+                    <div class="mobile-nav-toggler" style="width: 20px;">
+                        <img src="{% static 'assets/images/components/hamburger.png' %}" alt="">
+                    </div>
+                    <!-- Main Menu -->
+                    <nav class="main-menu navbar-expand-md navbar-light">
+                        <!-- Menu will be inserted here by JS -->
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Sticky Header -->
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu">
+        <div class="menu-backdrop"></div>
+        <div class="close-btn"><i class="fa-solid fa-circle-xmark"></i></div>
+        <nav class="menu-box">
+            <div class="nav-logo">
+                <a href="{% url 'lidohome' %}"><img src="{% static 'assets/images/components/logo.png' %}" alt="" title=""></a>
+            </div>
+            <div class="menu-outer"><!-- Menu will be injected via JavaScript --></div>
+            <!-- Social Links -->
+            
+            <div class="social-links">
+                        <!-- Book Now Button for Mobile Menu -->
+            <div class="link-btn mobile-only" style="text-align: center; width: 100%;">
+                <a href="{% url 'lidobooking' %}" class="btn-one">Book Now + <span></span></a>
+            </div>
+                <ul class="clearfix">
+                    <li><a href="https://web.facebook.com/lidoshores"><i class="fab fa-facebook-f"></i></a></li>
+                    <li><a href="https://www.instagram.com/lidoshores/" target="_blank"><i class="fa-brands fa-instagram"></i></a></li>
+                    <li><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;tf=1&amp;to=lidoshores.sariaya@gmail.com" target="_blank"><i class="fa-brands fa-google"></i></a></li>
+                    <li><a href="https://chats.viber.com/lidoshores.sariaya" target="_blank"><i class="fa-brands fa-viber"></i></a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+    <div class="nav-overlay">
+        <div class="cursor"></div>
+        <div class="cursor-follower"></div>
+    </div>
+</header>
+
+<style>
+    /* General modal styles */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Fixed position to ensure it stays in the same place */
+        z-index: 1000; /* Sit on top of other elements */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: hidden; /* Disable scroll on modal */
+        background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modal Content */
+    .modal-content {
+        background-color: white; /* Make sure the modal content stands out */
+        padding: 20px;
+        text-align: center;
+        width: 500px;
+        border-radius: 10px; /* Rounded corners */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Add a slight shadow for better visibility */
+    }
+
+    /* Buttons inside the modal */
+    .modal-content button {
+        background-color: var(--bgsecondary);
+        color: white;
+        padding: 10px 20px;
+        margin: 10px;
+        border: none;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+
+    .modal-content button#modalLogoutCancel {
+        background-color: #f44336;
+    }
+
+    .modal-content button:hover {
+        opacity: 0.8;
+    }
+</style>

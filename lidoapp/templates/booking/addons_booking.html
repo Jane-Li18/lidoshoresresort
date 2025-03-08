@@ -1,8 +1,8 @@
 {% load static %}
+{% load humanize %}
 
     <div class="button-group">
         <button class="btn-one" onclick="backToRooms()">&#8249; Rooms <span></span></button>
-        <button onclick="goToGuestDetails()" class="btn-one" style="float:right;">Guest Details &#8250; <span></span></button>
     </div>
     <h2 class="progress-title">Choose Add-ons</h2>
     <div class="step-progress">
@@ -23,7 +23,7 @@
         <div class="bar"></div>
         <div class="circle-step">
             <div class="circle">4</div>
-            <div class="label">Confirmation</div>
+            <div class="label">Confirm</div>
         </div>
     </div>
 
@@ -31,17 +31,16 @@
     {% for addon in addons %}
     <div class="addons-card" id="AddOn{{ forloop.counter }}" style="border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; background: var(--bgtertiary);">
         <div class="image-addons" style="max-width: 200px; float: left; margin-right: 20px;">
-            <img src="{{ addon.image.url }}" alt="{{ addon.name }}" style="width: 100%; height: auto;">
+            <img src="{{ addon.add_on_image.url }}" alt="{{ addon.add_on_name }}" style="width: 100%; height: auto;">
         </div>
+        
         <div class="addons-card-content" style="overflow: hidden;">
             <div class="addon-header">
-                <h3 class="addon-name" style="margin: 0;">{{ addon.name }}</h3>
-                <span class="addon-price" style="color: #888; font-size: 18px;">₱{{ addon.price }}</span>
+                <h3 class="addon-name" style="margin: 0;">{{ addon.add_on_name }}</h3>
+                <span class="addon-price" style="color: #888; font-size: 18px;">₱ {{ addon.add_on_price|intcomma  }}</span>
             </div>
             <hr>
-            <p style="font-size: 14px; color: #555;">Policies</p>
-            <p style="font-size: 14px; color: #555;">You may cancel before 3PM local time within 24 hours or 1 day prior to arrival date to avoid 100% add-on penalty.
-            <p style="font-size: 14px; color: #555;" >{{addon.description}}</p>
+            <p>{{addon.add_on_descriptions}}</p>
             <div class="addons-quantity">
                 <div class="quantity">
                     <div class="addons-total-price" style="font-size: 16px; color: #444;">
@@ -49,173 +48,187 @@
                     </div>
                     <!-- Disable the minus button initially since the minimum quantity is 1 -->
                     <button class="addon-minus" disabled>-</button>
-                    <input type="text" value="0" data-stock="{{ addon.stock_quantity }}" readonly>
+                    <input type="text" value="0" data-stock="{{ addon.selling_quantity }}" readonly>
                     <!-- The plus button will be disabled if the stock is 0 or the quantity reaches the max stock -->
-                    <button class="addon-plus" {% if addon.stock_quantity <= 1 %} disabled {% endif %}>+</button>
-
+                    <button class="addon-plus" {% if addon.selling_quantity <= 1 %} disabled {% endif %}>+</button>
+                
                     <div class="addon-stock" style="font-size: 12px; color: #999; margin-left: 25px;">
-                        Quantity left: {{ addon.stock_quantity }}
+                        Quantity: {{ addon.selling_quantity }}
                     </div>
                 </div>
+                
+            </div>
+            <hr>
+            <div class="addons-policy">
+                <p><strong>Policies: </strong><br><em>You may cancel before 3PM local time within 24 hours or 1 day prior to arrival date to avoid 100% add-on penalty.</em></p>
             </div>
         </div>
         <div style="clear: both;"></div>
     </div>
     {% empty %}
-    <p>No Add-ons available</p>
+        <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #D9544D; padding: 10px; margin-bottom: 20px;">
+            <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+                <li>No add-ons available<strong> at the moment</strong>.</li>
+            </ul>
+        </div>
     {% endfor %}
-
-    <!-- Apply All Selected Add-ons Button -->
-    <div style="text-align: center; margin-top: 20px;">
+    
+    <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+        <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+            <li>Please click <span style="color: #83b17b; font-weight: bold;">Apply All Selected Add-ons</span> after adding quantity of product to save.</li>
+            <li>If none, proceed filling-up the Guest Details.</li>
+        </ul>
+    </div>
+    <div class="button-group">
         <button class="btn-one" onclick="applyAllAddons()">Apply All Selected Add-ons<span></span></button>
+        <button onclick="goToGuestDetails()" class="btn-one" style="float:right;">Guest Details &#8250; <span></span></button>
     </div>
 
-
 <script>
-// Ensure no duplicate listeners are attached by using event delegation
-document.addEventListener('click', function (event) {
-    const target = event.target;
+    // Ensure no duplicate listeners are attached by using event delegation
+    document.addEventListener('click', function (event) {
+        const target = event.target;
 
-    if (target.classList.contains('addon-plus')) {
-        event.stopPropagation();
-        console.log('Plus button clicked');
-        increaseAddonQty(target);
-    } else if (target.classList.contains('addon-minus')) {
-        event.stopPropagation();
-        console.log('Minus button clicked');
-        decreaseAddonQty(target);
-    }
-});
-
-// Function to increase the quantity of add-ons
-function increaseAddonQty(button) {
-    const input = button.previousElementSibling; 
-    let currentQty = parseInt(input.value); 
-    const maxQty = parseInt(input.getAttribute('data-stock')); 
-    
-    if (currentQty < maxQty) {
-        currentQty += 1; // Correctly increment by 1
-        input.value = currentQty;
-        console.log('Updated Quantity (Increase):', currentQty);
-        updateAddonTotal(button); 
-    }
-
-    if (currentQty >= maxQty) {
-        button.disabled = true;
-        button.classList.add('disabled');
-    }
-
-    // Enable the minus button if quantity is more than 1
-    button.previousElementSibling.previousElementSibling.disabled = false;
-}
-
-// Function to decrease the quantity of add-ons
-function decreaseAddonQty(button) {
-    const input = button.nextElementSibling; 
-    let currentQty = parseInt(input.value); 
-    
-    if (currentQty > 1) {
-        currentQty -= 1; // Correctly decrement by 1
-        input.value = currentQty;
-        console.log('Updated Quantity (Decrease):', currentQty);
-        updateAddonTotal(button); 
-    }
-
-    if (currentQty <= 1) {
-        button.disabled = true;
-    }
-
-    // Enable the plus button again since we decreased the quantity
-    button.nextElementSibling.nextElementSibling.disabled = false;
-    button.nextElementSibling.nextElementSibling.classList.remove('disabled');
-}
-
-// Function to update the total price of the add-on
-function updateAddonTotal(button) {
-    const card = button.closest('.addons-card');
-    const quantity = parseInt(card.querySelector('.quantity input').value);
-    const price = parseFloat(card.querySelector('.addon-price').textContent.replace('₱', '').replace(/,/g, ''));
-
-    const totalPriceElement = card.querySelector('.addons-total-price span');
-    const totalPrice = (price * quantity).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-    // Update the displayed total price based on the quantity, formatted with commas for thousands
-    totalPriceElement.textContent = `${totalPrice}`;
-}
-
-// Function to apply all selected add-ons and save to localStorage
-function applyAllAddons() {
-    const addonCards = document.querySelectorAll('.addons-card');
-    let selectedAddOns = {};
-
-    addonCards.forEach(card => {
-        const addonName = card.querySelector('.addon-name').textContent.trim();
-        const quantity = parseInt(card.querySelector('.quantity input').value);
-        const price = parseFloat(card.querySelector('.addon-price').textContent.replace('₱', '').replace(/,/g, ''));
-
-        if (quantity > 0) {
-            selectedAddOns[addonName] = {
-                quantity: quantity,
-                price: price
-            };
+        if (target.classList.contains('addon-plus')) {
+            event.stopPropagation();
+            console.log('Plus button clicked');
+            increaseAddonQty(target);
+        } else if (target.classList.contains('addon-minus')) {
+            event.stopPropagation();
+            console.log('Minus button clicked');
+            decreaseAddonQty(target);
         }
     });
 
-    // Save selected add-ons to localStorage
-    localStorage.setItem('selectedAddOns', JSON.stringify(selectedAddOns));
+    // Function to increase the quantity of add-ons
+    function increaseAddonQty(button) {
+        const input = button.previousElementSibling; 
+        let currentQty = parseInt(input.value); 
+        const maxQty = parseInt(input.getAttribute('data-stock')); 
+        
+        if (currentQty < maxQty) {
+            currentQty += 1; // Correctly increment by 1
+            input.value = currentQty;
+            console.log('Updated Quantity (Increase):', currentQty);
+            updateAddonTotal(button); 
+        }
 
-    console.log('Selected Add-ons:', selectedAddOns);
-}
+        if (currentQty >= maxQty) {
+            button.disabled = true;
+            button.classList.add('disabled');
+        }
 
-
-// Function to check stock and display 'Out of Stock' message
-function checkStock(card) {
-    const stock = parseInt(card.querySelector('.quantity input').getAttribute('data-stock'));
-    const plusButton = card.querySelector('.addon-plus');
-    const stockMessage = card.querySelector('.addon-stock');
-
-    if (stock <= 1) {
-        plusButton.disabled = true; // Disable the plus button
-        plusButton.classList.add('disabled'); // Apply disabled styling
-        stockMessage.textContent = "Out of Stock"; // Update the stock message
-        stockMessage.style.color = "red"; // Highlight as red text
-    }
-}
-
-// Initialize stock checks for all add-ons
-document.querySelectorAll('.addons-card').forEach(card => {
-    checkStock(card); // Check stock on page load
-});
-
-// Update stock message dynamically when quantity changes
-function updateStock(button, action) {
-    const card = button.closest('.addons-card');
-    const stock = parseInt(card.querySelector('.quantity input').getAttribute('data-stock'));
-    const quantity = parseInt(card.querySelector('.quantity input').value);
-
-    if (action === 'increase' && quantity >= stock) {
-        checkStock(card);
-    }
-}
-
-
-
-// Save selected add-ons and their quantities to localStorage
-function saveAddOnsToLocalStorage(addOnName, quantity) {
-    let selectedAddOns = JSON.parse(localStorage.getItem('SelectedAddOns')) || [];
-
-    // Check if the add-on already exists in the array
-    const existingAddOn = selectedAddOns.find(addOn => addOn.name === addOnName);
-
-    if (existingAddOn) {
-        existingAddOn.quantity = quantity; // Update quantity
-    } else {
-        selectedAddOns.push({ name: addOnName, quantity }); // Add new add-on
+        // Enable the minus button if quantity is more than 1
+        button.previousElementSibling.previousElementSibling.disabled = false;
     }
 
-    localStorage.setItem('SelectedAddOns', JSON.stringify(selectedAddOns));
-    console.log('Add-ons saved to localStorage:', selectedAddOns);
-}
+    // Function to decrease the quantity of add-ons
+    function decreaseAddonQty(button) {
+        const input = button.nextElementSibling; 
+        let currentQty = parseInt(input.value); 
+        
+        if (currentQty > 1) {
+            currentQty -= 1; // Correctly decrement by 1
+            input.value = currentQty;
+            console.log('Updated Quantity (Decrease):', currentQty);
+            updateAddonTotal(button); 
+        }
+
+        if (currentQty <= 1) {
+            button.disabled = true;
+        }
+
+        // Enable the plus button again since we decreased the quantity
+        button.nextElementSibling.nextElementSibling.disabled = false;
+        button.nextElementSibling.nextElementSibling.classList.remove('disabled');
+    }
+
+    // Function to update the total add_on_price of the add-on
+    function updateAddonTotal(button) {
+        const card = button.closest('.addons-card');
+        const quantity = parseInt(card.querySelector('.quantity input').value);
+        const price = parseFloat(card.querySelector('.addon-price').textContent.replace('₱', '').replace(/,/g, ''));
+
+        const totalPriceElement = card.querySelector('.addons-total-price span');
+        const totalPrice = (price * quantity).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+        // Update the displayed total price based on the quantity, formatted with commas for thousands
+        totalPriceElement.textContent = `${totalPrice}`;
+    }
+
+    // Function to apply all selected add-ons and save to localStorage
+    function applyAllAddons() {
+        const addonCards = document.querySelectorAll('.addons-card');
+        let selectedAddOns = {};
+
+        addonCards.forEach(card => {
+            const addonName = card.querySelector('.addon-name').textContent.trim();
+            const quantity = parseInt(card.querySelector('.quantity input').value);
+            const price = parseFloat(card.querySelector('.addon-price').textContent.replace('₱', '').replace(/,/g, ''));
+
+            if (quantity > 0) {
+                selectedAddOns[addonName] = {
+                    quantity: quantity,
+                    price: price
+                };
+            }
+        });
+
+        // Save selected add-ons to localStorage
+        localStorage.setItem('selectedAddOns', JSON.stringify(selectedAddOns));
+
+        console.log('Selected Add-ons:', selectedAddOns);
+    }
+
+
+    // Function to check stock and display 'Out of Stock' message
+    function checkStock(card) {
+        const stock = parseInt(card.querySelector('.quantity input').getAttribute('data-stock'));
+        const plusButton = card.querySelector('.addon-plus');
+        const stockMessage = card.querySelector('.addon-stock');
+
+        if (stock <= 1) {
+            plusButton.disabled = true; // Disable the plus button
+            plusButton.classList.add('disabled'); // Apply disabled styling
+            stockMessage.textContent = "Out of Stock"; // Update the stock message
+            stockMessage.style.color = "red"; // Highlight as red text
+        }
+    }
+
+    // Initialize stock checks for all add-ons
+    document.querySelectorAll('.addons-card').forEach(card => {
+        checkStock(card); // Check stock on page load
+    });
+
+    // Update stock message dynamically when quantity changes
+    function updateStock(button, action) {
+        const card = button.closest('.addons-card');
+        const stock = parseInt(card.querySelector('.quantity input').getAttribute('data-stock'));
+        const quantity = parseInt(card.querySelector('.quantity input').value);
+
+        if (action === 'increase' && quantity >= stock) {
+            checkStock(card);
+        }
+    }
+
+
+
+    // Save selected add-ons and their quantities to localStorage
+    function saveAddOnsToLocalStorage(addOnName, quantity) {
+        let selectedAddOns = JSON.parse(localStorage.getItem('SelectedAddOns')) || [];
+
+        // Check if the add-on already exists in the array
+        const existingAddOn = selectedAddOns.find(addOn => addOn.name === addOnName);
+
+        if (existingAddOn) {
+            existingAddOn.quantity = quantity; // Update quantity
+        } else {
+            selectedAddOns.push({ name: addOnName, quantity }); // Add new add-on
+        }
+
+        localStorage.setItem('SelectedAddOns', JSON.stringify(selectedAddOns));
+        console.log('Add-ons saved to localStorage:', selectedAddOns);
+    }
 
 
 </script>
@@ -235,4 +248,98 @@ function saveAddOnsToLocalStorage(addOnName, quantity) {
     hr {
         margin: 10px 0;
     }
+
+    /* General responsiveness */
+@media (max-width: 1024px) {
+    .addons-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px;
+    }
+
+    .image-addons {
+        max-width: 100%; /* Make image container full-width */
+        margin: 0 0 15px 0; /* Add margin for spacing */
+    }
+
+    .addons-card-content {
+        text-align: center;
+        padding: 0 10px; /* Add spacing inside content */
+    }
+
+    .addon-header h3 {
+        font-size: 18px; /* Slightly smaller heading */
+    }
+
+    .addon-price {
+        font-size: 16px; /* Adjust price font size */
+    }
+}
+
+@media (max-width: 768px) {
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Add spacing between buttons */
+    }
+
+    .addons-card {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+
+    .addons-card-content p {
+        font-size: 12px; /* Reduce text size for smaller screens */
+    }
+
+    .addons-quantity {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .quantity input {
+        max-width: 60px;
+        text-align: center;
+    }
+
+    .progress-title {
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .addons-card {
+        flex-direction: column;
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+
+    .image-addons {
+        max-width: 100%; /* Ensure images are full-width */
+    }
+
+    .addon-header h3 {
+        font-size: 16px;
+    }
+
+    .addon-price {
+        font-size: 14px;
+    }
+
+    .addons-quantity {
+        gap: 5px; /* Smaller spacing for quantity controls */
+    }
+
+    .progress-title {
+        margin-top: 10px;
+        font-size: 18px;
+    }
+
+    .btn, .btn-one {
+        padding: 8px; /* Adjust button padding */
+        font-size: 14px; /* Smaller button text */
+    }
+}
+
 </style>

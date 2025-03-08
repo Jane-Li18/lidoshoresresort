@@ -388,11 +388,11 @@
         <div class="loading-line" id="signupLoadingLine"></div>
         <div class="signup-box-left">
             <img src="{% static 'assets/images/components/logo-circle-admin.png' %}" alt="Lido Logo">
-            <h1>Create a Lido Shores Front Desk Account</h1>
+            <h1>Create a Lido Shores Frontdesk Account</h1>
             <p>Enter your details</p>
         </div>
         <div class="signup-box-right">
-            <form id="signupForm" method="post" action="{% url 'frontdesksignup' %}">
+            <form id="signupForm" method="post" action="{% url 'guest_signup' %}">
                 {% csrf_token %}
                 <div class="input-container">
                     <input type="text" name="first_name" id="first_name" placeholder=" " required>
@@ -422,7 +422,7 @@
             <p>Enter your birthday and gender</p>
         </div>
         <div class="basic-info-right">
-            <form id="basicInfoForm" method="post" action="{% url 'frontdesksignup' %}">
+            <form id="basicInfoForm" method="post" action="#">
                 {% csrf_token %}
                 <div class="input-group">
                     <div class="input-container">
@@ -483,8 +483,9 @@
                 </div>
 
                 </br>
-                <a href="#" class="info-link">Why we ask for birthday and gender</a>
+                <a href="{% url 'faq_policy' %}" class="info-link">Why we ask for birthday and gender</a>
                 <button type="submit" class="btn-one" id="nextButton">Next<span></span></button>
+                <button type="button" class="btn-one" id="backToNameSection">Back<span></span></button>
             </form>
         </div>
     </div>
@@ -495,7 +496,7 @@
         <div class="email-box-left">
             <img src="{% static 'assets/images/components/logo-circle-admin.png' %}" alt="Lido Logo">
             <h1>How you’ll sign in</h1>
-            <p>Create an email address for signing in to your Lido Shores Account</p>
+            <p>Create an email address for signing in to your Lido Shores Frontdesk Account</p>
         </div>
         <div class="email-box-right">
             <form id="emailForm" method="post" action="#">
@@ -503,10 +504,11 @@
                 <div class="input-container">
                     <input type="text" name="email" id="email" placeholder=" " required>
                     <label for="email">Email</label>
-                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter a Lido Shores address.</div>
+                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter a Lido Shores Frontdesk address.</div>
                 </div>
                 <div class="email-instruction">You can use letters, numbers & periods</div>
                 <button type="submit" class="btn-one">Next<span></span></button>
+                <button type="button" class="btn-one" id="backToBasicInfoSection">Back<span></span></button>
             </form>
         </div>
     </div>
@@ -539,6 +541,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn-one">Next<span></span></button>
+                <button type="button" class="btn-one" id="backToEmailSection">Back<span></span></button>
             </form>
         </div>
     </div>
@@ -552,11 +555,15 @@
             <p>You can use this email address to sign in later</p>
         </div>
         <div class="review-box-right">
-            <p><strong id="reviewFullName"></strong></p> <!-- Updated with dynamic values -->
-            <p id="reviewEmail"></p> <!-- Updated with dynamic values -->
+            <p><strong id="reviewFullName"></strong></p> <!-- Full name -->
+            <p id="reviewEmail"></p> <!-- Email -->
+            <p id="reviewBirthday"></p> <!-- Birthday -->
+            <p id="reviewGender"></p> <!-- Gender -->
             <button type="button" class="btn-one" id="proceedToTerms">Next<span></span></button>
+            <button type="button" class="btn-one" id="backToPasswordSection">Back<span></span></button>
         </div>
     </div>
+    
 
     <!-- Privacy and Terms Section -->
     <div class="terms-box hidden" id="termsSection">
@@ -566,13 +573,11 @@
             <h1>Privacy and Terms</h1>
         </div>
         <div class="terms-box-right">
-            <p>To create a Lido Shores Resort Guest Account, you’ll need to agree to our Guest Terms and Privacy Policy. Here’s a brief overview:</p>
+            <p>To create a Lido Shores Frontdesk Account, you’ll need to agree to our Guest Terms and Privacy Policy. Here’s a brief overview:</p>
             <ul>
-                <li><strong>Information We Collect:</strong> When you create a Lido Shores Resort Guest Account, we collect details such as your name, contact information, and any preferences you provide. During your stay and when you use our services, we process information like your room preferences, activities, and any special requests.</li>
-                <li><strong>Why We Collect It:</strong> We use this information to enhance your experience, customize your stay, and improve our services. This includes offering personalized recommendations, ensuring your room is prepared to your liking, and addressing any special needs you might have.</li>
-                <li><strong>Combining Data:</strong> To better serve you, we may combine data from different aspects of your stay, such as dining preferences and room service requests, to ensure a seamless experience across our services.</li>
-                <li><strong>Your Control:</strong> You have control over your information and can manage your preferences anytime. If you have concerns, you can always adjust your settings or contact us for support.</li>
+                {{ terms_content|safe }}
             </ul>
+            <hr>
             <p>Please note that adhering to resort policies is essential for a pleasant stay, such as observing check-in/out times, following pool rules, and taking care of room amenities. For full details, please review our Guest Terms and Privacy Policy.</p>
         
             <button type="button" class="btn-one" id="agreeButton">Agree<span></span></button>
@@ -590,7 +595,7 @@
 <!-- Modal HTML -->
 <div id="privacyAndTermsModal" class="modal">
     <div class="modal-content">
-        <p>Are you sure you want to discard creating a Lido Shores account?</p>
+        <p>Are you sure you want to discard creating a Lido Shores Frontdesk account?</p>
         <div class="modal-footer">
             <button class="btn-cancel" id="modalCancel">No</button>
             <button class="btn-confirm" id="modalConfirm">Yes, discard</button>
@@ -647,6 +652,135 @@
         var privacyAndTermsModal = document.getElementById('privacyAndTermsModal');
         var modalCancel = document.getElementById('modalCancel');
         var modalConfirm = document.getElementById('modalConfirm');
+
+        var backToBasicInfoSection = document.getElementById('backToBasicInfoSection');
+        var backToEmailSection = document.getElementById('backToEmailSection');
+        var backToPasswordSection = document.getElementById('backToPasswordSection');
+        var backToReviewSection = document.getElementById('backToReviewSection');
+
+        var cancelButton = document.getElementById('cancelButton');
+        var cancelModal = document.getElementById('cancelModal');
+        var modalCancel = document.getElementById('modalCancel');
+        var modalConfirm = document.getElementById('modalConfirm');
+
+            // Show modal when Cancel button is clicked
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
+            cancelModal.style.display = 'flex';  // Show the modal
+        });
+    }
+
+    // Close the modal when the 'No' button is clicked
+    if (modalCancel) {
+        modalCancel.addEventListener('click', function() {
+            cancelModal.style.display = 'none';  // Hide the modal
+        });
+    }
+
+    // Proceed with the "discard" action when the 'Yes, discard' button is clicked
+    if (modalConfirm) {
+        modalConfirm.addEventListener('click', function() {
+            window.location.href = "{% url 'guest_login' %}";  // Redirect to guest login or another page
+        });
+    }
+        
+    // Back button functionality for Name Section
+    if (backToNameSection) {
+        backToNameSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(basicInfoLoadingLine);
+            setTimeout(function() {
+                basicInfoSection.classList.add('hidden');
+                nameSection.classList.remove('hidden');
+                hideLoadingAnimation(basicInfoLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Basic Info Section
+    if (backToBasicInfoSection) {
+        backToBasicInfoSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(emailLoadingLine);
+            setTimeout(function() {
+                emailSection.classList.add('hidden');
+                basicInfoSection.classList.remove('hidden');
+                hideLoadingAnimation(emailLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Email Section
+    if (backToEmailSection) {
+        backToEmailSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(passwordLoadingLine);
+            setTimeout(function() {
+                passwordSection.classList.add('hidden');
+                emailSection.classList.remove('hidden'); // Go back to the email section
+                hideLoadingAnimation(passwordLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Password Section
+    if (backToPasswordSection) {
+        backToPasswordSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(reviewLoadingLine);
+            setTimeout(function() {
+                reviewSection.classList.add('hidden'); // Hide the review section
+                passwordSection.classList.remove('hidden'); // Show the password section
+                hideLoadingAnimation(reviewLoadingLine); // Stop the loading animation
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+
+    // Back button functionality for Review Section
+    if (backToReviewSection) {
+        backToReviewSection.addEventListener('click', function() {
+            // Start loading animation before transitioning
+            startLoadingAnimation(passwordLoadingLine);
+            setTimeout(function() {
+                reviewSection.classList.add('hidden');
+                passwordSection.classList.remove('hidden');
+                hideLoadingAnimation(passwordLoadingLine);
+            }, 1500); // Adjust the time for loading animation if necessary
+        });
+    }
+    
+        // Example: Back Button in Basic Info
+        var nextButton = document.getElementById('nextButton');
+        nextButton.addEventListener('click', function(event) {
+            event.preventDefault();
+    
+            var isBirthdayValid = validateBirthday();
+            var isGenderValid = validateGender();
+    
+            if (genderInput.value === 'Custom') {
+                // Validate custom gender fields
+                var isCustomGenderValid = validateInput(customGenderInput, customGenderError);
+                var isReferAsValid = validateInput(referAsInput, referAsError);
+    
+                if (isBirthdayValid && isGenderValid && isCustomGenderValid && isReferAsValid) {
+                    startLoadingAnimation(basicInfoLoadingLine);
+                    setTimeout(function() {
+                        basicInfoSection.classList.add('hidden');
+                        emailSection.classList.remove('hidden');
+                        hideLoadingAnimation(basicInfoLoadingLine); 
+                    }, 1500);
+                }
+            } else {
+                if (isBirthdayValid && isGenderValid) {
+                    startLoadingAnimation(basicInfoLoadingLine);
+                    setTimeout(function() {
+                        basicInfoSection.classList.add('hidden');
+                        emailSection.classList.remove('hidden');
+                        hideLoadingAnimation(basicInfoLoadingLine);
+                    }, 1500);
+                }
+            }
+        });
     
         // For Nice Select compatibility
         $('.nice-select').on('change', function() {
@@ -693,58 +827,57 @@
             }
         });
     
-    // Validate email on "Next" click in the email section
-    emailForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        // Clear any previous error before starting new validation
-        clearError(emailInput, emailError);
-
-        // Start the loading animation immediately
-        startLoadingAnimation(emailLoadingLine);
-
-        if (!validateEmail(emailInput, emailError)) {
-            hideLoadingAnimation(emailLoadingLine);
-            return;
-        }
-
-        // Check if email exists for frontdesk signup
-        fetch('{% url "check_frontdesk_signup_email" %}', {  // Update this URL to check FrontdeskAccount
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}',
-            },
-            body: new URLSearchParams({ 'email': emailInput.value })
-        }).then(response => response.json())
-        .then(data => {
-            clearError(emailInput, emailError); // Clear error before setting a new one
-            if (data.exists) {
-                // Show the error message and stop the loading animation if email is taken
-                emailError.innerHTML = `<i class="${data.icon_class}"></i> ${data.error}`;
-                emailError.style.display = 'block';
-                emailInput.style.borderColor = '#d93025';
+        // Validate email on "Next" click in the email section
+        emailForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            // Clear any previous error before starting new validation
+            clearError(emailInput, emailError);
+    
+            // Start the loading animation immediately
+            startLoadingAnimation(emailLoadingLine);
+    
+            if (!validateEmail(emailInput, emailError)) {
                 hideLoadingAnimation(emailLoadingLine);
-            } else {
-                // Hide the error message if the email is valid
-                emailError.style.display = 'none';
-                emailInput.style.borderColor = '#dadce0';
-
-                // Complete the loading animation and proceed to the next section
-                setTimeout(function() {
-                    emailSection.classList.add('hidden');
-                    passwordSection.classList.remove('hidden');
-                    hideLoadingAnimation(emailLoadingLine); // Hide the loading bar after transition
-                }, 1500);
+                return;
             }
-        }).catch(error => {
-            // Handle any fetch errors
-            console.error('Fetch error:', error);
-            hideLoadingAnimation(emailLoadingLine);
-            alert('There was an error checking your email. Please try again.');
+    
+            // Check if email exists for sign-up
+            fetch('{% url "check_signup_email" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: new URLSearchParams({ 'email': emailInput.value })
+            }).then(response => response.json())
+            .then(data => {
+                clearError(emailInput, emailError); // Clear error before setting a new one
+                if (data.exists) {
+                    // Show the error message and stop the loading animation if email is taken
+                    emailError.innerHTML = `<i class="${data.icon_class}"></i> ${data.error}`;
+                    emailError.style.display = 'block';
+                    emailInput.style.borderColor = '#d93025';
+                    hideLoadingAnimation(emailLoadingLine);
+                } else {
+                    // Hide the error message if the email is valid
+                    emailError.style.display = 'none';
+                    emailInput.style.borderColor = '#dadce0';
+    
+                    // Complete the loading animation and proceed to the next section
+                    setTimeout(function() {
+                        emailSection.classList.add('hidden');
+                        passwordSection.classList.remove('hidden');
+                        hideLoadingAnimation(emailLoadingLine); // Hide the loading bar after transition
+                    }, 1500);
+                }
+            }).catch(error => {
+                // Handle any fetch errors
+                console.error('Fetch error:', error);
+                hideLoadingAnimation(emailLoadingLine);
+                alert('There was an error checking your email. Please try again.');
+            });
         });
-    });
-
     
         // Input validation and error clearing on input change
         firstNameInput.addEventListener('input', function() {
@@ -802,16 +935,44 @@
         function populateReviewSection() {
             const reviewFullName = document.getElementById('reviewFullName');
             const reviewEmail = document.getElementById('reviewEmail');
-    
+            const reviewBirthday = document.getElementById('reviewBirthday');
+            const reviewGender = document.getElementById('reviewGender');
+        
+            // Retrieve input values
             const firstName = firstNameInput.value.trim();
             const middleName = document.getElementById('middle_name').value.trim();
             const lastName = lastNameInput.value.trim();
             const email = emailInput.value.trim();
-    
+            const month = document.getElementById('month').value;
+            const day = document.getElementById('day').value.trim();
+            const year = document.getElementById('year').value.trim();
+            const gender = document.getElementById('gender').value;
+            const customGender = document.getElementById('custom_gender').value.trim();
+        
+            // Format full name
             const fullName = middleName ? `${firstName} ${middleName} ${lastName}` : `${firstName} ${lastName}`;
-            reviewFullName.textContent = fullName;
-            reviewEmail.textContent = email;
+            reviewFullName.textContent = `Full Name: ${fullName}`;
+            
+            // Set email
+            reviewEmail.textContent = `Email: ${email}`;
+            
+            // Format and display birthday
+            if (month && day && year) {
+                reviewBirthday.textContent = `Birthday: ${month} ${day}, ${year}`;
+            } else {
+                reviewBirthday.textContent = "Birthday: Not provided";
+            }
+        
+            // Set gender
+            if (gender === "Custom" && customGender) {
+                reviewGender.textContent = `Gender: ${customGender}`;
+            } else if (gender) {
+                reviewGender.textContent = `Gender: ${gender}`;
+            } else {
+                reviewGender.textContent = "Gender: Not provided";
+            }
         }
+        
     
         // Handle transitions and data transfer between form sections
         passwordForm.addEventListener('submit', function(event) {

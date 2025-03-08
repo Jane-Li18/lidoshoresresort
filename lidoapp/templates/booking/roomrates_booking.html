@@ -1,36 +1,432 @@
 {% load humanize %}
 {% load static %}
 
+<style>
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    /* Modal Styling */
+    .room-modal-info {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+    
+    .room-modal-content {
+        background: #fff;
+        padding: 30px;
+        width: 90%;
+        max-width: 800px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        position: relative;
+        font-size: 15px;
+    }
+    
+    .room-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .room-modal-header div {
+        flex: 1;
+        text-align: left;
+    }
+    
+    .room-modal-header div:last-child {
+        text-align: right;
+    }
+    
+    .close-room-modal {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 25px;
+        color: var(--bgtertiary);
+        background: var(--bgsecondary);
+        font-weight: 500;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 1001;
+        transition: background 0.3s ease;
+    }
+    
+    .close-room-modal:hover {
+        background: #e0e0e0;
+        color: #000;
+    }
+    
+    /* Typography */
+    .room-modal-content h3 {
+        font-size: 22px;
+        margin-bottom: 10px;
+    }
+    
+    .room-modal-content p {
+        font-size: 14px;
+        color: #666;
+        margin: 5px 0;
+    }
+    
+    /* Amenities and Images */
+    .amenities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .room-images-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    
+    .room-images-container img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+        transition: transform 0.3s ease;
+    }
+    
+    .room-images-container img:hover {
+        transform: scale(1.1);
+    }
+    
+    /* Unique Image Preview Modal */
+    #uniqueImagePreviewModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1001;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    
+    #uniqueModalImage {
+        max-width: 90%;
+        max-height: 80%;
+        margin: auto;
+        display: block;
+        transition: transform 0.3s ease;
+    }
+    
+    /* Close Button */
+    .close-room-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 25px;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 1002;
+        transition: background 0.3s ease;
+    }
+    
+    .close-room-modal:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: #fff;
+    }
+    
+    /* Navigation Arrows */
+    .arrow {
+        position: absolute;
+        top: 50%;
+        font-size: 40px;
+        color: #fff;
+        cursor: pointer;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        transform: translateY(-50%);
+        z-index: 1002;
+        transition: background 0.3s ease, color 0.3s ease;
+    }
+    
+    .arrow.left {
+        left: 15px;
+    }
+    
+    .arrow.right {
+        right: 15px;
+    }
+    
+    /* Rooms List and Cards */
+    .rooms-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        justify-content: center;
+        padding: 0;
+        margin: 0 auto;
+    }
+    
+    .room-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    /* Image Container */
+    .image-container {
+        width: 100%;
+        height: 250px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        background: #f9f9f9;
+        position: relative;
+    }
+    
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: pointer;
+    }
+    
+    /* New Banner Styling */
+    .new-banner {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: red;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 3px;
+        {% comment %} z-index: 10; {% endcomment %}
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Room Card Content */
+    .room-card-content {
+        text-align: center;
+        padding: 15px;
+        width: 100%;
+    }
+    
+    .room-card-content h3 {
+        font-size: 20px;
+        margin: 10px 0;
+    }
+    
+    .room-card-content p {
+        font-size: 14px;
+        margin: 5px 0;
+    }
+    
+    /* Price Section */
+    .room-card-price {
+        text-align: right;
+        padding: 20px;
+        width: 100%;
+    }
+    
+    .room-card-price h4 {
+        font-size: 18px;
+        color: #4CAF50;
+        margin-bottom: 5px;
+    }
+    
+    .room-card-price p {
+        font-size: 12px;
+        color: #888;
+    }
+    
+    /* Book Button */
+    .room-card-button {
+        background-color: var(--bgsecondary);
+        color: white;
+        padding: 10px 20px;
+        cursor: pointer;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        width: 90%;
+    }
+    
+    .room-card-button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    
+    
+    /* Responsive Adjustments */
+    @media (max-width: 1024px) {
+        .room-modal-content {
+            padding: 20px;
+            font-size: 13px;
+        }
+        .room-modal-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        .room-modal-content h3 {
+            font-size: 20px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .room-modal-content {
+            padding: 15px;
+            font-size: 12px;
+        }
+        .room-images-container img {
+            width: 60px;
+            height: 60px;
+        }
+        .new-banner {
+            font-size: 10px;
+            padding: 3px 8px;
+        }
+
+        #uniqueModalImage {
+            max-width: 95%;
+            max-height: 70%;
+        }
+    
+        .close-room-modal {
+            font-size: 20px;
+            width: 30px;
+            height: 30px;
+        }
+    
+        .arrow {
+            font-size: 30px;
+            padding: 5px;
+        }
+    
+        .arrow.left {
+            left: 10px;
+        }
+    
+        .arrow.right {
+            right: 10px;
+        }
+    }
+    
+    @media (max-width: 525px) {
+        .room-modal-content {
+            padding: 10px;
+            width: 100%;
+        }
+        .close-room-modal {
+            font-size: 20px;
+            width: 30px;
+            height: 30px;
+        }
+        .room-images-container img {
+            width: 50px;
+            height: 50px;
+        }
+        .room-modal-content h3 {
+            font-size: 16px;
+        }
+        #uniqueModalImage {
+            max-width: 100%;
+            max-height: 60%;
+        }
+    
+        .close-room-modal {
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            width: 28px;
+            height: 28px;
+        }
+    
+        .arrow {
+            font-size: 25px;
+            padding: 5px;
+        }
+    
+        .arrow.left {
+            left: 5px;
+        }
+    
+        .arrow.right {
+            right: 5px;
+        }
+
+        .room-card-content p {
+            font-size: 12px;
+        }
+    }
+    
+</style>
+
 <div class="available-rooms">
     {% if rooms %}
         <div class="rooms-list">
-            {% for room in rooms %}
-            <div class="room-card" 
-            data-room="{{ room.room_name }}" 
-            data-bed-type="{{ room.bed_type }}" 
-            data-room-capacity="{{ room.room_capacity }}" 
-            data-isavailable="{{ room.is_available|yesno:'true,false' }}">
+            {% for room in rooms|dictsortreversed:"created_at" %}
+                {% if room.room_unit > 0 %} <!-- Display room only if units are available -->
+                <div class="room-card" 
+                     data-room-name="{{ room.room_name }}" 
+                     data-bed-type="{{ room.bed_type }}" 
+                     data-room-capacity="{{ room.room_capacity }}" 
+                     data-is-available="{{ room.is_available|yesno:'true,false' }}">
+                    
                     <div class="image-container">
                         <img src="{{ room.room_image.url }}" 
-                             data-images='[
-                                 {"src": "{{ room.room_image.url }}"}
+                             data-images='[{"src": "{{ room.room_image.url }}"}
                                  {% for image in room.additional_images.all %}
                                      {% if image.visible %}
                                          ,{"src": "{{ image.image.url }}"}
                                      {% endif %}
-                                 {% endfor %}
-                             ]'
+                                 {% endfor %}]'
                              class="room-preview"
-                             onclick="openUniqueImagePreviewModal(this.getAttribute('data-images'));">
-                        <div class="image-icon">
-                            <i class="fas fa-image"></i>
-                        </div>
+                             onclick="openUniqueImagePreviewModal(this.getAttribute('data-images'));"
+                        />
                     </div>
-                    
                     
                     <div class="room-card-content">
                         <h3>{{ room.room_name }}</h3>
-                        
                         <p>
                            {% if room.bed_type == 'king' %}<i class="fa-solid fa-crown"></i> King Bed
                            {% elif room.bed_type == 'queen' %}<i class="fa-solid fa-chess-queen"></i> Queen Bed
@@ -38,55 +434,68 @@
                            {% elif room.bed_type == 'single' %}<i class="fa-solid fa-user-tie"></i> Single Bed
                            {% elif room.bed_type == 'twin' %}<i class="fa-solid fa-check-double"></i> Twin Bed
                            {% else %}{{ room.bed_type|capfirst }}{% endif %} | 
-                           {{ room.room_capacity }} person(s) | 
-                           {{ room.room_size }} m²
+                           {{ room.room_capacity }} person(s) |
+                           {{ room.room_size }} m² |
+                           {{ room.room_unit }} units
                         </p>
-                        
-                        <p style="font-size: 13px;"><i class="fa-regular fa-eye"></i><em> Click the image to show preview</em></p>
+
                         <p>
                             <a href="#" class="room-details-link" onclick="openRoomDetailsModal(this)"
-                            data-room="{{ room.room_name }}"
-                            data-price="{{ room.room_price|intcomma }}"
-                            data-subtitle="{{ room.room_capacity }} person(s) | {{ room.room_size }} m²"
-                            data-bed-type="{% if room.bed_type == 'king' %}King Bed{% elif room.bed_type == 'queen' %}Queen Bed{% elif room.bed_type == 'double' %}Double Bed{% elif room.bed_type == 'single' %}Single Bed{% elif room.bed_type == 'twin' %}Twin Bed{% else %}{{ room.bed_type|capfirst }}{% endif %}"
-                            data-capacity="{{ room.room_capacity }}"
-                            data-size="{{ room.room_size }}"
-                            data-amenities='[
-                            {% for amenity in room.room_amenities.all %}
-                                "{{ amenity.get_amenity_display }}"{% if not forloop.last %}, {% endif %}
-                            {% endfor %}
-                        ]'                                           
-                        data-images='[
-                            {"src": "{{ room.room_image.url }}"}
-                            {% for image in room.additional_images.all %}
-                                {% if image.visible %}
-                                    ,{"src": "{{ image.image.url }}"}
-                                {% endif %}
-                            {% endfor %}
-                        ]'>Room Details</a>
-                      </p>
-                      <p class="deposit-required"><i class="fas fa-credit-card"></i> Deposit Required</p>
+                               data-room="{{ room.room_name }}"
+                               data-price="{{ room.room_price|intcomma }}"
+                               data-subtitle="{{ room.room_capacity }} person(s) | {{ room.room_size }} m²"
+                               data-bed-type="{% if room.bed_type == 'king' %}King Bed{% elif room.bed_type == 'queen' %}Queen Bed{% elif room.bed_type == 'double' %}Double Bed{% elif room.bed_type == 'single' %}Single Bed{% elif room.bed_type == 'twin' %}Twin Bed{% else %}{{ room.bed_type|capfirst }}{% endif %}"
+                               data-capacity="{{ room.room_capacity }}"
+                               data-size="{{ room.room_size }}"
+                               data-amenities='[
+                                   {% for amenity in room.room_amenities.all %}
+                                       "{{ amenity.get_amenity_display }}"{% if not forloop.last %}, {% endif %}
+                                   {% endfor %}
+                               ]'
+                               data-images='[
+                                   {"src": "{{ room.room_image.url }}"}
+                                   {% for image in room.additional_images.all %}
+                                       {% if image.visible %}
+                                           ,{"src": "{{ image.image.url }}"}
+                                       {% endif %}
+                                   {% endfor %}
+                               ]'>
+                               Room Details
+                            </a>
+                        </p>
+                        <p class="deposit-required">
+                            <i class="fas fa-credit-card"></i> Deposit Required
+                        </p>
                     </div>
+                    
                     <div class="room-card-price">
                         {% if room.is_new %}
                         <div class="new-banner">NEW</div>
                         {% endif %}
                         <h4>₱{{ room.room_price|intcomma }}</h4>
                         <p>per night<br>excluding taxes and fees</p>
-                        <button class="btn-one room-card-button" 
-                        onclick="bookRoom('{{ room.room_name }}', {{ room.room_price }}, {{ room.room_capacity }}, '{{ room.bed_type }}')" 
-                        {% if room.is_available %} {% else %} disabled {% endif %}>
-                    BOOK NOW <span></span>
-                </button>
+                        <p style="font-size: 13px;">
+                            <i class="fa-regular fa-eye"></i><em> Click the image to show preview</em>
+                        </p>
                     </div>
                     
-                    
+                    <button class="btn-one room-card-button" 
+                    onclick="bookRoom('{{ room.room_name }}', {{ room.room_price }}, {{ room.room_capacity }}, '{{ room.bed_type }}')" 
+                    {% if room.room_unit > 0 %} {% else %} disabled {% endif %}>
+                BOOK NOW <span></span>
+            </button>
+            
                 </div>
+                {% endif %}
             {% endfor %}
         </div>
     {% else %}
         <div class="room-card-content">
-            <p style="text-align: center;">No rooms available at the moment.</p>
+            <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #D9544D; padding: 10px; margin-bottom: 20px;">
+                <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+                    <li>No rooms available<strong> at the moment</strong>.</li>
+                </ul>
+            </div>
         </div>
     {% endif %}
 </div>
@@ -110,13 +519,13 @@
         </div>
         
         <hr>
-        <div style="margin-bottom: 1em; font-size: 15px;"><em id="modalRoomPolicy">Please be mindful of check-in and check-out times, and enjoy your stay in our well-equipped rooms.</em></div>
-        <div style="margin-bottom: 1em; font-size: 15px;"><em id="modalRoomInfo">Our rooms offer the best combination of comfort and style, featuring high-quality amenities, comfortable bedding, and modern facilities. Ideal for both leisure and business travelers.</em></div>
+        <div style="margin-bottom: 1em; font-size: 12px;"><em id="modalRoomPolicy">Please be mindful of check-in and check-out times, and enjoy your stay in our well-equipped rooms.</em></div>
+        <div style="margin-bottom: 1em; font-size: 12px;"><em id="modalRoomInfo">Our rooms offer the best combination of comfort and style, featuring high-quality amenities, comfortable bedding, and modern facilities. Ideal for both leisure and business travelers.</em></div>
         
         <hr>
-        <h3 style="text-transform: uppercase; margin: 10px 0;" >Room Amenities</h3>
+        <h3 style="text-transform: uppercase; margin: 10px 0; font-size: 15px;" >Room Amenities</h3>
         <div id="roomAmenitiesContainer" class="amenities-grid"></div>
-        <h3 style="text-transform: uppercase; margin: 10px 0;" >Room Images</h3>
+        <h3 style="text-transform: uppercase; margin: 10px 0; font-size: 15px;" >Room Images</h3>
         <div id="roomImagesContainer" class="room-images-container"></div>
         
     </div>
@@ -134,371 +543,23 @@
 </div>
 
 
-<style>
-    #uniqueImagePreviewModal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 1001;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    #uniqueModalImage {
-        max-width: 90%;
-        max-height: 80%;
-        margin: auto;
-        display: block;
-    }
-    
-    .arrow {
-        position: absolute;
-        top: 50%;
-        font-size: 40px;
-        color: white;
-        cursor: pointer;
-        padding: 10px;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .arrow.left {
-        left: 20px;
-    }
-    
-    .arrow.right {
-        right: 20px;
-    }
-    
-    .close-room-modal {
-        position: absolute;
-        top: 10px;
-        right: 20px;
-        font-size: 30px;
-        color: #fff;
-        cursor: pointer;
-    }
-    
-    .room-card {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        padding: 15px;
-        border: 1px solid #ccc;
-        margin-bottom: 20px;
-        transition: transform 0.3s ease-in-out;
-        background: var(--bgtertiary);
-        position: relative;
-    }
-    
-    .image-container {
-        position: relative;
-        width: 250px;
-        height: 200px;
-        overflow: hidden;
-    }
-    
-    .image-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        cursor: pointer;
-        border: 1px solid #ccc;
-    }
-    
-    .image-icon {
-        position: absolute;
-        bottom: 15px;
-        right: 10px;
-        background-color: rgba(0, 0, 0, 0.5);
-        padding: 1px 5px;
-        color: white;
-        font-size: 18px;
-        cursor: pointer;
-    }
-    
-    .deposit-required {
-        font-weight: bold;
-        color: var(--txtprimary);
-        margin-top: 10px;
-    }
-    
-    .room-card-content {
-        text-align: left;
-        flex: 1;
-        margin-left: 20px;
-    }
-    
-    .room-card-content h3 {
-        margin: 0 0 10px;
-        font-size: 25px;
-        color: var(--txtprimary);
-    }
-    
-    .room-card-content p {
-        margin-bottom: 5px 0;
-        font-size: 14px;
-        color: #666;
-    }
-    
-    .room-card-price {
-        text-align: right;
-    }
-    
-    .room-card-price h4 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--bgsecondary);
-    }
-    
-    .room-card-price p {
-        margin: 5px 0;
-        font-size: 14px;
-        color: #666;
-    }
-    
-    .room-card-button {
-        background-color: var(--bgsecondary);
-        color: white;
-        padding: 10px 20px;
-        cursor: pointer;
-        text-transform: uppercase;
-    }
-    
-    .room-card-button:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
-    
-    #imageModal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    #modalImage {
-        max-width: 90%;
-        max-height: 80%;
-        margin: auto;
-        display: block;
-    }
-    
 
-    
-    .close-room-modal {
-        position: absolute;
-        top: 0px;
-        right: 20px;
-        font-size: 50px;
-        color: #fff;
-        cursor: pointer;
-    }
-    
-    .room-modal-info {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-    
-    .room-modal-content {
-        background: var(--bgprimary);
-        padding: 40px;
-        width: 80%;
-        max-width: 950px;
-        text-align: left;
-    }
-    
-    
-    .modal-subtitle {
-        font-size: 16px;
-        color: #666;
-    }
-    
-    .amenities-list {
-        list-style: none;
-        padding: 0;
-    }
-    
-    .amenities-list li {
-        font-size: 14px;
-        color: #333;
-        display: flex;
-        align-items: center;
-    }
-    
-    .amenities-list li i {
-        color: green;
-        margin-right: 5px;
-    }
-    
-    .room-images-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    
-    .amenities-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr); /* 5 columns */
-        gap: 10px;
-    }
-    
-    .amenities-grid div {
-        font-size: 14px;
-        color: #333;
-        display: flex;
-        align-items: center;
-    }
-    
-    .amenities-grid i {
-        color: green;
-        margin-right: 5px;
-    }
-    
-    .room-images-container img {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-        position: relative;
-    }
-    
-    .room-images-container img:hover {
-        transform: scale(1.1);
-    }
-    
-    .room-images-container img:hover::after {
-        content: "\f06e";
-        font-family: "Font Awesome 5 Free";
-        font-weight: 900;
-        color: rgba(0, 0, 0, 0.6);
-        font-size: 24px;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-    
-    .new-banner {
-        position: absolute;
-        top: 0px;
-        right: -0px;
-        background-color: red;
-        color: white;
-        padding: 5px 10px;
-        font-size: 14px;
-        font-weight: bold;
-        text-transform: uppercase;
-        /* border-radius: 3px; */
-        transform: rotate(1deg);
-        z-index: 1;
-        /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    }
-    
-
-    /* General Mobile Adjustments */
-    @media (max-width: 768px) {
-        .room-card {
-            flex-direction: column; /* Stack items vertically */
-            align-items: flex-start;
-        }
-        
-        .image-container {
-            width: 100%; /* Full width for images on small screens */
-            height: auto; /* Maintain aspect ratio */
-            margin-bottom: 15px; /* Add spacing below the image */
-        }
-        
-        .room-card-content {
-            margin-left: 0; /* Reset margin for stacked layout */
-            width: 100%; /* Take full width */
-        }
-
-        .room-card-price {
-            width: 100%; /* Full width for pricing section */
-            text-align: left; /* Align text to the left */
-            margin-top: 15px; /* Add spacing above the price */
-        }
-
-        .room-card-button {
-            width: 100%; /* Full-width buttons for easier tapping */
-            margin-top: 10px;
-        }
-
-        .room-card-content h3 {
-            font-size: 18px; /* Adjust font size for smaller screens */
-        }
-
-        .room-card-content p {
-            font-size: 12px; /* Adjust text size */
-        }
-
-        .room-images-container img {
-            width: 100%; /* Make images responsive */
-            height: auto;
-        }
-
-        .amenities-grid {
-            grid-template-columns: repeat(2, 1fr); /* Adjust amenities to fit smaller screens */
-        }
-    }
-
-    /* Extra Small Devices */
-    @media (max-width: 480px) {
-        .room-card {
-            padding: 10px; /* Reduce padding */
-        }
-
-        .room-card-content h3 {
-            font-size: 16px;
-        }
-
-        .room-card-content p {
-            font-size: 10px;
-        }
-
-        .room-card-price h4 {
-            font-size: 18px;
-        }
-    }
-
-    /* Modal Responsiveness */
-    .room-modal-content {
-        width: 90%; /* Reduce width for smaller screens */
-        padding: 20px; /* Adjust padding */
-    }
-
-    .room-images-container {
-        justify-content: center; /* Center images */
-    }
-
-    .room-images-container img {
-        width: 60px; /* Smaller images in modal */
-        height: 60px;
-    }
-</style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+
+        // Check if the page was just reloaded
+        if (!sessionStorage.getItem('reloadedOnce')) {
+            sessionStorage.setItem('reloadedOnce', 'true'); // Set a flag
+            localStorage.clear(); // Clear localStorage
+            console.log("LocalStorage cleared. Reloading the page...");
+            window.location.reload(); // Force reload
+        } else {
+            sessionStorage.removeItem('reloadedOnce'); // Clear the flag after reload
+            console.log("Page reloaded for the second time.");
+        }
+
+
         let currentIndex = 0;
         let images = [];
         let uniqueCurrentIndex = 0;

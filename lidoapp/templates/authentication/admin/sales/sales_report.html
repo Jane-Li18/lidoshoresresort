@@ -1,0 +1,102 @@
+<div id="sales-report-section">
+    <h2>Sales Report</h2>
+    <div id="sales-report-content">Loading...</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Payment Method</th>
+                <th>Overall Sales (PHP)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for method, sales in total_sales.items %}
+            <tr>
+                <td>{{ method }}</td>
+                <td>₱ {{ sales|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <h2>Refunded and Canceled Losses</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Refunded Loss (PHP)</th>
+                <th>Canceled Loss (PHP)</th>
+                <th>Total Loss (PHP)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Losses</td>
+                <td>₱ {{ refunded_loss|floatformat:2 }}</td>
+                <td>₱ {{ canceled_loss|floatformat:2 }}</td>
+                <td>₱ {{ total_loss|floatformat:2 }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <h2>Monthly Sales</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Payment Method</th>
+                <th>Monthly Sales (PHP)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for method, sales in monthly_sales.items %}
+            <tr>
+                <td>{{ method }}</td>
+                <td>₱ {{ sales|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <h2>Best Availing Room</h2>
+    <p>Best Availing Room: {{ best_room }}</p>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{% url 'sales_report' %}", {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const reportContent = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Payment Method</th>
+                            <th>Overall Sales (PHP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(data.total_sales).map(([method, sales]) => `
+                            <tr>
+                                <td>${method}</td>
+                                <td>₱ ${sales.toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h2>Refunded and Canceled Losses</h2>
+                <p>Refunded Loss: ₱ ${data.refunded_loss.toFixed(2)}</p>
+                <p>Canceled Loss: ₱ ${data.canceled_loss.toFixed(2)}</p>
+                <p>Total Loss: ₱ ${data.total_loss.toFixed(2)}</p>
+                <h2>Best Availing Room</h2>
+                <p>${data.best_room}</p>
+            `;
+            document.getElementById("sales-report-content").innerHTML = reportContent;
+        })
+        .catch(error => {
+            console.error("Error fetching sales report:", error);
+            document.getElementById("sales-report-content").textContent = "Failed to load sales report.";
+        });
+    });
+</script>

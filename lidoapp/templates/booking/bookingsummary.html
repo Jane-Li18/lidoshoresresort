@@ -1,127 +1,253 @@
 <style>
     /* CSS for Booking Summary */
-.booking-summary-wrapper {
-    flex: 1;
-    position: relative;
-}
-
-.booking-summary {
-    border: 1px solid #ccc;
-    padding: 20px;
-    background-color: white;
-    height: fit-content;
-    transition: all 0.3s;
-}
-
-.sticky {
-    position: fixed;
-    top: 20px;
-    width: calc(28% - 35px); /* This will be overridden dynamically */
-}
-
-.stop-sticky {
-    position: absolute;
-    bottom: 0;
-    width: 390px;
-    top: auto;
-}
-
-
-.booking-summary h3 {
-    margin-top: 0;
-    font-size: 20px;
-    color: var(--txtprimary);
-}
-
-.booking-summary p {
-    margin: 15px 0;
-    font-size: 16px;
-}
-
-.booking-summary .summary-row {
-    display: flex;
-    justify-content: space-between;
-    margin: -20px 0px;
-}
-
-/* The background overlay (optional) */
-.remove-booking-modal {
-    position: fixed;  /* Stay fixed at the viewport */
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: none;  /* Hidden by default */
-    background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
-    z-index: 1000;  /* Ensures it's on top */
-}
-
-/* The modal content container */
-.remove-booking-modal-content {
-    position: absolute;  
-    top: 50%; 
-    left: 50%; 
-    transform: translate(-50%, -50%);  
-    background-color: #fff;
-    padding: 20px;
-    width: 400px;  
-    max-width: 100%;
-    text-align: center;
-    animation: fadeIn 0.3s ease; /* Optional: smooth fade-in animation */
-}
-
-/* Optional: Add a smooth fade-in animation */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.8);
+    .booking-summary-wrapper {
+        flex: 1;
+        position: relative;
     }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+
+    .booking-summary {
+        border: 1px solid #ccc;
+        padding: 40px;
+        background-color: white;
+        height: fit-content;
+        transition: all 0.3s;
     }
-}
 
-.room-dates-toggle {
-    cursor: pointer;
-    text-decoration: underline;
-}
+    .sticky {
+        position: fixed;
+        top: 20px;
+        width: calc(28% - 35px); /* This will be overridden dynamically */
+    }
 
-.room-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
+    .stop-sticky {
+        position: absolute;
+        bottom: 0;
+        width: 390px;
+        top: auto;
+    }
 
 
-.room-date {
-    font-size: 12px;
-    color: #333;
-}
+    .booking-summary h3 {
+        margin-top: 0;
+        font-size: 18px;
+        color: var(--txtprimary);
+    }
 
-.room-price {
-    font-size: 14px;
-    color: #666;
-    margin-left: 10px;
-}
+    .booking-summary p {
+        margin: 15px 0;
+        font-size: 16px;
+    }
+
+    .booking-summary .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin: -20px 0px;
+    }
+
+    /* The background overlay (optional) */
+    .remove-booking-modal {
+        position: fixed;  /* Stay fixed at the viewport */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: none;  /* Hidden by default */
+        background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
+        z-index: 1000;  /* Ensures it's on top */
+    }
+
+    /* The modal content container */
+    .remove-booking-modal-content {
+        position: absolute;  
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%);  
+        background-color: #fff;
+        padding: 20px;
+        width: 400px;  
+        max-width: 100%;
+        text-align: center;
+        animation: fadeIn 0.3s ease; /* Optional: smooth fade-in animation */
+    }
+
+    /* Optional: Add a smooth fade-in animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+
+    .room-dates-toggle {
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .room-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+
+    .room-date {
+        font-size: 12px;
+        color: #333;
+    }
+
+    .room-price {
+        font-size: 14px;
+        color: #666;
+        margin-left: 10px;
+    }
+
+
+    /* Stop Sticky and Make Full Width at 981px */
+    @media (max-width: 981px) {
+        .booking-wrapper {
+            flex-direction: column; /* Stack Calendar and Summary vertically */
+        }
+
+        .booking-main {
+            width: 100%; /* Calendar becomes full width */
+        }
+
+        .booking-summary-wrapper {
+            width: 100%;
+            order: 2; /* Move Booking Summary to the bottom */
+            margin-top: 20px;
+        }
+
+        .booking-summary {
+            position: relative; /* Remove sticky behavior */
+            width: 100%; /* Full width */
+            padding: 50px;
+        }
+
+        .booking-summary .summary-row {
+            display: flex; /* Maintain two-column layout */
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+    }
+
+    /* Compact Layout for Smaller Screens */
+    @media (max-width: 768px) {
+        .booking-summary {
+            padding: 50px;
+            font-size: 12px;
+        }
+
+        .booking-summary h3 {
+            font-size: 16px;
+        }
+
+        .summary-row {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .room-details-container {
+            flex-direction: row;
+        }
+        
+    }
+
+    /* Very Small Screens (≤480px) */
+    @media (max-width: 480px) {
+        .booking-summary {
+            padding: 20px;
+            font-size: 12px;
+        }
+
+        .summary-row {
+            flex-direction: row; /* Stack Check-in/Check-out vertically */
+            text-align: center;
+        }
+
+        .booking-summary h3 {
+            font-size: 14px;
+        }
+
+        .btn-one {
+            font-size: 12px;
+            padding: 8px 10px;
+        }
+
+        .room-details-container {
+            flex-direction: row;
+        }
+
+        .summary-row p {
+            margin: 5px 0; /* Reduce spacing between paragraphs */
+            line-height: 1.4; /* Improve line spacing */
+        }
+    
+        .summary-row strong {
+            display: block; /* Place 'Check-in' and 'Check-out' on a new line */
+            margin-bottom: 5px; /* Add slight space below labels */
+            font-size: 14px; /* Adjust font size for labels */
+        }
+    
+        #summaryCheckInDate,
+        #summaryCheckOutDate {
+            display: block; /* Ensure dates appear on the next line */
+            font-size: 13px; /* Adjust font size for readability */
+            font-weight: normal; /* Optional: make date text regular */
+            margin-top: 2px;
+        }
+    
+        /* Adjust timing and count for better presentation */
+        .summary-row i {
+            margin-right: 5px; /* Add spacing before icons */
+        }
+    
+        .summary-row p:nth-child(2), /* Time */
+        .summary-row p:nth-child(3) { /* Count (Adult/Child) */
+            font-size: 12px; /* Smaller font size */
+        }
+    }
 </style>
 
 
 <div class="booking-summary-wrapper" id="bookingSummaryWrapper">
 <div class="booking-summary" id="bookingSummary">
-<h3>Your Booking Summary</h3>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h3>Your Booking Summary</h3>
+        <div class="edit-remove-buttons">
+            <button id="removeBookingButton" onclick="openRemoveBookingModal()"><i class="fa-solid fa-trash-can" style="color: red; font-size: 18px;"></i> <span></span></button>
+        </div>
+    </div>
+    
 <hr>
-<div class="summary-row">
+<div class="summary-row" > 
     <div>
-        <p><strong>Check-in:</strong> <br><span id="summaryCheckInDate">N/A</span></p>
-        <p style="font-size: 13px;"><i class="ri-time-line"></i> After 3:00 PM</p>
-        <p id="summaryAdultCount">1 Adult</p>
+        <p><div style="font-size: 13px; background-color: #f9f9f9;  #83b17b; padding: 10px; margin-top: 20px;">
+            <ul style="margin: 10px 0; padding: 10px;">
+                <li><strong>Check-in:</strong> <br><span id="summaryCheckInDate">N/A</span></li>
+                <li><i class="ri-time-line"></i> After 3:00 PM</li>
+                <li><div id="summaryAdultCount">1 Adult</div></li>
+            </ul>
+        </div></p>
+        {% comment %} <p style="font-size: 13px;"><i class="ri-time-line"></i> After 3:00 PM</p> {% endcomment %}
     </div>
     <div>
-        <p><strong>Check-out:</strong> <br><span id="summaryCheckOutDate">N/A</span></p>
-        <p style="font-size: 13px;"><i class="ri-time-line"></i> Before 12:00 PM</p>
-        <p id="summaryChildrenCount">0 Child</p>
+        <p><div style="font-size: 13px; background-color: #f9f9f9; padding: 10px; margin-top: 20px;">
+            <ul style="margin: 10px 0; padding: 10px;">
+                <li><strong>Check-out:</strong> <br><span id="summaryCheckOutDate">N/A</span></li>
+                <li><i class="ri-time-line"></i> Before 12:00 PM</li>
+                <li><div id="summaryChildrenCount">0 Child</div></li>
+            </ul>
+        </div></p>
     </div>
+
+
+
+
 </div>
 
 
@@ -145,17 +271,21 @@
     <p class="total-price" id="summaryTotalPrice">₱0.00</p>
 </div>        
 
-<div class="edit-remove-buttons" style="text-align: center; margin-top: 20px;">
-    <button id="removeBookingButton" onclick="openRemoveBookingModal()" class="btn-one">Remove Booking <span></span></button>
-</div>
+
 </div>
 </div>
 
 <!-- Remove Booking Confirmation Modal -->
 <div id="removeBookingModal" class="remove-booking-modal" style="display: none;">
 <div class="remove-booking-modal-content">
-<p>Are you sure you want to <br>remove the current booking?</p>
-<hr>
+    <div class="room-card-content">
+        <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #D9544D; padding: 10px;">
+            <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+                <li>Are you sure do you want to remove your recent <span style="color: #83b17b; font-weight: bold;">Booking Summary</span>?</li>
+            </ul>
+        </div>
+    </div>
+    <hr>
 <button id="confirm" class="btn-one" onclick="confirmRemoveBooking()">Confirm <span></span></button>
 <button id="cancel" class="btn-one" onclick="closeRemoveBookingModal()">Cancel <span></span></button>
 </div>

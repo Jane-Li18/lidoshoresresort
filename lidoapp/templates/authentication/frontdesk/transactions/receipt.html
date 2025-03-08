@@ -1,0 +1,516 @@
+{% load static %}
+{% load humanize %}
+
+<div style="display: flex; justify-content: space-between; gap: 20px; padding: 20px;">
+    <div id="addSalesContainer" style="flex: 1; padding: 20px; border: 1px solid #ccc; background-color: white;">
+        <h3 class="transaction-h3"><i class="fa-solid fa-pen-to-square"></i> &nbsp; Apply Receipt</h3>
+        <form id="addReceipt">
+
+            <!-- Reservation ID Dropdown -->
+            <div class="form-group">
+                <label for="reservation_id">Reservation ID *</label>
+                <select id="reservation_id" name="reservation_id" required>
+                    <option value="" disabled selected>Select a Reservation ID</option>
+                    {% for reservation in reservations %}
+                        <option value="{{ reservation.reservation_ID }}">{{ reservation.reservation_ID }}</option>
+                    {% endfor %}
+                </select>
+                <div class="error-message" style="display: none;">Reservation ID is required.</div>
+            </div>
+
+            <!-- Always Displayed Item (Cannot Be Removed) -->
+            <div id="fixed-item" class="item-wrapper">
+                <div class="form-row">
+                    <div class="form-group" style="width: 100%; position: relative;">
+                        <input type="text" id="item_name" name="item_name[]" list="add_ons_list" placeholder=" " maxlength="20" required oninput="handleItemSelection(this)" />
+                        <label for="item_name" class="floating-label">Item Name *</label>
+                        <datalist id="add_ons_list">
+                            {% if add_ons|length > 0 %}
+                                {% for add_on in add_ons %}
+                                    <option value="{{ add_on.add_on_name }}" 
+                                            {% if add_on.add_on_quantity is not None %} 
+                                                data-stock="{{ add_on.add_on_quantity }}" 
+                                                data-price="{{ add_on.add_on_price }}"
+                                            {% endif %}>
+                                        {% if add_on.add_on_quantity is not None %}
+                                            - ₱{{ add_on.add_on_price }} (Stock: {{ add_on.add_on_quantity }})
+                                        {% endif %}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        </datalist>
+                        
+                        <div class="error-message" style="display: none;">Error: Required (Max 20 Characters).</div>
+                    </div>
+            
+                    <div class="form-group" style="width: 100%;">
+                        <input type="number" id="item_quantity" name="item_quantity[]" placeholder=" " min="1" required 
+                               oninput="validateQuantity(this);" oninput="preventZero(this);"/>
+                 
+                        <label>Item Quantity *</label>
+                        <div class="error-message quantity-error" style="display: none;">Error: Exceeds available stock.</div>
+                    </div>
+                </div>
+            
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom: 0px; width: 100%;">
+                        <input type="number" id="item_amount" name="item_amount[]" placeholder=" " required oninput="preventZero(this);" />
+                        <label>Item Amount *</label>
+                        <div class="error-message" style="display: none;">Error: Item Amount is required.</div>
+                    </div>
+                </div>
+                <hr>
+            </div>
+            
+
+            <input type="hidden" id="reservation_trigger" />
+
+            <!-- Dynamic Item Fields -->
+            <div id="items-container"></div>
+
+            <button type="button" id="add-item" class="btn-one" style="width: 100%; margin-bottom: 20px;">+ Add Item <span></span></button>
+
+            <div class="form-group">
+                <input type="text" id="item_description" name="item_description" placeholder=" " />
+                <label for="item_description">Description</label>
+                <div class="error-message" style="display: none;">Description is required.</div>
+            </div>
+    
+            <div class="form-group">
+                <input type="text" id="handledBy" name="handledBy" required placeholder=" " />
+                <label for="handledBy">Handled by *</label>
+                <div class="error-message" style="display: none;">Handled by is required.</div>
+            </div>
+    
+            <button type="submit" id="submit-btn" class="btn-one" style="width: 100%;" disabled>
+                <i class="fa-solid fa-receipt"></i>&nbsp; Save Receipt <span></span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Acquired Receipts -->
+    <div id="salesTableContainer" style="flex: 1; padding: 20px; border: 1px solid #ccc; background-color: white;">
+        <h3 class="transaction-h3"><i class="fa-solid fa-eye"></i> &nbsp; Receipt Preview</h3>
+        <div id="receiptTableBody"></div>
+        {% comment %} <button type="submit" class="btn-one" style="width: 100%;" disabled>
+            <i class="fa-solid fa-receipt"></i>&nbsp; Download Receipt <span></span>
+        </button> {% endcomment %}
+    </div>
+</div>
+
+<style>
+    .receipt-container {
+        background: #fff;
+        padding: 15px;
+        border: 1px solid #ccc;
+        max-width: 350px;
+        margin: 10px auto;
+        text-align: left;
+        word-wrap: break-word; /* Ensures long text wraps */
+        overflow-wrap: break-word; /* Ensures long words don't overflow */
+    }
+    
+    .receipt-title {
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    
+    .receipt-items {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .receipt-line {
+        display: flex;
+        justify-content: space-between;
+        white-space: nowrap;
+    }
+    
+    .receipt-name {
+        flex-grow: 1;
+        text-align: left;
+    }
+    
+    .receipt-dots {
+        flex-grow: 2;
+        text-align: center;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    
+    .receipt-amount {
+        text-align: right;
+    }
+    
+    .receipt-total {
+        text-align: right;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    
+    .receipt-description {
+        text-align: left;
+        font-style: italic;
+        margin-top: 10px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%; /* Ensures description wraps properly */
+    }
+    
+</style>
+
+<script>
+    function handleItemSelection(input) {
+        let selectedOption = Array.from(document.querySelectorAll("#add_ons_list option"))
+            .find(option => option.value === input.value);
+    
+        let quantityInput = document.getElementById("item_quantity");
+        let amountInput = document.getElementById("item_amount");
+    
+        if (selectedOption) {
+            let maxStock = parseInt(selectedOption.getAttribute("data-stock"), 10);
+            let price = parseFloat(selectedOption.getAttribute("data-price"));
+    
+            quantityInput.max = maxStock;
+            quantityInput.value = "1"; // Default to 1 when selecting an add-on
+            amountInput.value = price; // Set initial amount
+    
+            // Update amount when quantity changes
+            quantityInput.oninput = function () {
+                validateQuantity(quantityInput, maxStock, price, amountInput);
+            };
+        } else {
+            quantityInput.removeAttribute("max");
+            amountInput.value = "";
+            quantityInput.value = "";
+        }
+    }
+    
+    function validateQuantity(input, maxStock, price, amountInput) {
+        let errorMessage = input.parentElement.querySelector(".quantity-error");
+        let quantity = parseInt(input.value, 10);
+    
+        if (isNaN(quantity) || quantity < 1) {
+            input.value = 1;
+            errorMessage.style.display = "none";
+        } else if (quantity > maxStock) {
+            input.value = maxStock;
+            errorMessage.style.display = "block";
+        } else {
+            errorMessage.style.display = "none";
+        }
+    
+        amountInput.value = input.value * price; // Update total amount
+    }
+    
+    function preventZero(input) {
+        if (input.value === "0" || input.value === "") {
+            input.value = "1";
+        }
+    }
+    
+    function handleQuantityChange(input, maxStock, price, amountInput) {
+        preventZero(input);
+        validateQuantity(input, maxStock, price, amountInput);
+    }
+    
+    
+    function enforceMaxLength(input) {
+        if (input.value.length > 5) {
+            input.value = input.value.slice(0, 5);
+        }
+    }
+    
+    
+    document.addEventListener("DOMContentLoaded", function () {
+    
+
+    
+        function updateHiddenField() {
+            let hiddenInput = document.getElementById('reservation_trigger');
+            if (hiddenInput) {
+                let randomValue = Math.random().toString(36).substring(2, 15);
+                hiddenInput.value = randomValue;
+                hiddenInput.dispatchEvent(new Event('input'));
+                updatePreview();
+            } else {
+                console.error("Hidden input field not found!");
+            }
+        }
+    
+        let reservationDropdown = document.getElementById('reservation_id');
+        if (reservationDropdown) {
+            reservationDropdown.addEventListener('change', updateHiddenField);
+        } else {
+            console.error("Reservation dropdown not found!");
+        }
+    
+        document.getElementById('addReceipt').addEventListener('input', updateHiddenField);
+        setInterval(updateHiddenField, 1000);
+    
+        
+        document.getElementById('addReceipt').addEventListener('submit', function (e) {
+            e.preventDefault();
+        
+            const reservationId = document.getElementById('reservation_id')?.value;
+            const handledBy = document.getElementById('handledBy')?.value;
+            const description = document.getElementById('item_description')?.value || '';
+        
+            let items = [];
+            let totalAmount = 0;
+        
+            document.querySelectorAll('.item-wrapper').forEach(item => {
+                let name = item.querySelector('input[name="item_name[]"]').value.substring(0, 20);
+                let quantity = item.querySelector('input[name="item_quantity[]"]').value.substring(0, 10);
+                let amount = parseFloat(item.querySelector('input[name="item_amount[]"]').value || 0);
+        
+                if (name && quantity && amount) {
+                    items.push({ name, quantity, amount });
+                    totalAmount += amount;
+                }
+            });
+        
+            const payload = {
+                reservation_id: reservationId,
+                handledBy: handledBy,
+                description: description,
+                items: items,
+                total_amount: totalAmount
+            };
+            console.log("Sending Data:", payload);
+        
+            fetch('/save-receipt/', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Response Data:", data);
+        
+                if (data.status === 'success' && data.receipt_url) {
+                    alert('Receipt saved successfully!');
+        
+                    // Auto-download the receipt
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.receipt_url;
+                    downloadLink.target = '_blank';
+                    downloadLink.download = 'Receipt.pdf';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+        
+                    // Reload the page
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+        
+        
+    
+        document.getElementById('reservation_id')?.addEventListener('change', function() {
+            let reservationTrigger = document.getElementById('reservation_trigger');
+            if (reservationTrigger) {
+                reservationTrigger.value = Math.random();
+                updatePreview();
+            }
+        });
+    
+        document.getElementById('reservation_trigger').addEventListener('input', updatePreview);
+        document.getElementById('item_description').addEventListener('input', updatePreview);
+    
+        document.querySelectorAll('#addReceipt input').forEach(input => {
+            input.addEventListener('input', updatePreview);
+        });
+    
+        function updatePreview() {
+            const receiptContainer = document.getElementById('receiptTableBody');
+            receiptContainer.innerHTML = '';
+    
+            const reservationId = document.getElementById('reservation_id').value;
+            const handledByInput = document.getElementById('handledBy');
+            const handledBy = handledByInput ? handledByInput.value : '';
+            const description = document.getElementById('item_description').value;
+            let totalAmount = 0;
+    
+            let items = [...document.querySelectorAll('.item-wrapper')].map(item => {
+                let name = item.querySelector('input[name="item_name[]"]').value.substring(0, 20);
+                let quantity = item.querySelector('input[name="item_quantity[]"]').value.substring(0, 10);
+                let amount = item.querySelector('input[name="item_amount[]"]').value;
+                totalAmount += parseFloat(amount || 0);
+    
+                return `<div class="receipt-line">
+                            <span class="receipt-name">${name} (${quantity})</span>
+                            <span class="receipt-dots">............................</span>
+                            <span class="receipt-amount">P${parseFloat(amount || 0).toLocaleString()}</span>
+                        </div>`;
+            }).join('');
+    
+            receiptContainer.innerHTML = `
+                <div class="receipt-container">
+                    <h3 class="transaction-h3">Acquired Receipt</h3>
+                    <div><strong>Reservation ID:</strong> ${reservationId || '-'}</div>
+                    <div><strong>Handled by:</strong> ${handledBy || '-'}</div>
+                    <hr>
+                    <div class="receipt-items">
+                        ${items || '<em>No items added yet</em>'}
+                    </div>
+                    <hr>
+                    <div class="receipt-total">
+                        <strong>Total: P${totalAmount > 0 ? totalAmount.toLocaleString() : '0'}</strong>
+                    </div>
+                    <div class="receipt-description">
+                        <strong>Description:</strong> ${description || '-'}</div>
+                </div>
+            `;
+        }
+    
+        document.querySelectorAll('input[name="item_name[]"], input[name="item_quantity[]"], input[name="item_amount[]"]').forEach(input => {
+            input.addEventListener('input', updatePreview);
+        });
+    
+        updatePreview();
+    
+        document.getElementById('add-item').addEventListener('click', function() {
+            const container = document.getElementById('items-container');
+            const itemRow = document.createElement('div');
+            itemRow.classList.add('item-wrapper');
+            itemRow.style.opacity = 0;
+            itemRow.innerHTML = `
+                <div class="form-row">
+                    <div class="form-group" style="width: 100%;">
+                        <input type="text" name="item_name[]" list="add_ons_list" placeholder=" " maxlength="20" required 
+                               onchange="handleDynamicItemSelection(this)" />
+                        <label>Item Name *</label>
+                        <datalist id="add_ons_list">
+                            {% if add_ons|length > 0 %}
+                                {% for add_on in add_ons %}
+                                    <option value="{{ add_on.add_on_name }}" 
+                                            data-stock="{{ add_on.add_on_quantity }}" 
+                                            data-price="{{ add_on.add_on_price }}">
+                                        - ₱{{ add_on.add_on_price }} (Stock: {{ add_on.add_on_quantity }})
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        </datalist>
+                        <div class="error-message" style="display: none;">Error: Required (Max 20 Characters).</div>
+                    </div>
+                    <div class="form-group" style="width: 100%;">
+                        <input type="number" name="item_quantity[]" placeholder=" " min="1" required 
+                               oninput="validateQuantity(this);" />
+                        <label>Item Quantity *</label>
+                        <div class="error-message quantity-error" style="display: none;">Error: Exceeds available stock.</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="width: 100%;">
+                        <input type="number" id="item_amount" name="item_amount[]" placeholder=" " required oninput="preventZero(this);" />
+                        <label>Item Amount *</label>
+                        <div class="error-message" style="display: none;">Error: Item Amount is required.</div>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="remove-item btn btn-danger" style="border-radius: 50%;">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+                <hr>
+            `;
+        
+            container.appendChild(itemRow);
+        
+            setTimeout(() => {
+                itemRow.style.opacity = 1;
+                itemRow.style.transition = 'opacity 0.3s ease-in-out';
+            }, 10);
+        
+            itemRow.querySelector('.remove-item').addEventListener('click', function() {
+                itemRow.style.opacity = 0;
+                setTimeout(() => {
+                    itemRow.remove();
+                    updatePreview();
+                }, 300);
+            });
+        
+            updatePreview();
+        });
+        
+        function handleDynamicItemSelection(input) {
+            const selectedOption = [...document.querySelectorAll('#add_ons_list option')].find(
+                option => option.value === input.value
+            );
+        
+            if (selectedOption) {
+                const stock = parseInt(selectedOption.getAttribute('data-stock'), 10);
+                const price = parseFloat(selectedOption.getAttribute('data-price'));
+        
+                // Find related quantity and amount inputs
+                const itemRow = input.closest('.item-wrapper');
+                const quantityInput = itemRow.querySelector('input[name="item_quantity[]"]');
+                const amountInput = itemRow.querySelector('input[name="item_amount[]"]');
+        
+                // Set quantity to 1 by default
+                quantityInput.value = 1;
+                quantityInput.setAttribute('max', stock);
+                quantityInput.setAttribute('data-stock', stock);
+                quantityInput.setAttribute('data-price', price);
+        
+                // Set initial amount based on 1 quantity
+                amountInput.value = price;
+        
+                // Ensure quantity updates dynamically
+                handleQuantityChange(quantityInput);
+            }
+        }
+        
+        function handleQuantityChange(input) {
+            const stock = parseInt(input.getAttribute('data-stock'), 10) || 1;
+            const price = parseFloat(input.getAttribute('data-price')) || 0;
+            const amountInput = input.closest('.item-wrapper').querySelector('input[name="item_amount[]"]');
+        
+            let quantity = parseInt(input.value, 10) || 1;
+        
+            if (quantity < 1) {
+                quantity = 1;
+            } else if (quantity > stock) {
+                quantity = stock;
+            }
+        
+            input.value = quantity;
+            amountInput.value = quantity * price; // Update amount dynamically
+        }
+        
+
+    
+        function checkFields() {
+            let allFilled = true;
+            document.querySelectorAll('input[required], select[required]').forEach(input => {
+                const errorMessage = input.parentElement.querySelector('.error-message');
+                if (!input.value.trim()) {
+                    allFilled = false;
+                    errorMessage.style.display = 'block';
+                } else {
+                    errorMessage.style.display = 'none';
+                }
+            });
+            document.getElementById('submit-btn').disabled = !allFilled;
+        }
+    
+        document.querySelectorAll('input[required], select[required]').forEach(input => {
+            input.addEventListener('input', checkFields);
+        });
+    
+        checkFields();
+    });
+    
+</script>
+

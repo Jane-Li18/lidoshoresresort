@@ -1,0 +1,417 @@
+{% load static %}
+
+<div class="privacy-and-terms-container" 
+     style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 20px; margin: 20px;">
+    <!-- Left Section -->
+    <div class="editor-section" 
+    style="flex: 1; max-width: 100%; box-sizing: border-box; background: var(--bgtertiary); padding: 20px; border: 1px solid #ccc;">
+    <h3><i class="fa-solid fa-pen-to-square"></i>&nbsp;Add Privacy and Terms</h3>
+    <hr>
+    <div class="input-container">
+        <label for="policyType">Select Policy Type:</label>
+        <select id="policyType" style="width: 100%; padding: 10px; margin-bottom: 20px; background: #f9f9f9;">
+            <option value="account">Account Policy</option>
+            <option value="booking">Booking Policy</option>
+            <option value="walkin">Walk-In Policy</option>
+            <option value="guarantee">Payment Policy</option>
+            <option value="cancel">Cancel Policy</option>
+            <option value="about">About Policy</option>
+            <option value="address">Footer Address Policy</option>
+            <option value="description">Revel Policy</option>
+        </select>
+    </div>
+    <div class="input-container">
+        <textarea id="termsUpdateField" rows="10" maxlength="500" placeholder=" "></textarea>
+        <label for="termsUpdateField">Insert new rules:</label>
+        <span id="characterCount">0 / 500</span>
+    </div>
+    <button id="saveTermsButton" class="btn-one" disabled>Save Changes <span></span></button>
+    </div>
+
+
+    <!-- Right Section: Preview -->
+    <div class="preview-section" 
+         style="flex: 1; min-width: 300px; max-width: 100%; box-sizing: border-box; background: var(--bgtertiary); padding: 20px; border: 1px solid #ccc;">
+        <h3><i class="fa-regular fa-eye"></i>&nbsp;Preview</h3>
+        <hr>
+        <div style="text-align: center;">
+            <div style="font-size: 13px; margin: 10px 0;">To create a Lido Shores Resort Guest Account, you’ll need to agree to our Guest Terms and Privacy Policy. Here’s a brief overview:</div>
+            <div id="termsPreview" class="preview-box">
+                <p>Live Preview of Latest Privacy & Terms will show here.</p>
+            </div>
+            <div style="font-size: 13px; margin: 10px 0;">Please note that adhering to resort policies is essential for a pleasant stay, such as observing check-in/out times, following pool rules, and taking care of room amenities. For full details, please review our Guest Terms and Privacy Policy.</div>
+            <button type="button" class="btn-one" id="agreeButton" style="text-align: center;" disabled>Agree<span></span></button>
+            <button type="button" class="btn-one" id="cancelButton" style="text-align: center;" disabled>Cancel<span></span></button>
+        </div>
+    </div>
+
+    <div class="policy-record-section" style="flex: 1; max-width: 100%; box-sizing: border-box; background: var(--bgtertiary); padding: 20px; border: 1px solid #ccc;">
+        <h3><i class="fa-solid fa-pen-to-square"></i>&nbsp;Previous Privacy and Terms</h3>
+        <hr>
+        <div id="policyCards" style="display: flex; flex-wrap: wrap; gap: 15px;">
+            {% for policy in policies %}
+            <div class="policy-card" style="font-size: 12px; border: 1px solid #ccc; padding: 15px; background: #f9f9f9; width: 100%; display: flex; flex-direction: column; gap: 10px;">
+                <!-- Header Row: Policy Type and Buttons -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">{{ policy.get_policy_type_display|default:"Unknown Policy" }}</h3>
+                    <div>
+                        <button class="show-content-button btn" style="padding: 5px 10px; background: yellow; color: var(--txtprimary); border: none; cursor: pointer; border-radius: 50%;"><i class="fa-solid fa-eye"></i></button>
+                        <button class="delete-policy-button btn" style="padding: 5px 10px; background: red; color: white; border: none; cursor: pointer; border-radius: 50%;" onclick="showPolicyModal('{{ policy.id }}')"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+                <!-- Policy Content -->
+                <p class="policy-content" 
+                   data-full-content="{{ policy.content|default:''|escape }}" 
+                   data-expanded="false" style="font-size: 0.9rem; color: #555; margin-bottom: 10px;">
+                    {% if policy.content and policy.content|length > 100 %}
+                        {{ policy.content|slice:":100"|escape }}...
+                    {% else %}
+                        {{ policy.content|default:"No content available" }}
+                    {% endif %}
+                </p>
+                <!-- Footer Row -->
+                <div style="font-size: 0.8rem; color: #999;">Last Updated: {{ policy.updated_at|date:"F j, Y, g:i a" }}</div>
+            </div>
+            {% empty %}
+            <div class="policy-card" style="border: 1px solid #ccc; padding: 15px; background: white; width: 100%; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); text-align: center;">
+                <p style="font-size: 1rem; color: #555;">No Policies Saved</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    
+</div>
+
+
+<!-- Modal -->
+<div class="policy-modal-backdrop" id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+<div class="policy-modal" id="policyModal" tabindex="-1" role="dialog" >
+    <div class="policy-modal-dialog" role="document">
+        <div class="policy-modal-content" style="display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="modal-title" style="margin: 0;">Confirm Deletion</h3>
+            </div>
+            <div class="modal-body">
+                <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #D9544D; padding: 10px; margin-bottom: 20px;">
+                    <i class="fa-solid fa-circle-info" style="color: #D9544D;"></i>&nbsp;
+                    <strong>Important Note:</strong>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><p id="deleteMessage"></p></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Yes, Delete</button>
+                <button type="button" class="btn btn-secondary" onclick="hidePolicyModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- CSS -->
+<style>
+    .policy-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .policy-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1100;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        max-width: 90%;
+        display: none;
+    }
+
+    
+    .input-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .input-container textarea {
+        width: 100%;
+        height: 420px;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        outline: none;
+        resize: none;
+    }
+
+    .input-container label {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: var(--txttertiary);
+        padding: 0 5px;
+        color: #777;
+        font-size: 15px;
+        pointer-events: none;
+        transition: 0.3s;
+    }
+
+    .input-container textarea:focus + label,
+    .input-container textarea:not(:placeholder-shown) + label {
+        top: -10px;
+        left: 10px;
+        font-size: 12px;
+    }
+
+    #characterCount {
+        position: absolute;
+        bottom: 15px;
+        right: 10px;
+        font-size: 12px;
+        color: #777;
+    }
+
+    .editor-section button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .preview-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        min-height: 300px;
+        font-size: 16px;
+        color: #555;
+        overflow: hidden;
+        word-wrap: break-word;
+        resize: none;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+        color: #555;
+    }
+
+    td {
+        color: #333;
+        word-wrap: break-word;
+    }
+
+    .delete-button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    .delete-button:hover {
+        background-color: #c82333;
+    }
+
+    @media (max-width: 480px) {
+        .btn, .btn-one {
+            padding: 8px; /* Adjust button padding */
+            font-size: 14px; /* Smaller button text */
+        }
+    }
+
+    @media (max-width: 425px) {
+        .input-container textarea {
+            font-size: 13px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        table {
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 6px;
+        }
+    }
+</style>
+
+
+<script>
+    // Show modal
+    function showPolicyModal(policyId) {
+        document.getElementById('deleteMessage').textContent = `Are you sure you want to delete policy #${policyId}?`;
+        document.getElementById('policyModal').style.display = 'block';
+        document.getElementById('modalBackdrop').style.display = 'block';
+
+        // Set delete button ID
+        const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+        confirmDeleteButton.onclick = function () {
+            deletePolicy(policyId);
+        };
+    }
+
+    // Hide modal
+    function hidePolicyModal() {
+        document.getElementById('policyModal').style.display = 'none';
+        document.getElementById('modalBackdrop').style.display = 'none';
+    }
+
+    function deletePolicy(policyId) {
+        fetch(`/delete_policy/${policyId}/`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showNotification('Policy deleted successfully!', 'success');
+                    setTimeout(() => {
+                        location.reload(); // Reload the page after a delay
+                    }, 1000); // Delay for 3 seconds to allow the notification to be visible
+                } else {
+                    showNotification('Failed to delete the policy.', 'error');
+                }
+                hidePolicyModal(); // Close the modal
+            });
+    }
+    
+    // Function to display notification dynamically
+    function showNotification(message, type) {
+        const messageBox = document.getElementById('messageBox');
+    
+        // Create the alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+    
+        // Add the alert to the messageBox
+        messageBox.appendChild(alertDiv);
+        messageBox.style.display = 'block';
+    
+        // Automatically fade out the alert
+        setTimeout(() => {
+            alertDiv.style.opacity = '0'; // Start fade out
+            setTimeout(() => {
+                alertDiv.remove(); // Remove the alert from the DOM
+            }, 500); // Match the transition duration
+        }, 1000);
+    }
+    
+    
+
+    // Wait for the DOM to load
+    document.addEventListener('DOMContentLoaded', function () {
+        const termsField = document.getElementById('termsUpdateField');
+        const saveButton = document.getElementById('saveTermsButton');
+        const characterCount = document.getElementById('characterCount');
+        const previewBox = document.getElementById('termsPreview');
+        const policyCards = document.getElementById('policyCards');
+        const policyTypeDropdown = document.getElementById('policyType'); // Dropdown for policy type
+
+        // Select all "Show More" buttons
+        const buttons = document.querySelectorAll('.show-content-button');
+        buttons.forEach(button => {
+            button.addEventListener('click', function () {
+                // Select the policy-content element correctly
+                const policyContent = this.closest('.policy-card').querySelector('.policy-content');
+                console.log('Policy Content Element:', policyContent);
+
+                if (!policyContent) {
+                    console.error('Policy Content element not found for this button.');
+                    return;
+                }
+
+                const fullContent = policyContent.getAttribute('data-full-content');
+                console.log('Full Content:', fullContent);
+
+                const isExpanded = policyContent.getAttribute('data-expanded') === 'true';
+                console.log('Is Expanded:', isExpanded);
+
+                if (!fullContent || fullContent.trim() === '') {
+                    console.error('Full content is missing for this policy.');
+                    policyContent.textContent = 'No content available';
+                    return;
+                }
+
+                // Apply animation classes
+                policyContent.style.transition = 'opacity 0.3s ease';
+                policyContent.style.opacity = 0;
+
+                setTimeout(() => {
+                    if (!isExpanded) {
+                        policyContent.textContent = fullContent;
+                        policyContent.setAttribute('data-expanded', 'true');
+                        this.innerHTML = '<i class="fa-solid fa-eye-slash"></i>'; // Use innerHTML to set the icon
+                    } else {
+                        const shortenedContent = fullContent.slice(0, 100) + '...';
+                        policyContent.textContent = shortenedContent;
+                        policyContent.setAttribute('data-expanded', 'false');
+                        this.innerHTML = '<i class="fa-solid fa-eye"></i>'; // Use innerHTML to set the icon
+                    }
+
+                    policyContent.style.opacity = 1; // Show content with animation
+                }, 300); // Match the transition duration
+            });
+        });
+
+        // Handle input changes for live preview
+        if (termsField) {
+            termsField.addEventListener('input', function () {
+                const content = termsField.value.trim();
+                characterCount.textContent = `${content.length} / 500`;
+                saveButton.disabled = content.length === 0;
+
+                previewBox.innerHTML = content || '<p>Your live preview will show here...</p>';
+            });
+        }
+
+        // Save new or updated policy
+        if (saveButton) {
+            saveButton.addEventListener('click', function () {
+                const content = termsField.value.trim();
+                const policyType = policyTypeDropdown.value;
+        
+                fetch('/save_policy/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ policy_type: policyType, content }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        showNotification(data.message, data.status === 'success' ? 'success' : 'error');
+                        if (data.status === 'success') {
+                            setTimeout(() => location.reload(), 1000); // Delay reload by 3 seconds
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('An error occurred while saving the policy.', 'error');
+                        console.error(error);
+                    });
+            });
+        }
+        
+
+
+    });
+</script>

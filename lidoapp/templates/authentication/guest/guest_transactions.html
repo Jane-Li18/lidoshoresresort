@@ -1,0 +1,1508 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+
+{% block title %}Transactions | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+{% block mainnav %}{% endblock mainnav %}
+{% include 'message_notification.html' %}
+<style>
+
+    
+    .btn-rebook {
+        background-color: teal;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        margin: 5px 0;
+    }
+
+    .btn-rebook:hover {
+        color: white;
+    }
+
+    .btn-rebook:disabled {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+    }
+
+    .transaction-container {
+        background-color: var(--bgtertiary);
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 1200px;
+        margin: 50px auto;
+        border-radius: 8px;
+        overflow-x: auto; /* Enable horizontal scrolling on small screens */
+
+    }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between; /* Align items on opposite sides */
+        align-items: center; /* Center items vertically */
+        margin-bottom: 20px; /* Add spacing below the row */
+    }
+
+    .transaction-h3 {
+        font-size: 20px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px; /* Standardize font size for clarity */
+    }
+
+    table th, table td {
+        padding: 5px; /* Clean, consistent padding */
+        background: var(--bgprimary);
+        border: 3px solid white;
+        text-align: center;
+    }
+
+    table th {
+        background-color: white;
+        font-weight: bold;
+    }
+
+    table tr:nth-child(odd) {
+        background-color: #f9f9f9; /* Alternate row color: light gray */
+    }
+
+    table tr:nth-child(even) {
+        background-color: #ffffff; /* Alternate row color: white */
+    }
+
+    {% comment %} table tr:hover {
+        background-color: #e0e0e0; /* Highlight hovered row */
+    }
+
+    table tr:not(:hover) {
+        opacity: 0.5; /* Dim non-hovered rows */
+    } {% endcomment %}
+
+    .details-row {
+        background-color: #f9f9f9;
+        font-size: 14px;
+        padding: 0;
+    }
+
+    .details-content {
+        padding: 10px; /* Slightly larger padding for readability */
+        font-size: 14px; /* Adjust for better emphasis */
+    }
+
+    .btn.toggle-details {
+        text-decoration: underline;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+
+    #submit-request:disabled {
+        background-color: #ccc; /* Gray background for disabled state */
+        color: #666; /* Dim text color */
+        cursor: not-allowed; /* Show not-allowed cursor */
+    }
+
+    .status-booked {
+        color: green; /* Booked */
+        font-weight: bold;
+    }
+    .status-pending {
+        color: darkgray; /* Pending */
+        font-weight: bold;
+    }
+    .status-cancelled {
+        color: red; /* Cancelled */
+        font-weight: bold;
+    }
+    .status-refunded {
+        color: blue; /* Refunded - you can customize this color */
+        font-weight: bold;
+    }
+    .status-rebooked {
+        color: teal; /* Rebooked - new status for confirmed rebookings */
+        font-weight: bold;
+    }
+    
+    .rebooking-modal {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start; /* Align modal to the top of the screen */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Dim background */
+        z-index: 1000;
+        overflow-y: auto; /* Enable vertical scrolling */
+        padding: 20px; /* Add padding to prevent content from sticking to the edges */
+    }
+    
+    .rebooking-modal-content {
+        background-color: #fff;
+        padding: 20px;
+        width: 90%; /* Use most of the screen width */
+        max-width: 800px; /* Limit width on larger screens */
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden; /* Prevent content overflow inside the modal */
+    }
+
+    #confirmation-modal {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+    
+    #confirmation-modal .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .rebooking-modal.show .rebooking-modal-content {
+        transform: scale(1);
+    }
+    
+    .rebooking-modal.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    #calendar-container {
+        display: block; /* Remove flex behavior */
+        width: 100%;
+        margin-top: 20px;
+    }
+    
+    .calendar-row {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        gap: 15px;
+    }
+    
+    .calendar {
+        width: 48%; /* Side-by-side calendars on larger screens */
+    }
+
+    .date-number{
+        font-size: 13px;
+    }
+
+    .availability{
+        font-size: 10px;
+    }
+
+    @media (max-width: 424px) {
+        .btn.toggle-details {
+            margin-bottom: 5px;
+        }
+    }
+    
+    
+    @media (max-width: 425px) {
+
+        .rebooking-modal {
+            align-items: flex-start; /* Align modal content at the top */
+            padding: 10px; /* Reduce padding around the modal */
+            overflow-y: auto; /* Ensure scrolling is enabled */
+        }
+    
+        .rebooking-modal-content {
+            width: 100%; /* Take full width */
+            max-width: none; /* Remove width constraint */
+            padding: 15px; /* Add compact padding */
+            overflow-y: auto; /* Ensure the content inside modal is scrollable */
+            max-height: 90vh; /* Limit modal height to 90% of the viewport */
+            box-sizing: border-box; /* Include padding in width and height calculations */
+        }
+    
+        .calendar-row {
+            flex-direction: column; /* Stack calendars vertically */
+            gap: 15px; /* Add spacing between calendars */
+            align-items: center; /* Center-align calendars */
+        }
+    
+        .calendar {
+            width: 100%; /* Full width for small screens */
+            margin: 0 auto; /* Center calendars */
+        }
+    
+        #previous, #next {
+            width: 100%; /* Full-width navigation buttons */
+            font-size: 14px; /* Adjust font size */
+            padding: 10px; /* Add padding for touch-friendly buttons */
+            margin-bottom: 10px; /* Space between buttons */
+        }
+    
+        .btn-one {
+            width: 100%; /* Full-width submit button */
+            padding: 12px; /* Add padding for touch devices */
+            font-size: 16px; /* Increase font size */
+        }
+    
+        .transaction-h3 {
+            font-size: 18px;
+            text-align: center; /* Center the heading */
+            margin-bottom: 20px; /* Add spacing below the heading */
+        }
+    
+        .calendar table {
+            font-size: 12px; /* Adjust table font size for small screens */
+        }
+    
+        .date-labels {
+            text-align: center; /* Center-align date labels */
+            margin: 10px 0; /* Add margin for spacing */
+        }
+    
+        .transaction-container table {
+            display: block; /* Force table to behave like block elements */
+            width: 100%; /* Full width for very small screens */
+        }
+    
+        .transaction-container thead {
+            display: none; /* Hide table headers */
+        }
+    
+        .transaction-container tbody tr {
+            display: flex; /* Set rows as flex containers */
+            flex-wrap: wrap; /* Allow items to wrap if needed */
+            justify-content: center; /* Center align content horizontally */
+            align-items: center; /* Center align items vertically */
+            margin: 10px auto; /* Center rows with some space between them */
+            padding: 15px; /* Add padding for better spacing */
+            border: 1px solid #ccc; /* Card-like border */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #fff; /* White background for contrast */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+    
+        .transaction-container tbody td {
+            flex: 1 1 calc(50% - 10px); /* Items take 50% width with space between */
+            margin: 5px; /* Add spacing around items */
+            text-align: center; /* Center align text */
+            font-size: 14px; /* Adjust font size for readability */
+        }
+    
+        .transaction-container tbody td::before {
+            text-align: center; /* Center labels */
+            font-size: 16px; /* Make labels slightly larger */
+            font-weight: bold; /* Highlight labels */
+            color: #555; /* Darker color for readability */
+        }
+    
+        .btn, .btn-one {
+            padding: 8px; /* Adjust button padding */
+            font-size: 14px; /* Smaller button text */
+        }
+
+        .calendar td {
+            padding: 3px;
+        }
+
+        .availability {
+            font-size: 9px;
+        }
+
+        .date-number {
+            font-size: 10px;
+            font-weight: bold;
+        }
+    }
+    
+    
+    
+    
+    @media (max-width: 768px) {
+        #calendar-container {
+            flex-direction: column; /* Stack calendars vertically */
+            gap: 20px;
+        }
+    
+        .rebooking-modal-content {
+            width: 95%; /* Use more of the screen for small devices */
+            padding: 15px; /* Reduce padding for small screens */
+        }
+
+        h3.transaction-h3 {
+            font-size: 18px; /* Adjust header size */
+            text-align: left; /* Center-align header */
+            margin-right: 20px;
+            margin-bottom: 0px;
+        }
+    
+        .calendar-row {
+            flex-direction: column; /* Stack calendars vertically */
+        }
+    
+        #previous, #next {
+            width: 100%; /* Full-width buttons for navigation */
+            text-align: center;
+        }
+
+        .rebooking-modal-content ul {
+            font-size: 12px; /* Adjust font size for small screens */
+        }
+    
+        .calendar {
+            width: 100%; /* Full width for each calendar */
+        }
+    
+        .calendar-labels {
+            flex-direction: column; /* Stack controls vertically */
+            align-items: center;
+        }
+    
+        .date-labels {
+            text-align: center; /* Center-align date labels */
+        }
+    
+        .btn {
+            font-size: 12px; /* Reduce button size */
+            padding: 8px; /* Adjust padding */
+        }
+    
+        table th, table td {
+            font-size: 12px; /* Reduce font size */
+            padding: 8px; /* Reduce padding */
+        }
+    
+        table th {
+            text-align: left; /* Align headers to the left */
+        }
+    
+        table tr:hover {
+            background-color: none;
+        }
+    
+        .transaction-container tbody tr {
+            display: flex; /* Set rows as flex containers */
+            flex-wrap: wrap; /* Allow items to wrap if needed */
+            justify-content: center; /* Center align content horizontally */
+            align-items: center; /* Center align items vertically */
+            margin: 10px auto; /* Center rows with some space between them */
+            padding: 15px; /* Add padding for better spacing */
+            border: 1px solid #ccc; /* Card-like border */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #fff; /* White background for contrast */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+    
+        .transaction-container tbody td {
+            flex: 1 1 calc(50% - 10px); /* Items take 50% width with space between */
+            margin: 5px; /* Add spacing around items */
+            text-align: center; /* Center align text */
+            font-size: 14px; /* Adjust font size for readability */
+        }
+    
+        .transaction-container tbody td::before {
+            content: attr(data-label); /* Display the label */
+            display: block; /* Ensure it's on its own line */
+            font-weight: bold; /* Emphasize labels */
+            margin-bottom: 5px; /* Space between label and value */
+            font-size: 14px; /* Match font size */
+            color: #555; /* Darker color for labels */
+        }
+    
+        .transaction-container table {
+            display: block; /* Force table to behave as block elements */
+        }
+    
+        .transaction-container thead {
+            display: none; /* Hide table headers on small screens */
+        }
+    
+        .transaction-container {
+            width: 100%; /* Take full width on small screens */
+            padding: 10px; /* Adjust padding for smaller screens */
+        }
+    
+        /* Adjust buttons inside table rows */
+        .transaction-container tbody td button {
+            font-size: 14px;
+            padding: 10px 15px; 
+            border-radius: 5px; 
+        }
+
+        .btn.toggle-details {
+            font-size: 14px;
+            padding: 10px 15px; 
+            border-radius: 5px;
+            margin: 0px;
+        }
+    }
+    
+
+    {% comment %} @media (max-width: 1136px) {
+        .btn.toggle-details {
+            margin-bottom: 5px;
+        }
+    } {% endcomment %}
+
+    
+
+    .check-in {
+        background-color:rgb(39, 39, 39);
+        color: white;
+        font-size: 8px;
+        padding: 5px;
+    }
+    
+    .check-out {
+        background-color:rgb(39, 39, 39);
+        color: white;
+        font-size: 8px;
+        padding: 5px;
+    }
+    
+    
+    .disabled {
+        color: #ccc;
+        pointer-events: none;
+    }
+    
+    .not-current-month {
+        visibility: hidden;
+    }
+    
+    .month-year {
+        display: flex; 
+        justify-content: center;
+    }
+
+    .date-label {
+        position: absolute;
+        top: 50%; /* Adjust to place the label in the center */
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 8px; /* Smaller font for the label */
+        background: rgb(39, 39, 39);
+        pointer-events: none; /* Prevent interfering with clicks */
+    }
+    
+    .calendar td {
+        position: relative; /* Required for positioning the label */
+    }
+    
+    .calendar-labels {
+        display: flex;
+        justify-content: space-between; /* Align "Previous" and "Next" to the far left and right */
+        align-items: center; /* Vertically align all items */
+        width: 100%; /* Use the full width of the container */
+        padding: 10px 0; /* Add padding for spacing */
+    }
+    
+    .date-labels {
+        display: flex;
+        flex-direction: column; 
+        align-items: center;
+        gap: 5px;
+        text-align: center; 
+        margin: 15px 0;
+    }
+    
+    .calendarlabel {
+        font-size: 12px;
+    }
+    
+    
+
+    #calendar-controls {
+        display: flex;
+        justify-content: space-between; /* Align "Previous" to the far left and "Next" to the far right */
+        align-items: center; /* Center the buttons vertically */
+        margin: 5px 0; /* Add spacing above and below the buttons */
+        position: relative;
+        width: 100%; /* Ensure it spans the full width of the container */
+    }
+    
+    #calendar-controls .btn:hover {
+        color: black;
+        border: 1px solid #cccc;
+    }
+    
+    .details-row-container {
+        display: flex; /* Create a flex container */
+        justify-content: space-between; /* Space between columns */
+        gap: 20px; /* Add spacing between columns */
+        width: 100%; /* Ensure it takes the full width */
+        padding: 15px; /* Add padding for spacing */
+        background-color: #f9f9f9; /* Light background for the container */
+        border: 1px solid #ccc; /* Add a subtle border */
+        border-radius: 8px; /* Rounded corners */
+    }
+    
+    .details-left, .details-right {
+        flex: 1; /* Each column takes equal space */
+        max-width: 50%; /* Limit columns to half the width */
+    }
+    
+    .details-left {
+        text-align: left; /* Align text to the left for the left column */
+    }
+    
+    .details-right {
+        text-align: left; /* Align text to the left for the right column */
+    }
+    
+    .details-content p {
+        margin: 10px 0; /* Add spacing between paragraphs */
+        font-size: 14px; /* Standard font size */
+        line-height: 1.5; /* Improve readability */
+    }
+    
+    @media (max-width: 768px) {
+        .details-row-container {
+            flex-direction: column; /* Stack columns vertically */
+            gap: 10px; /* Reduce gap for smaller screens */
+        }
+    
+        .details-left, .details-right {
+            max-width: 100%; /* Allow columns to take full width */
+        }
+    }
+    
+</style>
+
+<div class="container transaction-container">
+    <div class="header-row">
+        <h3 class="transaction-h3">Your Reservations</h3>
+        <a href={% url 'lidohome' %} class="btn-one"><i class="fa-solid fa-house-user"></i>&nbsp; Home <span></span></a>
+    </div>
+    <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+        <i class="fa-solid fa-circle-info" style="color: #83b17b;"></i>&nbsp;
+        <strong>Important Note:</strong>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Rebooking requests take 2-5 minutes for front desk processing. Once approved, the status will change to <span style="color: teal; font-weight: bold;">Rebooked</span> with the updated dates.</li>
+            <li>Rebooking is <strong><u>allowed only once</u></strong> and can only be requested within <span style="color: red;">3 days of the booking creation.</span></li>
+            <li>Refunds and cancellations must be requested via our official <a href="https://web.facebook.com/lidoshores" target="_blank" style="color: var(--bgsecondary); text-decoration: none;">Facebook page</a>.</li>
+            <li>Reservations with the status <span style="color: red; font-weight: bold;">Cancelled</span> or <span style="color: blue; font-weight: bold;">Refunded</span> cannot be rebooked.</li>
+        </ul>
+    </div>
+    
+    
+    <!-- Table for Larger Screens -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Reservation ID</th>
+                <th>Guest</th>
+                <th>Check in/out Dates</th>
+                <th>Room Details</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation in reservations %}
+            <tr class="table-row">
+                <td data-label="Reservation ID">{{ reservation.reservation_ID }}</td>
+                <td data-label="Guest">{{ reservation.guest.first_name }} {{ reservation.guest.last_name }}</td>
+                <td data-label="Check in/out Dates">{{ reservation.check_in_date }} -<br> {{ reservation.check_out_date }}</td>
+                <td data-label="Room Details">
+                    {{ reservation.room_chosen }}<br>
+                    ₱{{ reservation.overall_total_amount|floatformat:0|intcomma }}
+                </td>
+                <td data-label="Status">
+                    {% if reservation.latest_rebooking_request %}
+                        {% with reservation.latest_rebooking_request as request %}
+                            {% if request.status == 'Pending' %}
+                                <span class="status-pending">Pending Rebooking</span>
+                                <br>
+                                <small style="color: gray;">
+                                    Pending Dates: {{ request.requested_check_in_date }} - {{ request.requested_check_out_date }}
+                                </small>
+                            {% elif request.status == 'Approved' %}
+                                <span class="status-rebooked">Rebooked</span>
+                                <br>
+                                <small style="color: gray;">
+                                    New Dates: {{ request.requested_check_in_date }} - {{ request.requested_check_out_date }}
+                                </small>
+                            {% elif request.status == 'Cancelled' %}
+                                <span class="status-cancelled">Rebooking Cancelled</span>
+                                <br>
+                                <small style="color: gray;">
+                                    Cancelled Dates: {{ request.requested_check_in_date }} - {{ request.requested_check_out_date }}
+                                </small>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        {% if reservation.status == 'Rebooked' %}
+                            <span class="status-rebooked">Rebooked</span>
+                        {% elif reservation.status == 'Booked' %}
+                            <span class="status-booked">Booked</span>
+                        {% elif reservation.status == 'Pending' %}
+                            <span class="status-pending">Pending</span>
+                        {% elif reservation.status == 'Cancelled' %}
+                            <span class="status-cancelled">Cancelled</span>
+                        {% elif reservation.status == 'Refunded' %}
+                            <span class="status-refunded">Refunded</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                
+                
+
+                {% with today=now|date:"Y-m-d" %}
+                <td data-label="Actions">
+                    {% if reservation.status == "Booked" and not reservation.disable_rebooking %}
+                    <button class="btn btn-sm btn-rebook" data-reservation="{{ reservation.reservation_ID }}">Rebook</button>
+                    {% else %}
+                    <button class="btn btn-sm btn-rebook" disabled>Rebook</button>
+                    {% endif %}
+                    <button class="btn btn-sm toggle-details" data-reservation="{{ reservation.reservation_ID }}">Details</button>
+                </td>
+                
+                {% endwith %}
+                
+                
+                
+            </tr>
+            <tr class="details-row" data-reservation="{{ reservation.reservation_ID }}" style="display: none;">
+                <td colspan="7">
+                    <div class="details-content">
+                        <div class="details-row-container">
+                            <!-- Left Column -->
+                            <div class="details-left">
+                                <p><i class="fa-solid fa-file-invoice"></i> &nbsp;<strong>Invoices:</strong> 
+                                        {% if reservation.invoice_file %}
+                                            <li>
+                                                <a href="{{ reservation.invoice_file.url }}" download style="text-decoration: underline;">
+                                                    <strong>Original Invoice</strong>
+                                                </a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="expired-invoice" style="color: red;"><strong>Original Invoice Expired</strong></span>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% if reservation.rebooked_invoice_file %}
+                                            <li>
+                                                <a href="{{ reservation.rebooked_invoice_file.url }}" download style="text-decoration: underline;">
+                                                    <strong>Rebooked Invoice</strong>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+
+                                        {% if reservation.all_receipts %}
+                                        <strong>Receipts:</strong>
+                                        <ul>
+                                            {% for receipt in reservation.all_receipts %}
+                                                {% if receipt.receipt_file %}
+                                                    <li>
+                                                        <a href="{{ receipt.receipt_file.url }}" download style="text-decoration: underline;">
+                                                            <strong>Receipt ({{ receipt.created_at|date:"M d, Y H:i A" }})</strong>
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Transaction Date:</strong> 
+                                    <br><span data-label="Transaction Date" class="transaction-date" data-utc="{{ reservation.created_at|date:'c' }}"></span>
+                                </p>
+                                <p><strong>Mode of Payment:</strong> {{ reservation.mode_of_payment|default:"Not Specified" }}</p>
+                                <p><strong>Payment Type:</strong> {{ reservation.payment_type|default:"Not Specified" }}</p>
+                            </div>
+            
+                            <!-- Right Column -->
+                            <div class="details-right">
+                                <p><strong>Contact Info:</strong> <br>{{ reservation.email }} / {{ reservation.contact_number }}</p>
+                                <p><strong>Special Requests:</strong> {{ reservation.special_requests|default:"None" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            
+            
+            {% empty %}
+            <tr>
+                <td colspan="7">No reservations found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="rebooking-modal" class="rebooking-modal" style="display: none;">
+    <div class="rebooking-modal-content">
+        <!-- Header with Title and Close Button -->
+        <div class="modal-header" style="margin-bottom: 10px;">
+            <h3 class="transaction-h3">Rebooking Request</h3>
+            <button type="button" class="btn-one" id="close-modal">Close <span></span></button>
+        </div>
+        <form id="rebooking-form">
+                        <!-- Important Notes -->
+                        <div style="font-size: 12px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 10px;">
+                            <i class="fa-solid fa-circle-info" style="color: #83b17b;"></i>&nbsp;
+                            <strong>Important Note:</strong>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>
+                                    Rebooking requests are limited to changes in <span style="color: red; font-weight: bold;">check-in and check-out dates only.</span> The room selection remains unchanged to ensure availability and to maintain your reservation in the same room. Processing such requests typically takes 2-5 minutes, and once approved, the status will update to <span style="color: teal; font-weight: bold;">Rebooked</span> with the adjusted dates.
+                                </li>
+                            </ul>                
+                        </div>
+
+                                        <!-- Navigation Buttons with Date Labels -->
+                <div class="calendar-labels">
+                    <button class="btn" id="previous" style="border: 1px solid #ccc; font-size: 12px;">Previous </button>
+                    <button class="btn" id="next" style="border: 1px solid #ccc; font-size: 12px;">Next </button>
+                </div>
+            <input type="hidden" id="reservation-id" name="reservation_id">
+            <div id="calendar-container">
+                <div class="calendar-row">
+                    <div class="calendar" id="calendar1">
+                        <div class="month-year" id="monthYear1"></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Su</th>
+                                    <th>Mo</th>
+                                    <th>Tu</th>
+                                    <th>We</th>
+                                    <th>Th</th>
+                                    <th>Fr</th>
+                                    <th>Sa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarBody1" style="font-size: 11px;"></tbody>
+                        </table>
+                    </div>
+                    <div class="calendar" id="calendar2">
+                        <div class="month-year" id="monthYear2"></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Su</th>
+                                    <th>Mo</th>
+                                    <th>Tu</th>
+                                    <th>We</th>
+                                    <th>Th</th>
+                                    <th>Fr</th>
+                                    <th>Sa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarBody2" style="font-size: 11px;"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div class="date-labels">
+                    <div id="checkInLabel" class="calendarlabel"><strong>Check-In Date:</strong> N/A</div>
+                    <div id="checkOutLabel" class="calendarlabel"><strong>Check-Out Date:</strong> N/A</div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="text-align: center;">
+                <button type="submit" id="submit-request" class="btn-one" disabled style="margin-bottom: 10px;">Submit Request <span></span></button>
+                <button type="button" class="btn-one" id="cancel-modal" style="margin-bottom: 10px;">Cancel <span></span></button>
+            </div>
+            
+        </form>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="rebooking-modal" style="display: none;">
+    <div class="rebooking-modal-content">
+        <div class="modal-header">
+            <h3 class="transaction-h3">Confirm Rebooking</h3>
+            
+        </div>
+        <div class="confirmation-details">
+            <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+                <i class="fa-solid fa-circle-info" style="color: #83b17b;"></i>&nbsp;
+                <strong>Important Note:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Rebooking requests take 2-5 minutes for front desk processing. Once approved, the status will change to <span style="color: teal; font-weight: bold;">Rebooked</span> with the updated dates.</li>
+                    <li><br>Rebooking is <strong><u>allowed only once</u></strong> and can only be requested within <span style="color: red;">3 days of the booking creation.</span></li>
+                    <li><br>Refunds and cancellations must be requested via our official <a href="https://web.facebook.com/lidoshores" target="_blank" style="color: var(--bgsecondary); text-decoration: none;">Facebook page</a>.</li>
+                    <li>Reservations with the status <span style="color: red; font-weight: bold;">Cancelled</span> or <span style="color: blue; font-weight: bold;">Refunded</span> cannot be rebooked.</li>
+                </ul>
+            </div>
+
+
+
+            <ul style="text-align: center; margin-bottom: 10px;">
+                <li><strong>Check-In Date:</strong> <span id="confirm-checkin"></span></li>
+                <li><strong>Check-Out Date:</strong> <span id="confirm-checkout"></span></li>
+            </ul>
+        </div>
+        <div style="text-align: center;">
+            <button type="button" class="btn-one" id="confirm-rebooking">Confirm <span></span></button>
+            <button type="button" class="btn" id="close-confirmation-modal">Cancel <span></span></button>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = document.querySelectorAll('.table-row');
+
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                rows.forEach(otherRow => {
+                    if (otherRow !== row) {
+                        otherRow.style.opacity = '0.5';
+                    }
+                });
+            });
+
+            row.addEventListener('mouseleave', () => {
+                rows.forEach(otherRow => {
+                    otherRow.style.opacity = '1';
+                });
+            });
+        });
+
+        const transactionDates = document.querySelectorAll('.transaction-date');
+
+        function timeSince(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = Math.floor(seconds / 31536000);
+
+            if (interval >= 1) return interval + " year" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) return interval + " month" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) return interval + " day" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + " hour" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) return interval + " minute" + (interval > 1 ? "s" : "") + " ago";
+            return "just now";
+        }
+
+        transactionDates.forEach(function (dateElement) {
+            const utcTime = dateElement.getAttribute('data-utc');
+            if (utcTime) {
+                const localTime = new Date(utcTime);
+
+                // Format the absolute time
+                const options = {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                };
+                const formattedTime = localTime.toLocaleString(undefined, options);
+
+                // Calculate the relative time
+                const relativeTime = timeSince(localTime);
+
+                // Display both absolute and relative time
+                dateElement.innerHTML = `${formattedTime} <span style="color: gray;">(${relativeTime})</span>`;
+            }
+        });
+
+        const toggleButtons = document.querySelectorAll('.toggle-details');
+
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const reservationID = button.getAttribute('data-reservation');
+                const detailsRow = document.querySelector(`.details-row[data-reservation="${reservationID}"]`);
+        
+                if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+                    detailsRow.style.display = 'table-row';
+                    button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+                } else {
+                    detailsRow.style.display = 'none';
+                    button.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                }
+            });
+        });
+
+        const rebookButtons = document.querySelectorAll('.btn-rebook');
+        const rebookModal = document.getElementById('rebooking-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelModal = document.getElementById('cancel-modal');
+        const rebookingForm = document.getElementById('rebooking-form');
+        const reservationIdField = document.getElementById('reservation-id');
+        const rebookingDateField = document.getElementById('rebooking-date');
+
+        function showModal(reservationID) {
+            const rebookModal = document.getElementById('rebooking-modal');
+            const reservationIdField = document.getElementById('reservation-id');
+            reservationIdField.value = reservationID; // Set the hidden field value
+            rebookModal.style.display = 'flex'; // Ensure it's ready to animate
+            setTimeout(() => {
+                rebookModal.classList.add('show'); // Start animation
+            }, 10); // Short delay to ensure CSS transition works
+        }
+        
+        function hideModal() {
+            const rebookModal = document.getElementById('rebooking-modal');
+            rebookModal.classList.remove('show'); // Start hide animation
+            setTimeout(() => {
+                rebookModal.style.display = 'none'; // Hide after animation
+            }, 300); // Match the transition duration
+        }
+        
+
+    // Attach event listeners to rebook buttons
+    rebookButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const reservationID = button.getAttribute('data-reservation');
+            showModal(reservationID);
+        });
+    });
+
+    // Attach event listener to close button
+    closeModal.addEventListener('click', hideModal);
+
+    // Close modal when clicking outside the modal content
+    window.addEventListener('click', function (event) {
+        if (event.target === rebookModal) {
+            hideModal();
+        }
+    });
+
+        // Submit the rebooking form
+        rebookingForm.addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent the form from refreshing the page
+            const reservationID = reservationIdField.value;
+            const rebookingDate = rebookingDateField.value;
+
+            fetch(`/rebook/${reservationID}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({
+                    check_in_date: checkInDate.toISOString().split("T")[0],
+                    check_out_date: checkOutDate.toISOString().split("T")[0],
+                }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        // Disable the rebook button for the specific reservation
+                        const rebookButton = document.querySelector(
+                            `.btn-rebook[data-reservation="${reservationID}"]`
+                        );
+                        if (rebookButton) {
+                            rebookButton.disabled = true;
+                            rebookButton.textContent = "Rebooking Requested";
+                        }
+            
+                        location.reload(); // Reload to display success message
+                    } else {
+                        showMessage(data.message || "Failed to submit rebooking request.", "error");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    showMessage("An error occurred. Please try again.", "error");
+                });
+            
+            
+        });
+
+        // Close modal when clicking outside the modal content
+        window.addEventListener('click', function (event) {
+            if (event.target === rebookModal) {
+                rebookModal.style.display = 'none';
+            }
+        });
+
+        let checkInDate = null;
+        let checkOutDate = null;
+
+        async function fetchRebookingAvailability(date) {
+            try {
+                const response = await fetch(`/api/getRoomAvailability?date=${date.toISOString().split('T')[0]}`);
+                if (!response.ok) {
+                    console.error(`Error fetching availability for ${date.toISOString().split('T')[0]}`);
+                    return { totalAvailable: 0 };
+                }
+                const data = await response.json();
+                return data; // Assumes API returns { totalAvailable: <number> }
+            } catch (error) {
+                console.error(`Error fetching availability for ${date.toISOString().split('T')[0]}:`, error);
+                return { totalAvailable: 0 };
+            }
+        }
+    
+        // Render calendar with availability
+        async function renderCalendar(calendarId, monthYearId, bodyId, month, year) {
+            const monthYear = document.getElementById(monthYearId);
+            const calendarBody = document.getElementById(bodyId);
+        
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            const now = new Date();
+        
+            monthYear.textContent = `${new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(year, month))} ${year}`;
+            calendarBody.innerHTML = ''; // Clear previous calendar content
+        
+            let date = 1;
+            const dates = []; // Store all the dates for batch fetching
+            const cells = []; // Store cells for later updates
+        
+            for (let i = 0; i < 6; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < 7; j++) {
+                    const cell = document.createElement('td');
+                    if (i === 0 && j < firstDay || date > lastDate) {
+                        cell.classList.add('not-current-month');
+                    } else {
+                        const cellDate = new Date(year, month, date);
+                        const dateContent = document.createElement('div');
+                        dateContent.textContent = date;
+                        dateContent.className = 'date-number';
+        
+                        const availability = document.createElement('div');
+                        availability.className = 'availability';
+        
+                        // Add loading spinner
+                        const loadingSpinner = document.createElement('div');
+                        loadingSpinner.className = 'loading-spinner';
+                        loadingSpinner.style.width = '16px';
+                        loadingSpinner.style.height = '16px';
+                        loadingSpinner.style.border = '3px solid var(--bgtertiary)';
+                        loadingSpinner.style.borderTop = '3px solid var(--bgsecondary)';
+                        loadingSpinner.style.borderRadius = '50%';
+                        loadingSpinner.style.animation = 'spin 1s linear infinite';
+                        loadingSpinner.style.margin = 'auto';
+        
+                        cell.appendChild(dateContent);
+                        cell.appendChild(loadingSpinner);
+                        cell.classList.add('disabled'); // Disable the date initially
+        
+                        dates.push(cellDate); // Add the date for fetching
+                        cells.push({ cell, cellDate, loadingSpinner, availability }); // Save cell data for later updates
+        
+                        date++;
+                    }
+                    row.appendChild(cell);
+                }
+                calendarBody.appendChild(row);
+            }
+        
+            // Throttled Fetching
+            const batchSize = 5; // Adjust based on your server's capacity
+            for (let i = 0; i < dates.length; i += batchSize) {
+                const batch = dates.slice(i, i + batchSize);
+        
+                const batchResults = await Promise.all(
+                    batch.map(async (date) => ({
+                        date,
+                        data: await fetchRebookingAvailability(date),
+                    }))
+                );
+        
+                // Update cells with the fetched data
+                batchResults.forEach(({ date, data }) => {
+                    const { cell, loadingSpinner, availability } = cells.find((c) => c.cellDate.getTime() === date.getTime());
+        
+                    loadingSpinner.remove(); // Remove the spinner
+                    const roomsAvailable = data.totalAvailable || 0;
+        
+                    if (roomsAvailable > 0) {
+                        availability.textContent = `${roomsAvailable} Avail..`;
+                        availability.style.color = 'green';
+                        cell.classList.remove('disabled'); // Enable the date
+                        cell.classList.add('clickable');
+                        cell.addEventListener('click', () => handleDateClick(date, cell));
+                    } else {
+                        availability.textContent = 'Full';
+                        availability.style.color = 'red';
+                        cell.classList.add('disabled');
+                    }
+                    cell.appendChild(availability);
+                });
+            }
+        }
+        
+        // Add CSS for the spinner
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .loading-spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        
+    
+        const submitButton = document.getElementById("submit-request");
+        const confirmModal = document.getElementById("confirmation-modal");
+        const rebookingModal = document.getElementById("rebooking-modal");
+        const confirmCheckIn = document.getElementById("confirm-checkin");
+        const confirmCheckOut = document.getElementById("confirm-checkout");
+        const confirmRebooking = document.getElementById("confirm-rebooking");
+        const closeConfirmationModal = document.getElementById("close-confirmation-modal");
+        const messageBox = document.getElementById("messageBox");
+
+        function showMessage(message, type) {
+            const alert = document.createElement("div");
+            alert.className = `alert alert-${type}`;
+            alert.role = "alert";
+            alert.textContent = message;
+    
+            messageBox.appendChild(alert);
+            messageBox.style.display = "block";
+    
+            // Automatically fade out the message
+            setTimeout(() => {
+                alert.style.opacity = "0";
+                setTimeout(() => {
+                    alert.remove();
+                }, 500);
+            }, 3000);
+        }
+
+            // Show confirmation modal
+            submitButton.addEventListener("click", function (event) {
+                event.preventDefault();
+                confirmCheckIn.textContent = checkInDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+                confirmCheckOut.textContent = checkOutDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+                confirmModal.style.display = "flex";
+            });
+            
+
+    // Close confirmation modal
+    closeConfirmationModal.addEventListener("click", function () {
+        confirmModal.style.display = "none";
+    });
+
+    // Confirm rebooking
+    confirmRebooking.addEventListener("click", function () {
+        const reservationID = document.getElementById("reservation-id").value;
+        fetch(`/rebook/${reservationID}/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify({
+                check_in_date: checkInDate.toISOString().split("T")[0],
+                check_out_date: checkOutDate.toISOString().split("T")[0],
+            }),
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    // Disable the rebook button for the specific reservation
+                    const rebookButton = document.querySelector(
+                        `.btn-rebook[data-reservation="${reservationID}"]`
+                    );
+                    if (rebookButton) {
+                        rebookButton.disabled = true;
+                        rebookButton.textContent = "Rebooking Requested";
+                    }
+        
+                    location.reload(); // Reload to display success message
+                } else {
+                    showMessage(data.message || "Failed to submit rebooking request.", "error");
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                showMessage("An error occurred. Please try again.", "error");
+            });
+        
+        
+    });
+
+    // Update navigation button states
+    function updateButtonState(currentYear, currentMonth) {
+        const now = new Date();
+        const maxMonth = now.getMonth() + 1; // Limit to 2 months ahead
+        const maxYear = now.getFullYear() + Math.floor(maxMonth / 12);
+    
+        const nextButton = document.getElementById('next');
+        const prevButton = document.getElementById('previous');
+    
+        // Disable "Next" if beyond the limit
+        nextButton.disabled = currentYear > maxYear || (currentYear === maxYear && currentMonth > maxMonth % 12);
+    
+        // Disable "Previous" if before the current month
+        prevButton.disabled = currentYear === now.getFullYear() && currentMonth <= now.getMonth();
+    }
+
+    function handleDateClick(selectedDate, cell) {
+        if (!checkInDate || (checkInDate && checkOutDate)) {
+            // Reset dates and set Check-in
+            checkInDate = selectedDate;
+            checkOutDate = null;
+    
+            clearSelectedDates();
+            cell.classList.add('check-in');
+            addLabel(cell, 'Check-in');
+        } else if (checkInDate && !checkOutDate && selectedDate > checkInDate) {
+            // Set Check-out
+            checkOutDate = selectedDate;
+    
+            cell.classList.add('check-out');
+            addLabel(cell, 'Check-out');
+    
+            // Highlight range between Check-in and Check-out
+            highlightRange(checkInDate, checkOutDate);
+        } else if (checkInDate && selectedDate <= checkInDate) {
+            alert('Check-out date must be after the Check-in date.');
+            return;
+        }
+    
+        // Persist marks
+        reapplyMarks();
+    
+        // Update labels and enable/disable the submit button
+        updateDateLabels();
+        updateSubmitButtonState();
+    }
+    
+    function reapplyMarks() {
+        document.querySelectorAll('.calendar td').forEach((cell) => {
+            const cellDate = new Date(cell.getAttribute('data-date'));
+    
+            if (isSameDate(cellDate, checkInDate)) {
+                cell.classList.add('check-in');
+                addLabel(cell, 'Check-in');
+            }
+            if (isSameDate(cellDate, checkOutDate)) {
+                cell.classList.add('check-out');
+                addLabel(cell, 'Check-out');
+            }
+            if (checkInDate && checkOutDate && cellDate > checkInDate && cellDate < checkOutDate) {
+                cell.classList.add('in-range');
+            }
+        });
+    }
+    
+
+    function updateSubmitButtonState() {
+        const submitButton = document.getElementById('submit-request');
+        if (checkInDate && checkOutDate) {
+            submitButton.disabled = false;
+        } else {
+            submitButton.disabled = true;
+        }
+    }
+    
+    function clearSelectedDates() {
+        document.querySelectorAll('.check-in, .check-out, .in-range').forEach((cell) => {
+            cell.classList.remove('check-in', 'check-out', 'in-range');
+            const existingLabel = cell.querySelector('.date-label');
+            if (existingLabel) {
+                existingLabel.remove();
+            }
+        });
+    }
+    
+
+        function addLabel(dateElement, labelText) {
+            const existingLabel = dateElement.querySelector('.date-label');
+            if (existingLabel) {
+                existingLabel.textContent = labelText;
+            } else {
+                const label = document.createElement('div');
+                label.className = 'date-label';
+                label.textContent = labelText;
+                dateElement.appendChild(label);
+            }
+        }
+        
+
+        function updateDateLabels() {
+            const checkInLabel = document.getElementById('checkInLabel');
+            const checkOutLabel = document.getElementById('checkOutLabel');
+        
+            checkInLabel.innerHTML = checkInDate
+                ? `<strong>Check-In Date:</strong> ${checkInDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}`
+                : '<strong>Check-In Date:</strong> N/A';
+        
+            checkOutLabel.innerHTML = checkOutDate
+                ? `<strong>Check-Out Date:</strong> ${checkOutDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}`
+                : '<strong>Check-Out Date:</strong> N/A';
+        }
+        
+    
+
+    function formatDateVerbose(date) {
+        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function highlightRange(startDate, endDate) {
+        document.querySelectorAll('.calendar td').forEach((cell) => {
+            const cellDate = new Date(cell.getAttribute('data-date'));
+            if (cellDate > startDate && cellDate < endDate) {
+                cell.classList.add('in-range');
+            } else {
+                cell.classList.remove('in-range');
+            }
+        });
+    }
+    
+
+    async function initializeCalendar(calendarId, monthYearId, bodyId, month, year) {
+        await renderCalendar(calendarId, monthYearId, bodyId, month, year);
+    
+        // Reapply "Check-in" and "Check-out" marks
+        document.querySelectorAll('.calendar td').forEach((cell) => {
+            const cellDate = new Date(cell.getAttribute('data-date'));
+    
+            if (isSameDate(cellDate, checkInDate)) {
+                cell.classList.add('check-in');
+                addLabel(cell, 'Check-in');
+            }
+            if (isSameDate(cellDate, checkOutDate)) {
+                cell.classList.add('check-out');
+                addLabel(cell, 'Check-out');
+            }
+            if (checkInDate && checkOutDate && cellDate > checkInDate && cellDate < checkOutDate) {
+                cell.classList.add('in-range');
+            }
+        });
+    }
+    
+    
+
+    function displaySelectedDates() {
+        const checkInLabel = document.getElementById('confirm-checkin');
+        const checkOutLabel = document.getElementById('confirm-checkout');
+    
+        checkInLabel.textContent = checkInDate
+            ? checkInDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+            : 'N/A';
+    
+        checkOutLabel.textContent = checkOutDate
+            ? checkOutDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+            : 'N/A';
+    }
+    
+    
+        
+        function isSameDate(date1, date2) {
+            return date1 && date2 && date1.toDateString() === date2.toDateString();
+        }
+
+        function handleButtonState(currentYear, currentMonth) {
+            const now = new Date();
+            const maxMonth = now.getMonth() + 1; // Limit to current and next 2 months
+            const maxYear = now.getFullYear() + Math.floor(maxMonth / 12);
+        
+            const nextButton = document.getElementById('next');
+            const prevButton = document.getElementById('previous');
+        
+            nextButton.disabled = currentYear > maxYear || (currentYear === maxYear && currentMonth > maxMonth % 12);
+            prevButton.disabled = currentYear === now.getFullYear() && currentMonth <= now.getMonth();
+        }
+        
+    
+        // Initialize two months for the modal calendar
+        const now = new Date();
+        let currentMonth = now.getMonth();
+        let currentYear = now.getFullYear();
+        
+        initializeCalendar('calendar1', 'monthYear1', 'calendarBody1', currentMonth, currentYear);
+        initializeCalendar('calendar2', 'monthYear2', 'calendarBody2', currentMonth + 1, currentYear);
+        handleButtonState(currentYear, currentMonth);
+        
+
+    // Navigation Buttons
+    document.getElementById('next').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        initializeCalendar('calendar1', 'monthYear1', 'calendarBody1', currentMonth, currentYear);
+        initializeCalendar('calendar2', 'monthYear2', 'calendarBody2', currentMonth + 1, currentYear);
+        handleButtonState(currentYear, currentMonth);
+    });
+    
+    document.getElementById('previous').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        initializeCalendar('calendar1', 'monthYear1', 'calendarBody1', currentMonth, currentYear);
+        initializeCalendar('calendar2', 'monthYear2', 'calendarBody2', currentMonth + 1, currentYear);
+        handleButtonState(currentYear, currentMonth);
+    });
+    
+
+    // Initialize Button States
+    handleButtonState(currentYear, currentMonth);
+    
+        // Initialize both calendars
+        const today = new Date();
+        const thisMonth = today.getMonth();
+        const thisYear = today.getFullYear();
+    
+        renderCalendar('calendar1', 'monthYear1', 'calendarBody1', thisMonth, thisYear);
+        renderCalendar('calendar2', 'monthYear2', 'calendarBody2', thisMonth + 1, thisYear);
+    
+        document.querySelectorAll('.btn-rebook').forEach(button => {
+            button.addEventListener('click', () => {
+                const reservationID = button.getAttribute('data-reservation');
+                
+                // Show the modal
+                showModal(reservationID);
+                
+                // Trigger the "Next" button
+                const nextButton = document.getElementById('next');
+                if (nextButton) {
+                    nextButton.click();
+                }
+            });
+        });
+        
+        
+        document.getElementById('close-modal').addEventListener('click', hideModal);
+        document.getElementById('cancel-modal').addEventListener('click', hideModal);
+        
+        window.addEventListener('click', event => {
+            const rebookModal = document.getElementById('rebooking-modal');
+            if (event.target === rebookModal) {
+                hideModal();
+            }
+        });
+        
+        
+    });
+</script>
+
+{% endblock content %}

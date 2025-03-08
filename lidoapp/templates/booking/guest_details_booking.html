@@ -3,6 +3,46 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
 
 <style>
+
+  .payment-toggle-container {
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  .payment-toggle-link {
+    margin: 10px 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .payment-toggle-link.active,
+  .payment-toggle-link:hover {
+    background-color: var(--bgsecondary);
+    color: var(--bgtertiary);
+    filter: brightness(1);
+  }
+
+  .payment-container {
+    display: block; /* Ensure it's always part of the layout */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    height: 0;
+    overflow: hidden;
+  }
+  
+  .payment-container.active {
+    opacity: 1;
+    transform: translateY(0);
+    height: auto;
+  }
+  
+
   /* Container for the form */
   .lidoguestdetails-container {
     max-width: 800px;
@@ -110,15 +150,27 @@
     margin-top: 20px;
   }
 
+  .payment-section h3 {
+    font-size: 18px; /* Default font size */
+    margin-bottom: 10px;
+  }
+
+  .payment-section p {
+    font-size: 15px;
+    margin-bottom: 15px;
+    line-height: 1.6;
+  }
+
+  /* Payment Logos */
   .payment-logo {
-    width: 40px; /* Adjust the size of the logos */
+    width: 40px; /* Default size */
     margin-right: 10px;
   }
 
   /* QR Code styles */
-  .qr-code {
+  .image-preview-container {
     width: 100px; /* Size of the QR code */
-    margin-left: 20px;
+    margin: 5px 50px;
   }
 
   /* Flexbox for payment method layout */
@@ -175,17 +227,243 @@
 
 
   /* Disable button appearance */
-button:disabled {
-  background-color: #ddd;  /* Gray background */
-  color: #999;  /* Gray text */
-  cursor: not-allowed;  /* Change cursor to show button is not clickable */
-}
+  button:disabled {
+    background-color: #ddd;  /* Gray background */
+    color: #999;  /* Gray text */
+    cursor: not-allowed;  /* Change cursor to show button is not clickable */
+  }
 
 
-#paypal-button-container {
-  transition: opacity 0.3s ease;
-}
+  #paypal-button-container {
+    transition: opacity 0.3s ease;
+    padding: 25px;
+  }
 
+  /* General adjustments */
+  .policy-card p {
+    margin: 5px 0; /* Minimal spacing between paragraphs */
+    line-height: 1.6;
+  }
+
+  .policy-card strong {
+    margin-top: 3px; /* Add spacing above titles */
+    margin-bottom: 3px; /* Small gap below the title */
+    font-size: 16px;
+    display: inline-block; /* Prevent breaking the layout */
+  }
+
+  .policy-card p + strong {
+    margin-top: 10px; /* Larger margin between sections */
+  }
+
+  /* Adjust margin and padding for sections */
+  .policy-card {
+    padding: 20px;
+    border: 1px solid #ddd;
+    background-color: #f8f8f8;
+    margin-bottom: 20px;
+  }
+
+  /* reCAPTCHA Container */
+  .g-recaptcha {
+    margin: 20px 0; /* Space above and below the reCAPTCHA */
+    text-align: center; /* Center align on small screens */
+  }
+
+  @media (max-width: 1024px) {
+    .lidoguestdetails-container {
+      padding: 20px; /* Reduce padding */
+    }
+
+    .form-row {
+      flex-direction: column; /* Stack form fields vertically */
+      gap: 15px;
+    }
+
+    .form-row > .form-group {
+      flex: none;
+      width: 100%; /* Make fields full width */
+    }
+
+    .form-row-single,
+    .form-row-country {
+      display: block;
+    }
+
+    .policy-card {
+      padding: 15px; /* Reduce padding */
+    }
+
+    .policy-card p {
+      font-size: 14px; /* Slightly smaller font size */
+    }
+
+    .policy-card strong {
+      font-size: 15px; /* Adjust bold titles */
+    }
+  }
+
+  @media (max-width: 768px) {
+    .lidoguestdetails-container {
+      padding: 15px;
+    }
+
+    .policy-card {
+      padding: 15px; /* Reduce padding */
+    }
+
+    .policy-card strong {
+      font-size: 14px; /* Adjust font size for smaller screens */
+    }
+
+    .policy-card p {
+      font-size: 13px; /* Smaller text size */
+    }
+
+    .g-recaptcha {
+      margin: 15px 0; /* Adjust spacing */
+    }
+
+    .guestdetails-h3 {
+      font-size: 16px; /* Adjust title font */
+    }
+
+    #agreeButton {
+      font-size: 14px; /* Button font size */
+      padding: 8px 10px; /* Compact button */
+    }
+
+    .payment-method-container {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .payment-section h3 {
+      font-size: 16px; /* Adjust heading size */
+    }
+
+    .payment-section p {
+      font-size: 14px; /* Adjust paragraph size */
+    }
+
+    .payment-logo {
+      width: 60px; /* Smaller logos for medium devices */
+    }
+  }
+
+  @media (max-width: 480px) {
+    .lidoguestdetails-container {
+      padding: 10px; /* Smaller padding for tiny screens */
+      margin: 0; /* Remove margins */
+    }
+
+    .form-row {
+      gap: 10px; /* Reduce gap */
+    }
+
+    .form-group label {
+      font-size: 0.9em; /* Smaller label */
+    }
+
+    input, textarea {
+      padding: 8px; /* Smaller padding */
+    }
+
+    .policy-card {
+      padding: 10px; /* Compact padding */
+    }
+
+    .policy-card strong {
+      font-size: 13px;
+      margin-top: 10px; /* Smaller spacing above titles */
+    }
+
+    .policy-card p {
+      font-size: 12px; /* Smaller text for tight screens */
+    }
+
+    /* reCAPTCHA Area */
+    .g-recaptcha {
+      transform: scale(0.9); /* Adjust the size */
+      transform-origin: center;
+      justify-content: center;
+      display: flex;
+    }
+
+    /* Agree Button for Smaller Screens */
+    #agreeButton {
+      width: 100%; /* Full width button */
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .guestdetails-h3 {
+      font-size: 14px; /* Smaller heading */
+    }
+    
+    .payment-section h3 {
+      font-size: 15px; /* Compact font size for small screens */
+    }
+
+    .payment-section p {
+      font-size: 13px; /* Smaller font for tight spaces */
+    }
+
+    .payment-logo {
+      width: 50px; /* Further reduce logo size */
+      margin-right: 8px;
+    }
+
+    /* Center logos */
+    .payment-method-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn, .btn-one {
+      padding: 8px; /* Adjust button padding */
+      font-size: 14px; /* Smaller button text */
+  }
+  }
+
+
+  .image-preview-container {
+    margin-top: 20px;
+  }
+
+  .image-preview-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .image-preview-box {
+    width: 150px; /* Fixed size for the preview box */
+    height: 150px; /* Fixed size for the preview box */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden; /* Ensure the image doesn't overflow the box */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f8f8;
+    position: relative;
+  }
+
+  .image-preview-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Maintain aspect ratio and fit within the box */
+  }
+
+  .image-placeholder-text {
+    color: #aaa;
+    font-size: 12px;
+    text-align: center;
+  }
 
 </style>
 
@@ -224,13 +502,24 @@ button:disabled {
 <!-- Policies Section -->
 <div class="lidoguestdetails-container" style="margin-bottom: 20px">
   <h3 class="guestdetails-h3">Policies:</h3>
-  <div class="policy-card" style="padding: 20px; border: 1px solid #ddd; background-color: #f8f8f8; margin-bottom: 20px;">
-    <strong>Check-in</strong> &nbsp;&nbsp; | &nbsp;&nbsp; <strong>Check-out</strong>
-    <p>after 3:00 pm &nbsp;&nbsp; | &nbsp;&nbsp;before 12:00 pm</p>
-    <br>
-    <p><strong>Guarantee Policy</strong><br />This is a Book-and-Buy arrangement. Full payment through credit card is required upon booking and is non-refundable but may be rebooked subject to applicable charges such as rate difference. Rebooking should be done at least 3 days prior to arrival date. (Hotel Local Time).</p>
-    <br>
-    <p><strong>Cancel Policy</strong><br />This reservation is non-cancellable & non-refundable but may be rebooked subject to applicable rate difference. <br>Rebooking should be done at least 3 days before arrival. Full payment will be forfeited for no-show. Add-Ons will be cancelled automatically.</p>
+  <div class="policy-card">
+      <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Arrival of Check-in <span style="color: #83b17b; font-weight: bold;">after 3:00 pm</span></li>
+            <li>Check-out leave <span style="color: #83b17b; font-weight: bold;">before 12:00 pm</span></li>
+            <br>
+            <li><span style="font-weight: bold;">Guarantee Policy</span></li>
+            <li>This is a <em>Book-and-Buy arrangement</em>.</li>
+            <li>Full payment through credit card is required upon booking and is non-refundable but may be rebooked subject to applicable charges such as rate difference. Rebooking should be done at <span style="color: red; font-weight: bold;">least 3 days</span> prior to arrival date. (Hotel Local Time).</li>
+            <br>
+            <li><span style="font-weight: bold;">Cancel Policy</span></li>
+            <li>This reservation is non-cancellable & non-refundable but may be rebooked subject to applicable rate difference. </li>
+            <li>Rebooking should be done at <span style="color: red; font-weight: bold;">least 3 days</span> before arrival. Full payment will be forfeited for no-show. Add-Ons will be cancelled automatically.</li>
+            <br>
+            <li>For any questions regarding refund policies or rebooking, <br>please visit our <a href="https://web.facebook.com/lidoshores" target="_blank" style="color: var(--bgsecondary); text-decoration: none;">Facebook Page</a></li>
+        </ul>
+    </div>
+  </p>
   </div>
 
   <!-- reCAPTCHA v2 (Checkbox) -->
@@ -264,7 +553,7 @@ button:disabled {
       <div class="form-row">
         <div class="form-group">
           <input type="text" id="prefix" placeholder=" " required />
-          <label for="prefix">Prefix *</label>
+          <label for="prefix">Prefix * (Mr/Ms)</label>
           <div class="error-message">Error: Prefix is required.</div>
           <div id="prefix-suggestions" class="autocomplete-suggestions" style="display: none"></div>
         </div>
@@ -290,10 +579,10 @@ button:disabled {
         </div>
 
         <div class="form-group">
-          <input type="tel" id="contact_number" placeholder=" " />
+          <input type="tel" id="contact_number" placeholder=" " required/>
           <label for="contact_number">Contact Number *</label>
           <div class="error-message">Error: Contact number is required.</div>
-      </div>
+        </div>
       </div>
 
       <!-- Email Address in its own row -->
@@ -349,7 +638,7 @@ button:disabled {
 
       <br />
       <br />
-      <hr />
+      <hr>
       <br />
 
       <h3 class="guestdetails-h3">Reservation Details</h3>
@@ -357,45 +646,128 @@ button:disabled {
       <!-- Special Requests (Note Section with character limit and fixed height) -->
       <div class="form-row-single">
         <div class="form-group">
-          <textarea id="specialRequests" rows="3" maxlength="200" placeholder=" " style="height: 150px; resize: none"></textarea>
+          <textarea id="specialRequests" rows="3" maxlength="200" placeholder=" " style="height: 250px; resize: none"></textarea>
           <label for="specialRequests">Special Requests</label>
           <div id="charCount" style="font-size: 12px; text-align: right">0/200</div>
         </div>
       </div>
 
+            <!-- Dynamic guest details container -->
+            <div id="guestDetailsContainer"></div>
+            <!-- Dynamic guest details will be appended here -->
+      
+            <!-- Add Guest Details Button -->
+            {% comment %} <button id="addGuestButton" type="button" class="btn-one" style="margin-top: 10px">
+              Add Guest Info <span></span>
+            </button> {% endcomment %}
+
       <hr>
       <!-- Payment Section -->
-      <div class="payment-section">
-        <h3 class="guestdetails-h3">Payment Method</h3>
 
-        
-        <p style="font-size: 15px;">Note: Paying through PayPal will allow you to pay the total amount directly. No Payment, No Reservation.</p>
-        <div style="margin-bottom: 20px;">
-          <img src="{% static 'assets/images/components/Visa_Logo.png' %}" class="payment-logo" alt="Visa Logo" />
-          <img src="{% static 'assets/images/components/Mastercard_Logo.png' %}" class="payment-logo" alt="Mastercard Logo" />
+      <h3 class="guestdetails-h3">Choose Payment Method:</h3>
+      <div style="text-align: center;">
+        <a href="#" class="payment-toggle-link" id="showPayPal">PayPal</a>
+        <a href="#" class="payment-toggle-link" id="showGCash">GCash</a>
+      </div>
+    
+      <!-- PayPal Payment Section -->
+      <div id="paypalContainer" class="payment-container active">
+        <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+          <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+              <li>Paying through PayPal <span style="color: #83b17b; font-weight: bold;">requires full payment</span> and will automatically confirm your booking upon successful payment.</li>
+              <li>No Payment, <span style="color: red; font-weight: bold;">No Reservation.</span></li>
+              <div style="margin-top: 10px;">
+                <img src="{% static 'assets/images/components/Visa_Logo.png' %}" class="payment-logo" alt="Visa Logo" />
+                <img src="{% static 'assets/images/components/Mastercard_Logo.png' %}" class="payment-logo" alt="Mastercard Logo" />
+              </div>
+          </ul>
+        </div>
+        <div id="paypal-button-container" style="margin: 10px 0 20px;"></div>
+      </div>
+    
+      <!-- GCash Payment Section -->
+      <div id="gcashContainer" class="payment-container">
+        <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+          <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+              <li>Paying through GCash <span style="color: #83b17b; font-weight: bold;">allows you to choose between full payment</span> or <span style="color: #83b17b; font-weight: bold;">down payment (50% of the total amount)</span> Requests take 2-5 minutes for front desk processing. </li>
+              <li>The reservation status will set as <span style="color: darkgray; font-weight: bold;">Pending</span>.</li>
+              <br>
+              <li>To pay, <span style="color: red; font-weight: bold;">please scan the given QR code and ensure the exact amount is sent for your chosen payment option</span>.</li>
+              <br>
+              <li>No Payment, <span style="color: red; font-weight: bold;">No Reservation.</span></li>
+              <div style="margin-top: 10px;">
+                <img src="{% static 'assets/images/components/GCash_Logo.png' %}" class="payment-logo" alt="GCash Logo" />
+              </div>
+          </ul>
+      </div>
+        <div class="qr-container" style="text-align: center; margin-bottom: 20px;">
+          <div id="showQrCodeDiv" class="btn"><i class="fa-regular fa-eye"></i> Show QR Code</div>
+          <img src="{% static 'assets/images/components/QR.jpg' %}" alt="QR Code" id="qrCode" style="display: none; margin: 20px auto; width: 150px;" />
         </div>
         <div class="payment-method-container">
-          <div>
-
+          <div style="flex: 3;">
+            <div class="form-row">
+              <div class="form-group">
+                <input type="text" id="gcashNumber" placeholder=" " />
+                <label for="gcashNumber">GCash Number *</label>
+                <div class="error-message" id="gcashNumberRequired">Error: GCash Number is required.</div>
+                <div class="error-message" id="gcashNumberLength">Error: GCash Number must be 11 digits.</div>
+              </div>
+              <div class="form-group">
+                <input type="text" id="gcashAccountName" placeholder=" " />
+                <label for="gcashAccountName">Name on GCash Account *</label>
+                <div class="error-message">Error: Name on GCash account is required.</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <input type="text" id="gcashReference" placeholder=" " />
+                <label for="gcashReference">GCash Reference Number *</label>
+                <div class="error-message">Error: GCash Reference Number is required.</div>
+              </div>
+              <div class="form-group">
+                <input type="file" name="uploaded_receipt" id="paymentReceipt" accept=".jpg, .png" onchange="previewImage(this)" />
+                <label for="paymentReceipt">Upload Payment Receipt *</label>
+                <div class="error-message">Error: Upload Payment Receipt is required.</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <input type="text" id="paymentTypeInput" placeholder=" " readonly />
+              <label for="paymentTypeInput">Payment Type *</label>
+              <div class="error-message">Error: Payment Type is required.</div>
+              <div id="paymentTypeSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
+            </div>
+            
           </div>
-
+          <div style="flex: 1; text-align: right;">
+            <div class="form-row">
+              <div class="image-preview-container">
+                <!-- Image Preview Section -->
+                <div class="image-preview-box" id="imagePreviewBox" style="border: 1px solid #ccc; padding: 10px; text-align: center;">
+                  <p class="image-placeholder-text">No image uploaded</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="paypal-button-container" style="margin-top: 10px"></div>
+        <div style="margin: 10px 0; text-align: center;">
+          <button id="gcashProceedButton" class="btn-one" disabled>Proceed to Reserve with GCash <span></span></button>
+        </div>
       </div>
-
       
-      <!-- Dynamic guest details container -->
-      <div id="guestDetailsContainer"></div>
-      <!-- Dynamic guest details will be appended here -->
+      <p>
+        For any questions regarding refund policies or rebooking, please visit our 
+        <a href="https://web.facebook.com/lidoshores" target="_blank" style="color: var(--bgsecondary); text-decoration: none;">
+            Facebook Page
+        </a>
+      </p>
 
-      <!-- Add Guest Details Button -->
-      <button id="addGuestButton" type="button" class="btn-one" style="margin-top: 10px">
-        Add Guest Info <span></span>
-      </button>
+
 
       
     </form>
-  </div>
+
+</div>
 </div>
 </div>
 
@@ -460,9 +832,10 @@ button:disabled {
         })
             .then(response => response.json())
             .then(order => {
-                const approvalLink = order.links.find(link => link.rel === 'approve').href;
-                window.location.href = approvalLink;
-            })
+              const approvalLink = order.links.find(link => link.rel === 'approve').href;
+              window.location.href = approvalLink;
+          })
+          
             .catch(error => console.error('Error creating PayPal order:', error));
     },
     onApprove: function (data, actions) {
@@ -488,6 +861,300 @@ button:disabled {
 }).render('#paypal-button-container');
 
 
+document.getElementById('showPayPal').addEventListener('click', function (event) {
+  event.preventDefault();
+  toggleActiveLink(this);
+
+  const paypalContainer = document.getElementById('paypalContainer');
+  const gcashContainer = document.getElementById('gcashContainer');
+
+  // Smooth transition for showing PayPal container
+  gcashContainer.classList.remove('active');
+  paypalContainer.classList.add('active');
+
+  // Clear validation for GCash fields
+  validateGCashFields(false);
+});
+
+document.getElementById('showGCash').addEventListener('click', function (event) {
+  event.preventDefault();
+  toggleActiveLink(this);
+
+  const paypalContainer = document.getElementById('paypalContainer');
+  const gcashContainer = document.getElementById('gcashContainer');
+
+  // Smooth transition for showing GCash container
+  paypalContainer.classList.remove('active');
+  gcashContainer.classList.add('active');
+
+  // Validate GCash fields
+  validateGCashFields(true);
+});
+
+const payPalLink = document.getElementById("showPayPal");
+const gcashLink = document.getElementById("showGCash");
+
+payPalLink.classList.add("active"); // Default active link
+
+function toggleActiveLink(selectedLink) {
+  payPalLink.classList.remove("active");
+  gcashLink.classList.remove("active");
+  selectedLink.classList.add("active");
+}
+
+payPalLink.addEventListener("click", function (event) {
+  event.preventDefault();
+  toggleActiveLink(this);
+
+  const paypalContainer = document.getElementById('paypalContainer');
+  const gcashContainer = document.getElementById('gcashContainer');
+
+  // Smooth transition for showing PayPal container
+  gcashContainer.classList.remove('active');
+  paypalContainer.classList.add('active');
+});
+
+gcashLink.addEventListener("click", function (event) {
+  event.preventDefault();
+  toggleActiveLink(this);
+
+  const paypalContainer = document.getElementById('paypalContainer');
+  const gcashContainer = document.getElementById('gcashContainer');
+
+  // Smooth transition for showing GCash container
+  paypalContainer.classList.remove('active');
+  gcashContainer.classList.add('active');
+});
+
+
+
+
+const paymentTypes = [
+  "Full Payment",
+  "50% Down Payment",
+];
+
+const paymentTypeInput = document.getElementById("paymentTypeInput");
+const paymentTypeSuggestionsContainer = document.getElementById("paymentTypeSuggestions");
+
+// Function to show payment type suggestions
+function showPaymentTypeSuggestions() {
+  paymentTypeSuggestionsContainer.innerHTML = ""; // Clear previous suggestions
+  paymentTypes.forEach((type) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.className = "autocomplete-suggestion";
+    suggestionItem.textContent = type;
+    suggestionItem.onclick = function () {
+      paymentTypeInput.value = type; // Set the input value to the selected suggestion
+      paymentTypeSuggestionsContainer.style.display = "none"; // Hide suggestions
+      checkPaymentTypeValidity(); // Validate the field after selection
+    };
+    paymentTypeSuggestionsContainer.appendChild(suggestionItem);
+  });
+  paymentTypeSuggestionsContainer.style.display = "block"; // Show suggestions
+}
+
+// Function to check validity of the payment type input
+function checkPaymentTypeValidity() {
+  const formGroup = paymentTypeInput.closest(".form-group");
+  const errorMessage = formGroup.querySelector(".error-message");
+
+  if (!paymentTypeInput.value.trim()) {
+    formGroup.classList.add("error");
+    errorMessage.style.display = "block";
+  } else {
+    formGroup.classList.remove("error");
+    errorMessage.style.display = "none";
+  }
+
+  validateGCashFields(); // Revalidate the entire GCash form
+}
+
+// Event listener to show payment type suggestions when the input is focused
+paymentTypeInput.addEventListener("focus", showPaymentTypeSuggestions);
+
+// Hide suggestions when clicking outside
+document.addEventListener("click", function (e) {
+  if (
+    !paymentTypeInput.contains(e.target) &&
+    !paymentTypeSuggestionsContainer.contains(e.target)
+  ) {
+    paymentTypeSuggestionsContainer.style.display = "none";
+  }
+});
+
+document.getElementById("gcashProceedButton").addEventListener("click", function (e) {
+  e.preventDefault();
+
+  // Validate GCash fields before submission
+  validateGCashFields();
+
+  const gcashProceedButton = document.getElementById("gcashProceedButton");
+  if (gcashProceedButton.disabled) {
+    alert("Please fill in all required fields correctly.");
+    return;
+  }
+
+  // Retrieve GCash details
+  const gcashDetails = {
+    gcashNumber: document.getElementById("gcashNumber").value.trim(),
+    gcashAccountName: document.getElementById("gcashAccountName").value.trim(),
+    gcashReference: document.getElementById("gcashReference").value.trim(),
+    paymentTypeInput: document.getElementById("paymentTypeInput").value.trim(),
+  };
+
+  // Retrieve data from local storage
+  const localStorageData = {
+    check_in_date: localStorage.getItem("checkInDate"),
+    check_out_date: localStorage.getItem("checkOutDate"),
+    room_chosen: JSON.parse(localStorage.getItem("ChosenRoom"))?.name || "",
+    adult_count: parseInt(localStorage.getItem("adultCount") || 1),
+    children_count: parseInt(localStorage.getItem("childrenCount") || 0),
+    overall_total_amount: document.getElementById("summaryTotalPrice").textContent.replace(/[^\d.]/g, ''),
+    add_ons: JSON.stringify(JSON.parse(localStorage.getItem("selectedAddOns")) || {}), // Add-ons as JSON string
+    prefix: document.getElementById("prefix").value.trim() || "",
+    first_name: document.getElementById("first_name").value.trim() || "",
+    last_name: document.getElementById("last_name").value.trim() || "",
+    email: document.getElementById("email").value.trim() || "",
+    contact_number: document.getElementById("contact_number").value.trim() || "",
+    address1: document.getElementById("address1").value.trim() || "",
+    address2: document.getElementById("address2").value.trim() || "",
+    city: document.getElementById("city").value.trim() || "",
+    postal_code: document.getElementById("postalCode").value.trim() || "",
+    country: document.getElementById("country").value.trim() || "",
+    special_requests: document.getElementById("specialRequests").value.trim() || "",
+  };
+
+  // Construct form data
+  const formData = new FormData();
+  Object.keys(gcashDetails).forEach((key) => {
+    formData.append(key, gcashDetails[key]);
+  });
+  Object.keys(localStorageData).forEach((key) => {
+    formData.append(key, localStorageData[key]);
+  });
+
+  // Include receipt file
+  const receiptFile = document.getElementById("paymentReceipt").files[0];
+  if (receiptFile) {
+    formData.append("paymentReceipt", receiptFile);
+  }
+
+  // Submit the form data
+  fetch("/submit-reservation-gcash/", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // Redirect to the completed page
+        window.location.href = data.redirect_url;
+      } else {
+        alert("Failed to save reservation: " + data.error);
+      }
+    })
+    .catch((error) => {
+      console.error("Error saving reservation:", error);
+    });
+});
+
+
+
+// Function to validate all GCash fields, including payment type
+function validateGCashFields() {
+  const gcashFields = [
+    'gcashNumber',
+    'gcashAccountName',
+    'gcashReference',
+    'paymentReceipt',
+    'paymentTypeInput', // For the custom dropdown
+  ];
+
+  const gcashProceedButton = document.getElementById("gcashProceedButton");
+  let allGCashFieldsValid = true;
+
+  // Validate GCash-specific fields
+  gcashFields.forEach((id) => {
+    const field = document.getElementById(id);
+    const formGroup = field.closest(".form-group");
+    const errorRequired = formGroup.querySelector(".error-message:first-of-type");
+    const errorLength = formGroup.querySelector(".error-message:nth-of-type(2)");
+
+    // Validate GCash Number
+    if (id === 'gcashNumber') {
+      const value = field.value.trim();
+      const isValidLength = value.length === 11 && /^\d+$/.test(value); // Must be 11 digits
+
+      if (!value) {
+        allGCashFieldsValid = false;
+        errorRequired.style.display = "block";
+        errorLength.style.display = "none";
+        field.classList.add("error");
+      } else if (!isValidLength) {
+        allGCashFieldsValid = false;
+        errorRequired.style.display = "none";
+        errorLength.style.display = "block";
+        field.classList.add("error");
+      } else {
+        errorRequired.style.display = "none";
+        errorLength.style.display = "none";
+        field.classList.remove("error");
+      }
+    } else {
+      // General validation for other GCash fields
+      if (!field.value.trim()) {
+        allGCashFieldsValid = false;
+        errorRequired.style.display = "block";
+        field.classList.add("error");
+      } else {
+        errorRequired.style.display = "none";
+        field.classList.remove("error");
+      }
+    }
+  });
+
+  // Combine GCash and guest details validations
+  const guestDetailsValid = validateFormFields();
+  gcashProceedButton.disabled = !(allGCashFieldsValid && guestDetailsValid);
+}
+
+
+// Restrict GCash Number to numeric input only
+document.getElementById("gcashNumber").addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+});
+
+// Event listeners for form validation
+document.querySelectorAll("#gcashContainer input, #gcashContainer select").forEach((field) => {
+  const eventType = field.type === "file" ? "change" : "input";
+  field.addEventListener(eventType, validateGCashFields);
+});
+
+// Restrict GCash Number to numeric input only and limit to 11 digits
+document.getElementById("gcashNumber").addEventListener("input", (e) => {
+  const input = e.target;
+  input.value = input.value.replace(/\D/g, ""); // Remove non-numeric characters
+  if (input.value.length > 11) {
+    input.value = input.value.slice(0, 11); // Limit to 11 characters
+  }
+});
+
+// Event listeners for GCash form validation
+document.querySelectorAll("#gcashContainer input, #gcashContainer select").forEach((field) => {
+  const eventType = field.type === "file" ? "change" : "input";
+  field.addEventListener(eventType, validateGCashFields);
+});
+
+// Event listeners for guest details validation
+document.querySelectorAll("#guestDetailsForm input[required]").forEach((field) => {
+  field.addEventListener("input", validateGCashFields);
+});
+
+// Initial validation on page load
+validateGCashFields();
+
+
 document.addEventListener("DOMContentLoaded", function () {
   try {
       localStorage.clear();
@@ -497,12 +1164,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-
-  
-  
-
-
-
   function validateFormFields() {
     const requiredFields = [
       "prefix",
@@ -511,8 +1172,6 @@ document.addEventListener("DOMContentLoaded", function () {
       "contact_number",
       "email",
       "address1",
-      "city",
-      "country",
     ];
   
     // Check if each required field has a value
@@ -550,10 +1209,40 @@ document.addEventListener("DOMContentLoaded", function () {
   
   const selectedAddOns = JSON.parse(localStorage.getItem('SelectedAddOns')) || [];
 
-  
-  
+  // Toggle QR Code Visibility
+  document.getElementById('showQrCodeDiv').addEventListener('click', function () {
+    const qrCode = document.getElementById('qrCode');
+    qrCode.style.display = qrCode.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Image Preview Function
+  function previewImage(input) {
+    const previewBox = document.getElementById("imagePreviewBox");
+    const placeholderText = previewBox.querySelector(".image-placeholder-text");
+
+    // Clear existing content in the preview box
+    previewBox.innerHTML = "";
+
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.classList.add("uploaded-image");
+        img.style.maxWidth = "100%";
+        img.style.height = "auto";
+        previewBox.appendChild(img);
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      // If no file is selected, show placeholder text
+      placeholderText.style.display = "block";
+      previewBox.innerHTML = '<p class="image-placeholder-text">No image uploaded</p>';
+    }
+  }
+
   // Save Reservation Function
-  function saveReservationToBackend() {
+  function saveReservationToBackend(isGCash = false) {
     // Get guest details and calculate total guest count dynamically
     const reservationDetails = {
       check_in_date: localStorage.getItem('checkInDate'),
@@ -574,33 +1263,48 @@ document.addEventListener("DOMContentLoaded", function () {
       postal_code: document.getElementById("postalCode").value || '',
       country: document.getElementById("country").value,
       special_requests: document.getElementById("specialRequests").value || '',
-  };
+    };
   
+    // Add GCash-specific details if needed
+    if (isGCash) {
+      reservationDetails.gcashNumber = document.getElementById("gcashNumber").value;
+      reservationDetails.gcashAccountName = document.getElementById("gcashAccountName").value;
+      reservationDetails.gcashReference = document.getElementById("gcashReference").value;
+      reservationDetails.paymentReceipt = document.getElementById("paymentReceipt").files[0]; // File upload
+      reservationDetails.paymentTypeInput = document.getElementById("paymentTypeInput").value;
+    }
   
-
-  // Debugging: Check the calculated total_guest_count
-  console.log("Total Guest Count:", reservationDetails.total_guest_count);
-  console.log("Reservation Details Sent to Backend:", reservationDetails);
+    // Debugging: Check the calculated total_guest_count
+    console.log("Total Guest Count:", reservationDetails.total_guest_count);
+    console.log("Reservation Details Sent to Backend:", reservationDetails);
   
-    fetch('/submit-reservation/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(reservationDetails),
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert('Reservation saved successfully!');
-        window.location.href = data.redirect_url;
-      } else {
-        alert('Failed to save reservation: ' + data.error);
+    // Set the correct endpoint for submission
+    const endpoint = isGCash ? '/submit-reservation-gcash/' : '/submit-reservation/';
+  
+    // Use FormData for file uploads
+    const formData = new FormData();
+    for (const key in reservationDetails) {
+      if (reservationDetails[key] !== undefined) {
+        formData.append(key, reservationDetails[key]);
       }
+    }
+  
+    // Send the reservation details to the backend
+    fetch(endpoint, {
+      method: 'POST',
+      body: formData, // Use FormData for file uploads
     })
-    .catch(error => {
-      console.error('Error saving reservation:', error);
-    });
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          window.location.href = data.redirect_url;
+        } else {
+          alert('Failed to save reservation: ' + data.error);
+        }
+      })
+      .catch((error) => {
+        console.error('Error saving reservation:', error);
+      });
   }
   
 
@@ -669,27 +1373,35 @@ document.addEventListener("DOMContentLoaded", function () {
           method: 'GET',
           credentials: 'same-origin',
       })
-      .then((response) => response.json())
-      .then((data) => {
+      .then(response => response.json())
+      .then(data => {
           if (data.success) {
-              document.getElementById("first_name").value = data.first_name;
-              document.getElementById("last_name").value = data.last_name;
-              document.getElementById("email").value = data.email;
-              document.getElementById("contact_number").value = data.contact_number;
-              document.getElementById("telephone_number").value = data.telephone_number;
-              document.getElementById("address1").value = data.address1;
-              document.getElementById("city").value = data.city;
-              document.getElementById("country").value = data.country;
+              // Populate fields and validate missing ones
+              const fields = [
+                  "prefix", "first_name", "last_name", "email", 
+                  "contact_number", "telephone_number", "address1", 
+                  "city", "country"
+              ];
+              
+              fields.forEach(field => {
+                  const input = document.getElementById(field);
+                  if (input) {
+                      input.value = data[field] || ""; // Set field value or empty
+                      checkValidity(input); // Trigger validation
+                  }
+              });
           } else {
-              alert('Could not retrieve guest details: ' + data.error);
+              alert(data.error || 'Unable to auto-fill details.');
           }
       })
-      .catch((error) => {
+      .catch(error => {
           console.error('Error fetching guest details:', error);
       });
   }
   
+  // Attach event listener to the Auto-fill button
   document.getElementById("autoFillButton").addEventListener("click", autoFillGuestDetails);
+  
   
 
     // Event listener for auto-fill button
@@ -878,20 +1590,20 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Define the prefixes array
-    const prefixes = [
-      "Mr.",
-      "Ms.",
-      "Mrs.",
-      "Mx.",
-      "Dr.",
-      "Prof.",
-      "Sir",
-      "Madam",
-      "Captain",
-      "Chief",
-      "Lady",
-      "Lord",
-    ];
+    //const prefixes = [
+      //"Mr.",
+      //"Ms.",
+      //"Mrs.",
+      //"Mx.",
+      //"Dr.",
+      //"Prof.",
+      //"Sir",
+      //"Madam",
+      //"Captain",
+      //"Chief",
+      //"Lady",
+      //"Lord",
+    //];
 
     const prefixInput = document.getElementById("prefix");
     const prefixSuggestionsContainer = document.getElementById("prefix-suggestions");

@@ -1,0 +1,160 @@
+{% load humanize %}
+{% load static %}
+<tbody>
+    {% for room in rooms %}
+    <tr class="room-row" data-room-id="{{ room.id }}">
+        <td class="checkbox-cell hidden" data-label="Select">
+            <div class="custom-checkbox">
+                <div class="amenity-checkbox-group">
+                    <input type="checkbox" class="room-checkbox" data-room-id="{{ room.id }}" data-room-name="{{ room.room_name }}">
+                </div>
+            </div>
+        </td>
+        <td data-label="Room ID">{{ room.room_id }}</td>
+        <td data-label="Room Name">{{ room.room_name }}</td>
+        <td data-label="Price">&#8369;{{ room.room_price|floatformat:0|intcomma }}</td>
+        <td data-label="Capacity">{{ room.room_capacity }}</td>
+        <td data-label="Size">{{ room.room_size }} sq ft</td>
+        <td data-label="Bed Type">{{ room.get_bed_type_display }}</td>
+        <td data-label="Bed Count">{{ room.bed_count }}</td>
+        <td data-label="Amenities">
+            {% for amenity in room.room_amenities.all|slice:":2" %}
+                <span class="amenities-text">{{ amenity }}</span>{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+            {% if room.room_amenities.count > 2 %}
+                ...
+            {% endif %}
+        </td>
+              
+        <td data-label="Status">
+            <span id="status-{{ room.id }}">{{ room.get_room_status_display }}</span>
+            <div class="btn-group" role="group">
+                <button class="btn btn-success btn-sm status-btn" data-room-id="{{ room.id }}" data-status="available"><i class="fa-regular fa-circle-check"></i></button>
+                <button class="btn btn-warning btn-sm status-btn" data-room-id="{{ room.id }}" data-status="maintenance"><i class="fa-solid fa-screwdriver-wrench"></i></button>
+            </div>
+        </td>
+        
+        
+        <td data-label="Actions">
+            <a href="{% url 'view_room' room.id %}" class="btn btn-info btn-sm"><i class="fa-regular fa-eye"></i></a>
+            <a href="{% url 'edit_room' room.id %}" class="btn btn-warning btn-sm"><i class="fa-solid fa-pencil"></i></a>
+            <a href="#" class="btn btn-danger btn-sm delete-room" data-room-id="{{ room.id }}" data-room-name="{{ room.room_name }}">
+                <i class="fa-solid fa-trash"></i>
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="10">No rooms found.</td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+
+<style>
+        /* Make the table scrollable on smaller screens */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    /* Adjust table font sizes for smaller screens */
+    @media (max-width: 992px) {
+        .table thead th {
+            font-size: 14px;
+        }
+
+        .table tbody td {
+            font-size: 13px;
+        }
+    }
+
+    /* Stack table content for extra small screens */
+    @media (max-width: 576px) {
+        .table thead {
+            display: none; /* Hide the header */
+        }
+
+        .table tbody td {
+            display: block;
+            text-align: left;
+            font-size: 12px;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table tbody td:before {
+            content: attr(data-label); /* Add label before content */
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .room-row {
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 10px;
+            display: block;
+        }
+    }
+
+    /* Smaller font size for amenities */
+    .amenities-text {
+        font-size: 12px; /* Adjust font size as needed */
+    }
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const statusButtons = document.querySelectorAll('.status-btn');
+
+        statusButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const roomId = this.getAttribute('data-room-id');
+                const status = this.getAttribute('data-status');
+
+                fetch(`/update_room_status/${roomId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ status: status })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Room status updated successfully!');
+                        location.reload(); // Reload the page to reflect changes
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update status.');
+                });
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>

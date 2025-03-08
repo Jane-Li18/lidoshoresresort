@@ -1,43 +1,66 @@
 {% load static %}
-<!-- Lido Happenings Section -->
-        <section class="lido-happenings">
-            <div class="container" style="padding: 50px;">
-                <div class="row" >
-                    <!-- Text Content -->
-                    <div class="col-md-4">
-                        <h2 class="wow fadeInRight" data-wow-delay="0ms" data-wow-duration="6000ms">Lido Shores Happenings</h2>
-                        <p class="wow fadeInLeft mt-3" data-wow-delay="0ms" data-wow-duration="7000ms">Indulge in the exclusive offers and exquisite events at Lido Shores Resort.</p>
-                        <a href="#" class="btn-one fadeInUp" data-wow-delay="0ms" data-wow-duration="6500ms">Discover More<span></span></a>
-                    </div>
-                    <!-- Image Slider -->
-                    <div class="col-md-8">
-                        <section class="news-two-section wow zoomIn" data-wow-delay="0ms" data-wow-duration="4000ms">
-                            <div class="theme_carousel owl-theme owl-carousel owl-nav-style-one" data-options='{"loop": true, "center": false, "margin": 30, "autoheight":true, "lazyload":true, "nav": true, "mouseDrag": true, "dots": true, "autoplay": true, "autoplayTimeout": 6000, "smartSpeed": 5000, "responsive":{ "0" :{ "items": "1" }, "480" :{ "items" : "1" }, "768" :{ "items" : "2" }, "992" :{ "items" : "3" } , "1200":{ "items" : "3" }, "1600":{ "items" : "3" }}}'>
-                                <div class="news-one-block style-two">
-                                    <div class="news-one-image">
-                                        <div class="img_hover_3">
-                                            <a href="blog-details.html"><img src="{% static 'assets/images/gallery/Cafe1.jpg' %}" alt=""></a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="news-one-block style-two">
-                                    <div class="news-one-image">
-                                        <div class="img_hover_3">
-                                            <a href="blog-details.html"><img src="{% static 'assets/images/gallery/Cafe2.jpg' %}" alt=""></a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="news-one-block style-two">
-                                    <div class="news-one-image">
-                                        <div class="img_hover_3">
-                                            <a href="blog-details.html"><img src="{% static 'assets/images/gallery/Cafe3.jpg' %}" alt=""></a>
-                                        </div>
-                                    </div>
+<section class="lido-happenings">
+    <div class="container" style="padding: 50px;">
+        <div class="row">
+            <!-- Text Content -->
+            <div class="col-md-4">
+                <h2 class="wow fadeInRight" data-wow-delay="0ms" data-wow-duration="6000ms">Lido Shores Happenings</h2>
+                <p class="wow fadeInLeft mt-3" data-wow-delay="0ms" data-wow-duration="7000ms">Indulge in the exclusive offers and exquisite events at Lido Shores Resort.</p>
+                <a href="{% url 'lidogallery' %}" class="btn-one fadeInUp" data-wow-delay="0ms" data-wow-duration="6500ms">Discover More<span></span></a>
+            </div>
+            <!-- Image Slider -->
+            <div class="col-md-8">
+                <section class="news-two-section wow zoomIn" data-wow-delay="0ms" data-wow-duration="4000ms">
+                    <div class="theme_carousel owl-theme owl-carousel owl-nav-style-one" 
+                        data-options='{
+                            "loop": true, "center": false, "margin": 30, "autoheight":true, "lazyload":true, 
+                            "nav": true, "mouseDrag": true, "dots": true, "autoplay": true, 
+                            "autoplayTimeout": 6000, "smartSpeed": 5000, 
+                            "responsive": { 
+                                "0": {"items": "1"}, 
+                                "480": {"items": "1"}, 
+                                "768": {"items": "2"}, 
+                                "992": {"items": "3"}, 
+                                "1200": {"items": "3"}, 
+                                "1600": {"items": "3"} 
+                            }
+                        }'>
+                        <!-- Static Default Images -->
+                        <div class="news-one-block style-two">
+                            <div class="news-one-image">
+                                <div class="img_hover_3">
+                                    <a href="{% url 'lidogallery' %}"><img src="{% static 'assets/images/gallery/Cafe1.jpg' %}" alt=""></a>
                                 </div>
                             </div>
-                        </section>
+                        </div>
+                        <div class="news-one-block style-two">
+                            <div class="news-one-image">
+                                <div class="img_hover_3">
+                                    <a href="{% url 'lidogallery' %}"><img src="{% static 'assets/images/gallery/Cafe2.jpg' %}" alt=""></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="news-one-block style-two">
+                            <div class="news-one-image">
+                                <div class="img_hover_3">
+                                    <a href="{% url 'lidogallery' %}"><img src="{% static 'assets/images/gallery/Cafe3.jpg' %}" alt=""></a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamically Loaded Images -->
+                        {% for image in gallery_images %}
+                        <div class="news-one-block style-two">
+                            <div class="news-one-image">
+                                <div class="img_hover_3">
+                                    <a href="{% url 'lidogallery' %}"><img src="{{ image.image.url }}" alt="{{ image.image_name }}"></a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                </div>
+                </section>
             </div>
-        </section>
-        <!-- End Lido Happenings Section -->
+        </div>
+    </div>
+</section>

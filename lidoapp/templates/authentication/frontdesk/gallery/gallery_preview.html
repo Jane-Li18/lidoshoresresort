@@ -1,0 +1,318 @@
+{% load static %}
+<style>
+    section {
+        overflow-y: hidden;
+    }
+
+    ul.filter-tabs {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gallery-one-content {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        padding: 20px;
+      }
+      
+      h4.gallery-one-title {
+        font-size: 14px;
+        line-height: 30px;
+        color: var(--bgtertiary);
+        background: 
+        margin-bottom: 20px;
+        opacity: 0;
+        visibility: hidden;
+        -webkit-transition: all 500ms ease;
+        -o-transition: all 500ms ease;
+        transition: all 500ms ease;
+        -webkit-transform: translateY(-20px);
+        -ms-transform: translateY(-20px);
+        transform: translateY(-20px);
+        background: rgba(0, 0, 0, 0.5);
+        text-align: center;
+      }
+      
+      .gallery-one-text {
+        font-size: 12px;
+        letter-spacing: 2px;
+        line-height: 30px;
+        color: var(--bgprimary);
+        background: rgba(0, 0, 0, 0.5);
+        text-align: center;
+        opacity: 0;
+        visibility: hidden;
+        -webkit-transition: all 500ms ease;
+        -o-transition: all 500ms ease;
+        transition: all 500ms ease;
+        -webkit-transform: translateY(-20px);
+        -ms-transform: translateY(-20px);
+        transform: translateY(-20px);
+      }
+      
+      .gallery-one-like {
+        position: absolute;
+        right: 50px;
+        top: 25px;
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        background-color: #ffffff;
+        text-align: center;
+        line-height: 45px;
+        transition: 0.5s;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        -webkit-transition: all 500ms ease;
+        -o-transition: all 500ms ease;
+        transition: all 500ms ease;
+        transform: scale(0.2);
+      }
+      
+      .gallery-one-like:hover {
+        background: var(--theme-color);
+        color: #fff;
+      }
+
+      .gallery-modal {
+        display: none; /* Ensure the modal is hidden by default */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1051; /* Ensure the modal is above the backdrop */
+        width: 100%;
+        max-width: 500px;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.3rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .gallery-modal-dialog {
+        position: relative;
+        z-index: 1052; /* Ensure modal content is above everything */
+    }
+    
+    .gallery-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1050; /* Backdrop below the modal */
+    }
+    
+    .gallery-modal.show {
+        display: block; /* Show the modal when "show" class is added */
+    }
+    
+    
+</style>
+
+<section class="gallery-preview" style="padding: 20px;">
+    <div class="auto-container">
+        <div class="row align-items-center">
+            <div>
+                <h3><i class="fa-regular fa-folder"></i>&nbsp;Gallery Archives</h3>
+                <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+                    <ul style="margin: 10px 0; padding-left: 20px; padding-right: 20px;">
+                        <li>This is how guests view the galleries.</li>
+                        <li>You can upload or delete images. Images can be categorized by their gallery type. If no type is specified, they will be saved in "<strong>More Images</strong>." </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="gallery_title" style="text-align: center; letter-spacing: 10px; font-size: 20px;">
+        <h3 style="font-family: 'Candide Regular';">Lido Galleries</h3>
+        <div style="color: var(--txtprimary); letter-spacing: 5px; font-size: 15px; text-transform: uppercase; margin-bottom: 20px;">
+            Discover the Lido Experience
+        </div>
+
+        <ul class="filter-tabs filter-btns">
+            <li class="filter active" data-role="button" data-filter=".all">All</li>
+            {% for gallery_type in gallery_types %}
+            <li class="filter" data-role="button" data-filter=".{{ gallery_type|slugify }}">
+                {{ gallery_type }}
+                <button type="button" class="btn btn-danger btn-sm"
+                    onclick="confirmDelete('gallery', '{{ gallery_type|slugify }}', '{{ gallery_type }}')">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <hr>
+
+    <div class="full-container">
+        <!--Sortable Gallery-->
+        <div class="sortable-masonry">
+            <div class="items-container row">
+                {% for image in images %}
+                <div class="gallery-block-one masonry-item all 
+                    {% if image.gallery_type %}
+                        {{ image.gallery_type|slugify }}
+                    {% else %}
+                        banners
+                    {% endif %}
+                    col-lg-4 col-md-6">
+                    <div class="gallery-one-box">
+                        <div class="gallery-one-image">
+                            <img src="{% if image.file_path %}{{ image.file_path.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                                 alt="{% if image.image_name %}{{ image.image_name }}{% else %}{{ image.banner_name }}{% endif %}">
+                        </div>
+                        <div class="gallery-one-content">
+                            <h4 class="gallery-one-title" style="text-decoration: none;">
+                                {% if image.image_name %}{{ image.image_name }}{% else %}{{ image.banner_name }}{% endif %}
+                            </h4>
+                            <div class="gallery-one-text">
+                                {% if image.gallery_type %}{{ image.gallery_type }}{% else %}Banners{% endif %}
+                            </div>
+                            <button type="button" class="btn btn-danger btn-sm"
+                                onclick="confirmDelete('image', {{ image.id }}, '{% if image.image_name %}{{ image.image_name }}{% else %}{{ image.banner_name }}{% endif %}')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+    </div>
+</section>
+
+
+<div class="gallery-modal-backdrop" style="display: none;"></div>
+<div class="gallery-modal" id="galleryModal" tabindex="-1" role="dialog" style="display: none;">
+    <div class="gallery-modal-dialog" role="document">
+        <div class="gallery-modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Deletion</h3>
+                <button type="button" class="close" onclick="hideGalleryModal()" aria-label="Close">
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #D9544D; padding: 10px; margin-bottom: 20px;">
+                    <i class="fa-solid fa-circle-info" style="color: #D9544D;"></i>&nbsp;
+                    <strong>Important Note:</strong>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><p id="deleteMessage"></p></li>
+                    </ul>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Yes, Delete</button>
+                <button type="button" class="btn btn-secondary" onclick="hideGalleryModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+    let deleteType = ''; // 'image' or 'gallery'
+    let deleteId = null; // ID of the image or gallery type slug
+    
+    function confirmDelete(type, id, name) {
+        deleteType = type;
+        deleteId = id;
+    
+        // Update the modal message
+        const message =
+            type === "image"
+                ? `Are you sure you want to delete the image: "${name}"?`
+                : `Are you sure you want to delete the gallery: "${name}" and all its images?`;
+        document.getElementById("deleteMessage").innerText = message;
+    
+        // Show the modal
+        showGalleryModal();
+    }
+    
+    function showGalleryModal() {
+        // Add the backdrop if it doesn't exist
+        let backdrop = document.querySelector(".gallery-modal-backdrop");
+        if (!backdrop) {
+            backdrop = document.createElement("div");
+            backdrop.className = "gallery-modal-backdrop";
+            document.body.appendChild(backdrop);
+        }
+    
+        // Show the modal and backdrop
+        backdrop.style.display = "block";
+        const modal = document.getElementById("galleryModal");
+        modal.classList.add("show");
+        modal.style.display = "block";
+    }
+    
+    function hideGalleryModal() {
+        // Hide the modal and backdrop
+        const modal = document.getElementById("galleryModal");
+        modal.classList.remove("show");
+        modal.style.display = "none";
+    
+        const backdrop = document.querySelector(".gallery-modal-backdrop");
+        if (backdrop) {
+            backdrop.style.display = "none";
+        }
+    }
+    
+    
+    document
+        .getElementById("confirmDeleteButton")
+        .addEventListener("click", async () => {
+            if (deleteType === "image") {
+                await deleteImage(deleteId);
+            } else if (deleteType === "gallery") {
+                await deleteGallery(deleteId);
+            }
+            hideGalleryModal();
+        });
+    
+    document
+        .querySelectorAll('[data-dismiss="gallery-modal"]')
+        .forEach((button) => {
+            button.addEventListener("click", hideGalleryModal);
+        });
+    
+    async function deleteImage(imageId) {
+        const response = await fetch(`/delete-image/${imageId}/`, {
+            method: "DELETE",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        });
+        if (response.ok) {
+            location.reload(); // Reload to update the UI
+        } else {
+            alert("Failed to delete the image.");
+        }
+    }
+    
+    async function deleteGallery(gallerySlug) {
+        const response = await fetch(`/delete-gallery/${gallerySlug}/`, {
+            method: "DELETE",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        });
+        if (response.ok) {
+            location.reload(); // Reload to update the UI
+        } else {
+            alert("Failed to delete the gallery.");
+        }
+    }
+    
+</script>

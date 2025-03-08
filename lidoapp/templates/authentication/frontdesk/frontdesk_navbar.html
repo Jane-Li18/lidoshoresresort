@@ -1,8 +1,5 @@
 {% load static %}
-
-
-
-
+{% block profile %}{% endblock profile %}
 <header class="main-header header-style-one">
     <!-- Header Upper -->
     <div class="header-upper">
@@ -18,18 +15,14 @@
                 <div class="right-column">
                     <div class="navbar-right">
                         <div class="link-btn">
-                            <a href="javascript:void(0)" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
-                                <i class="ri-search-2-line"></i><span></span>
-                            </a>
-                        </div>
-                        <div class="link-btn">
-                            <a href="{% url 'lidoaboutus' %}" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
+                            <a href="{% url 'faq_policy' %}" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
                                 <i class="ri-chat-4-line"></i><span></span>
                             </a>
                         </div>
+
                         <div class="link-btn">
-                            <a href="{% url 'lidobooking' %}" target="_blank" class="btn-one">Book Now + <span></span></a>
-                        </div>      
+                            <a href="{% url 'lidobooking' %}" class="btn-one">Book Now + <span></span></a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -42,26 +35,27 @@
         <div class="auto-container" style="max-width: 1500px;">
             <div class="nav-outer">
                 <!-- Mobile Navigation Toggler -->
-                <div class="mobile-nav-toggler">
-                    <img src="{% static 'assets/images/icons/icon-bar.png' %}" alt="">
+                <div class="mobile-nav-toggler" style="width: 20px;">
+                    <img src="{% static 'assets/images/components/hamburger.png' %}" alt="">
                 </div>
                 <!-- Main Menu -->
                 <nav class="main-menu navbar-expand-md navbar-light">
                     <div class="collapse navbar-collapse show clearfix" id="navbarSupportedContent">
                         <ul class="navigation">
                             {% if request.session.frontdesk_id %}
-                            <li class="dropdown"><a href="{% url 'frontdesk_dashboard' %}">Dashboard</a></li>
-                            <li class="dropdown"><a href="{% url 'frontdesk_roomlist' %}">Room Management</a>
+                            <li><a href="{% url 'frontdesk_dashboard' %}">Dashboard</a></li>
+                            <li class="dropdown"><a href="{% url 'walk_in' %}">Walk In </a>
                                 <ul>
-                                    <li><a href="{% url 'frontdesk_rooms' %}" style="text-transform: uppercase; font-size: 15px;">Room List</a></li>
+                                    <li><a href="{% url 'cottage_rates' %}" style="text-transform: uppercase; font-size: 15px;">Cottage Rates </a></li>
                                 </ul>
                             </li>
-
-                            <li class="dropdown"><a href="{% url 'walkin' %}">Walk In <span></span></a></li>
-                            <li class="dropdown"><a href="{% url 'frontdesklogout' %}" id="logoutBtn">Logout <span></span></a></li>
+                            <li><a href="{% url 'transaction_management' %}">Transaction <span></span></a></li>
+                            <li><a href="{% url 'policy_board' %}">Policy <span></span></a></li>
+                            <li><a href="{% url 'frontdesk_gallery' %}">Gallery <span></span></a></li>
+                            <li><a href="{% url 'frontdesklogout' %}" id="logoutBtn">Logout <span></span></a></li>
                             {% else %}
                             <!-- Login Button -->
-                            <li class="dropdown"><a href="{% url 'frontdesklogin' %}">Login</a></li>
+                            <li><a href="{% url 'frontdesklogin' %}">Login</a></li>
                             {% endif %}
                         </ul>
                     </div>
@@ -86,18 +80,13 @@
                     <div class="right-column">
                         <div class="navbar-right">
                             <div class="link-btn">
-                                <a href="contact.html" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
-                                    <i class="ri-search-2-line"></i><span></span>
-                                </a>
-                            </div>
-                            <div class="link-btn">
-                                <a href="contact.html" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
+                                <a href="{% url 'faq_policy' %}" class="btn-one" style="background: none; color: var(--txtprimary); font-size: 20px; border: none;">
                                     <i class="ri-chat-4-line"></i><span></span>
                                 </a>
                             </div>
 
                             <div class="link-btn">
-                                <a href="{% url 'lidobooking' %}" target="_blank" class="btn-one">Book Now + <span></span></a>
+                                <a href="{% url 'lidobooking' %}" class="btn-one">Book Now + <span></span></a>
                             </div>
                         </div>
                     </div>
@@ -108,8 +97,8 @@
             <div class="auto-container" style="max-width: 1500px;">
                 <div class="nav-outer">
                     <!-- Mobile Navigation Toggler -->
-                    <div class="mobile-nav-toggler">
-                        <img src="{% static 'assets/images/icons/icon-bar.png' %}" alt="">
+                    <div class="mobile-nav-toggler" style="width: 20px;">
+                        <img src="{% static 'assets/images/components/hamburger.png' %}" alt="">
                     </div>
                     <!-- Main Menu -->
                     <nav class="main-menu navbar-expand-md navbar-light">
@@ -121,31 +110,31 @@
     </div>
     <!-- End Sticky Header -->
 
-    <!-- Mobile Menu  -->
+    <!-- Mobile Menu -->
     <div class="mobile-menu">
         <div class="menu-backdrop"></div>
-        <div class="close-btn"><i class="icon far fa-times"></i></div>
+        <div class="close-btn"><i class="fa-solid fa-circle-xmark"></i></div>
         <nav class="menu-box">
             <div class="nav-logo">
                 <a href="{% url 'lidohome' %}"><img src="{% static 'assets/images/components/logo.png' %}" alt="" title=""></a>
             </div>
-            <div class="menu-outer"><!--Here Menu Will Come Automatically Via Javascript / Same Menu as in Header--></div>
+            <div class="menu-outer"><!-- Menu will be injected via JavaScript --></div>
             <!-- Social Links -->
+            
             <div class="social-links">
+                        <!-- Book Now Button for Mobile Menu -->
+            <div class="link-btn mobile-only" style="text-align: center; width: 100%;">
+                <a href="{% url 'lidobooking' %}" class="btn-one">Book Now + <span></span></a>
+            </div>
                 <ul class="clearfix">
-                    <li><a href="#"><span class="fab fa-twitter"></span></a></li>
-                    <li><a href="#"><span class="fab fa-facebook-square"></span></a></li>
-                    <li><a href="#"><span class="fab fa-instagram"></span></a></li>
-                    <li>
-                        <a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;tf=1&amp;to=lidoshores.sariaya@gmail.com">
-                            <span class="fa-brands fa-google"></span>
-                        </a>
-                    </li>
+                    <li><a href="https://web.facebook.com/lidoshores"><i class="fab fa-facebook-f"></i></a></li>
+                    <li><a href="https://www.instagram.com/lidoshores/" target="_blank"><i class="fa-brands fa-instagram"></i></a></li>
+                    <li><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;tf=1&amp;to=lidoshores.sariaya@gmail.com" target="_blank"><i class="fa-brands fa-google"></i></a></li>
+                    <li><a href="https://chats.viber.com/lidoshores.sariaya" target="_blank"><i class="fa-brands fa-viber"></i></a></li>
                 </ul>
             </div>
         </nav>
     </div>
-    <!-- End Mobile Menu -->
 
     <div class="nav-overlay">
         <div class="cursor"></div>

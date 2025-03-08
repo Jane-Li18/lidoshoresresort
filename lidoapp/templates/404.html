@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | Lido Shores Resort {% endblock title %}
+
+{% block content %}
+<div class="container text-center" style="margin-top: 50px; margin-bottom: 80px;">
+    <div class="error-page">
+        <h1 style="font-size: 120px; font-weight: bold; color: var(--txtprimary);">404</h1>
+        <h2 style="font-size: 36px; font-weight: 600; color: var(--txtsecondary);">Oops! Page Not Found</h2>
+        <p style="font-size: 18px; color: var(--txttertiary);">
+            <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #D9544D; padding: 10px; margin-bottom: 20px;">
+                <ul style="margin: 10px 0; padding-left: 20px; text-align: center;">
+                    <li>The page you are looking for does not exist, or it may have been moved.</li>
+                    <br>
+                    <li><div style="border: 2px dashed rgba(18, 52, 86, 0.3); padding: 15px; border-radius: 10px;">Please check the URL or return to the homepage.</div></li>
+                </ul>
+              </div>
+        </p>
+        <a href="{% url 'lidohome' %}" class="btn-one">Back to Homepage <span></span></a>
+    </div>
+</div>
+{% endblock content %}

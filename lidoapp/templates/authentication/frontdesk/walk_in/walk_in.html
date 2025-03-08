@@ -1,0 +1,843 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Walk In | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+{% block profile %}{% endblock profile %}
+
+{% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+
+<style>
+    .no-click {
+        pointer-events: none; /* Prevents any interaction */
+        background-color: #f9f9f9; /* Optional: Gives a "disabled" look */
+        color: #6c757d; /* Optional: Matches a disabled text color */
+        cursor: not-allowed; /* Optional: Shows a "not-allowed" cursor */
+    }
+
+    
+    h2 {
+        font-size: 20px;
+        margin: 10px 0;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .form-control:disabled, .form-control[readonly] {
+        background: var(--bgtertiary);
+        cursor: not-allowed;
+    }
+
+    /* General container layout */
+    .container {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping for smaller screens */
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        gap: 20px; /* Add spacing between the containers */
+    }
+    
+    /* Ensure walk-in-container takes full width on smaller screens */
+    .walk-in-container {
+        flex: 2;
+        background: var(--bgtertiary);
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        padding: 20px;
+    }
+    
+    /* Note container takes full width on smaller screens */
+    .note-container {
+        flex: 2;
+        background-color: var(--bgtertiary);
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        height: 100%; /* Remove height constraint for better flexibility */
+    }
+    
+    /* Responsive adjustments for tablets and smaller devices */
+    @media (max-width: 992px) {
+        .container {
+            flex-direction: column; /* Stack containers vertically */
+        }
+    
+        .note-container {
+            margin-left: 0; /* Remove left margin */
+        }
+    }
+    
+    /* Responsive adjustments for smaller screens (phones) */
+    @media (max-width: 576px) {
+        .walk-in-container, .note-container {
+            flex: none; /* Reset flex properties */
+            width: 100%; /* Take full width */
+        }
+    
+        .note-container {
+            margin-top: 20px; /* Add space between containers */
+        }
+    }
+    
+
+    /* Existing styles */
+    .form-group {
+        position: relative;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        outline: none;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 14px;
+        color: #666;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        background: var(--bgtertiary);
+        padding: 4px;
+    }
+
+    .form-group .error-message {
+        color: white;
+        font-size: 13px;
+        display: none;
+        padding: 5px;
+        background-color: #d93025;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        width: 100%;
+        text-align: center;
+        margin-top: -10px;
+    }
+
+    .form-group.error .error-message {
+        display: block;
+    }
+
+    .form-group.error input {
+        border-color: #d93025;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .form-row > .form-group {
+        flex: 1;
+    }
+
+    .guestdetails-h3 {
+        font-size: 15px;
+        text-transform: uppercase;
+        margin-bottom: 13px;
+    }
+
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+    }
+
+    /* Autocomplete suggestion styles */
+    .autocomplete-suggestions {
+        border: 1px solid #ccc;
+        background: var(--bgtertiary);
+        max-height: 150px;
+        overflow-y: auto;
+        position: absolute;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .autocomplete-suggestion {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .autocomplete-suggestion:hover {
+        background-color: #ddd;
+    }
+
+    .btn-one:disabled {
+        background-color: #d3d3d3; /* Light gray */
+        cursor: not-allowed; /* Error cursor to indicate disabled */
+    }
+
+    @media (max-width: 768px) {
+        .walk-in-container {
+          padding: 15px;
+        }
+    
+    }
+    @media (max-width: 480px) {
+        .walk-in-container {
+          padding: 10px; /* Smaller padding for tiny screens */
+          margin: 0; /* Remove margins */
+        }
+    
+        .form-row {
+          gap: 10px; /* Reduce gap */
+        }
+    
+        .form-group label {
+          font-size: 0.9em; /* Smaller label */
+        }
+    
+        input, textarea {
+          padding: 8px; /* Smaller padding */
+        }
+    }
+</style>
+
+<div class="container mt-3">
+    <div class="note-container">
+        <div style="font-size: 14px; background-color: var(--bgtertiary); border-left: 4px solid #D9544D; padding: 10px; margin: 20px; margin-bottom: 0px;">
+            <i class="fa-solid fa-circle-info" style="color: #D9544D;"></i>&nbsp;
+            <strong>Important Note:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px; padding-right: 20px; list-style-type: none;">
+                <div>
+                    {{ walk_in_content|safe }}
+                </div>                
+            </ul>
+        </div>
+        <hr>
+        <form id="walkInForm" method="POST" action="{% url 'submit_walk_in' %}">
+            {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="arrivalDateTime" class="form-label">Arrival Date & Time *</label>
+                    <input 
+                        type="datetime-local" 
+                        id="arrivalDateTime" 
+                        name="arrivalDateTime" 
+                        required 
+                        readonly 
+                        placeholder=" " 
+                        class="form-control no-click"
+                    />
+                    <div class="error-message">Error: Arrival time is required.</div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="statusRate">Status Rate *</label>
+                    <input 
+                        type="text" 
+                        id="statusRate" 
+                        name="statusRate" 
+                        readonly 
+                        placeholder=" " 
+                        class="no-click"
+                    />
+                    <div class="error-message">Error: Status Rate is required.</div>
+                </div>
+            </div>
+            
+        </div>
+
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="hourPriceGuest">Hour Price for Guest *</label>
+                    <input type="number" id="hourPriceGuest" name="hourPriceGuest" value="330" readonly placeholder=" " />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="hourPriceChild">Hour Price for Child (3ft below) *</label>
+                    <input type="number" id="hourPriceChild" name="hourPriceChild" value="165" readonly placeholder=" " />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 w-100">
+
+                <div class="form-group">
+                    <label for="cottageRate">Cottage Rate</label>
+                    <select id="cottageRate" name="cottageRate" required class="form-control" onchange="validateForm(); updateLabelPosition(this); calculateTotal();">
+                        <option value="" disabled selected>Select a Cottage</option>
+                        {% for rate in cottage_rates %}
+                            {% if rate.available_count > 0 %}
+                            <option value="{{ rate.cottage_rate_name }}" data-price="{{ rate.cottage_rate_price }}" data-available="{{ rate.available_count }}" data-capacity="{{ rate.cottage_rate_capacity }}">
+                                {{ rate.cottage_rate_name }} - ₱{{ rate.cottage_rate_price }} (Available: {{ rate.available_count }}, Capacity: {{ rate.cottage_rate_capacity }} pax)
+                            </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <div class="error-message">Error: Cottage selection is required.</div>
+                </div>
+                
+                
+                
+                
+                <div class="form-group mt-3">
+                    <label for="cottageCount">Number of Cottages *</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" id="cottageCount" name="cottageCount" value="1" min="1" class="form-control" style="flex: 1;" oninput="validateCottageCount(); updateLabelPosition(this);">
+                        <button type="button" onclick="decrementCottageCount()" class="btn btn-outline-secondary">-</button>
+                        <button type="button" onclick="incrementCottageCount()" class="btn btn-outline-secondary">+</button>
+                    </div>
+                </div>
+                
+                
+                
+            </div>
+            <br>
+            <div class="col-md-6 mt-2 w-100">
+                <div class="form-group">
+                    <label for="paymentMethod">Choose Payment Method *</label>
+                    <input type="text" id="paymentMethod" name="paymentMethod" placeholder=" " required />
+                    <div class="error-message">Error: Payment Method is required.</div>
+                    <div id="paymentMethod-suggestions" class="autocomplete-suggestions"></div>
+                </div>
+            </div>
+
+            <hr>
+            <div class="col-md-6 mt-2 w-100">
+                <div class="form-group">
+                    <label for="hourPriceTotal">Hour Price Total *</label>
+                    <input type="text" id="hourPriceTotal" name="hourPriceTotal" value="₱0.00" readonly placeholder=" " />
+                </div>
+                
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="walk-in-container">
+        <h2 class="text-start"><i class="fa-solid fa-person-walking-luggage"></i>&nbsp; Walk-In Reservation</h2>
+
+        <div style="font-size: 14px; background-color: var(--bgtertiary); border-left: 4px solid rgb(217, 217, 77);; padding: 10px; margin: 20px; margin-bottom: 0px;">
+            <i class="fa-solid fa-circle-info" style="color:rgb(217, 217, 77);"></i>&nbsp;
+            <strong>Entrance Fees:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px; padding-right: 20px; list-style-type: none;">
+                <li>Daytour Hour Price Rate is 6:00 AM to 5:59 PM</li>
+                <li>₱ 330 per person</li>
+                <li>₱ 165 per child (3ft below)</li>
+                <br>
+                <li>Nighttour Hour Price Rate is 7:00 PM to 5:59 AM</li>
+                <li>₱ 500 per person</li>
+                <li>₱ 250 per child (3ft below)</li>
+                <br>
+                <li><button type="button" id="nowButton" onclick="setNow()" class="btn-one w-100">NOW <span></span></button></li>
+            </ul>
+        </div>
+        <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="totalGuestCount">Number of Guests *</label>
+                        <input type="number" id="totalGuestCount" name="totalGuestCount" min="1" value="1" required placeholder=" " oninput="calculateTotal()" />
+                        <div class="error-message">Error: Number of guests must be at least 1.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="totalChildCount">Number of Children (3ft below)</label>
+                        <input type="number" id="totalChildCount" name="totalChildCount" min="0" value="0" placeholder=" " oninput="calculateTotal()" />
+                        <div class="error-message">Error: Number of children cannot be negative.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 w-100">
+                <div class="form-group">
+                    <label for="discountTotal">Discount (20%) per head </label>
+                    <input type="number" id="discountTotal" name="discountTotal" min="0" value="0" placeholder=" " oninput="calculateTotal()" />
+                    <div class="error-message">Error: Number of children cannot be negative.</div>
+                </div>
+                <div class="form-group mt-3">
+                    <label for="guestIdProof">Upload Guest ID Proof *</label>
+                    <input type="file" id="guestIdProof" name="guestIdProof[]" accept="image/*" multiple onchange="previewImages(event); validateForm();">
+                    <div class="error-message">Error: At least one Guest ID Proof is required.</div>
+                    <div id="imagePreviewContainer" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                </div>
+                
+            </div>
+            
+            <hr />
+
+            <h3 class="guestdetails-h3">Guest Representative Details</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <input type="text" id="firstName" name="firstName" placeholder=" " required />
+                        <label for="firstName">First Name *</label>
+                        <div class="error-message">Error: First name is required.</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <input type="text" id="middleName" name="middleName" placeholder=" " />
+                        <label for="middleName">Middle Name</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <input type="text" id="lastName" name="lastName" placeholder=" " required />
+                        <label for="lastName">Last Name *</label>
+                        <div class="error-message">Error: Last name is required.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <input type="tel" id="contactNumber" name="contactNumber" placeholder=" " required />
+                        <label for="contactNumber">Contact Number *</label>
+                        <div class="error-message">Error: Contact number is required.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <input type="text" id="address" name="address" placeholder=" " required />
+                        <label for="address">Address *</label>
+                        <div class="error-message">Error: Address is required.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="email" id="email" name="email" placeholder=" " />
+                <label for="email">Email Address</label>
+                <div class="error-message">Error: Valid email address is required.</div>
+            </div>
+
+
+            <button type="submit" id="submitButton" class="btn-one w-100" disabled>Submit Walk In<span></span></button>
+        </form>
+    </div>
+</div>
+
+<div id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner"></div>
+</div>
+
+<script>
+    function setupDropdowns() {
+        document.querySelectorAll('.dropdown-selected').forEach(dropdown => {
+            dropdown.addEventListener('click', function () {
+                const list = this.nextElementSibling;
+                list.style.display = list.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const dropdown = this.closest('.custom-dropdown');
+                const selected = dropdown.querySelector('.dropdown-selected');
+                selected.textContent = this.textContent;
+                selected.dataset.value = this.dataset.value;
+                dropdown.querySelector('.dropdown-list').style.display = 'none';
+                checkValidity(selected); // Trigger validation on selection
+                updateLabelPosition(selected); // Ensure label moves up on selection
+            });
+        });
+    }
+
+    function checkValidity(input) {
+        const formGroup = input.closest(".form-group");
+        if (formGroup) {
+            const errorMessage = formGroup.querySelector(".error-message");
+            if (errorMessage) {
+                updateLabelPosition(input);
+
+                if (input.hasAttribute("required") && input.value.trim() === "") {
+                    formGroup.classList.add("error");
+                    errorMessage.style.display = "block";
+                } else {
+                    formGroup.classList.remove("error");
+                    errorMessage.style.display = "none";
+                }
+            }
+        }
+    }
+
+    function updateLabelPosition(input) {
+        const formGroup = input.closest(".form-group");
+        const label = formGroup.querySelector("label");
+        if (label) {
+            if (input.value.trim() !== "" || document.activeElement === input) {
+                label.style.top = "-13px";
+                label.style.left = "8px";
+                label.style.fontSize = "0.85em";
+                label.style.color = "#333";
+            } else {
+                label.style.top = "6px";
+                label.style.left = "8px";
+                label.style.fontSize = "0.85em";
+                label.style.color = "#666";
+            }
+        }
+    }
+
+    function checkRequiredFields() {
+        const requiredInputs = document.querySelectorAll('input[required]');
+        const submitButton = document.querySelector('.btn-one');
+
+        const allFilled = Array.from(requiredInputs).every(input => {
+            return input.value.trim() !== "";
+        });
+
+        submitButton.disabled = !allFilled; // Enable button if all required fields are filled
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        setupDropdowns();
+        const inputs = document.querySelectorAll('input, textarea');
+        const submitButton = document.querySelector('button[type="submit"]');
+
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                checkValidity(input);
+                updateLabelPosition(input);
+                checkRequiredFields();
+            });
+
+            input.addEventListener('blur', () => {
+                checkValidity(input);
+                updateLabelPosition(input);
+            });
+
+            input.addEventListener('focus', () => {
+                updateLabelPosition(input);
+            });
+        });
+
+        checkRequiredFields(); // Initial check
+    });
+
+    function setNow() {
+        const now = new Date();
+        now.setHours(now.getHours() + 8);
+        const datetime = now.toISOString().slice(0, 16);
+        document.getElementById('arrivalDateTime').value = datetime;
+
+        checkStatusRate();
+        calculateTotal();
+        updateAllLabels();
+        checkRequiredFields(); // Recheck required fields after setting values
+    }
+
+    function incrementCottageCount() {
+        const cottageDropdown = document.getElementById("cottageRate");
+        const selectedOption = cottageDropdown.options[cottageDropdown.selectedIndex];
+    
+        if (!selectedOption || selectedOption.value === "") {
+            alert("Please select a cottage first.");
+            return;
+        }
+    
+        const availableCount = parseInt(selectedOption.getAttribute("data-available")) || 0;
+        const cottageCountInput = document.getElementById("cottageCount");
+        let currentCount = parseInt(cottageCountInput.value) || 1;
+    
+        if (currentCount < availableCount) {
+            currentCount++;
+            cottageCountInput.value = currentCount;
+            calculateTotal();
+        } else {
+
+        }
+    }
+    
+    function decrementCottageCount() {
+        const cottageCountInput = document.getElementById("cottageCount");
+        let currentCount = parseInt(cottageCountInput.value) || 1;
+    
+        if (currentCount > 1) {
+            currentCount--;
+            cottageCountInput.value = currentCount;
+            calculateTotal();
+        }
+    }
+    
+    
+    function calculateTotal() {
+        const dayRate = 330;
+        const nightRate = 500;
+        const childDayRate = 165;
+        const childNightRate = 250;
+    
+        // Get the number of guests and children
+        let guests = parseInt(document.getElementById("totalGuestCount").value) || 1;
+        let children = parseInt(document.getElementById("totalChildCount").value) || 0;
+    
+        guests = Math.max(1, guests); // Ensure guests >= 1
+        children = Math.max(0, children); // Ensure children >= 0
+    
+        // Update input values to reflect the constraints
+        document.getElementById("totalGuestCount").value = guests;
+        document.getElementById("totalChildCount").value = children;
+    
+        // Determine the status rate (daytour or nighttour)
+        const statusRate = document.getElementById("statusRate").value;
+        const adultTotal = statusRate === "Nighttour" ? guests * nightRate : guests * dayRate;
+        const childTotal = statusRate === "Nighttour" ? children * childNightRate : children * dayRate;
+    
+        // Get the selected cottage price
+        const cottageDropdown = document.getElementById("cottageRate");
+        const selectedOption = cottageDropdown.options[cottageDropdown.selectedIndex];
+        const selectedCottagePrice = parseFloat(selectedOption.getAttribute("data-price")) || 0;
+    
+        // Get the number of cottages selected
+        const cottageCount = parseInt(document.getElementById("cottageCount").value) || 1;
+    
+        // Get the discount input
+        const discountPeople = parseInt(document.getElementById("discountTotal").value) || 0;
+    
+        // Calculate the discount for entrance fees only
+        const maxDiscount = Math.min(discountPeople, guests); // Ensure discount applies only to valid guests
+        const discountAmount = maxDiscount * (statusRate === "Nighttour" ? nightRate : dayRate) * 0.2;
+    
+        // Calculate the total
+        const total = adultTotal + childTotal + (selectedCottagePrice * cottageCount) - discountAmount;
+    
+        // Format the total as currency with thousands separators
+        const formattedTotal = new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "PHP",
+            minimumFractionDigits: 2,
+        }).format(total);
+    
+        // Update the total in the hourPriceTotal input
+        document.getElementById("hourPriceTotal").value = formattedTotal;
+    
+        // Update label positions
+        updateLabelPosition(document.getElementById("totalGuestCount"));
+        updateLabelPosition(document.getElementById("totalChildCount"));
+        updateLabelPosition(document.getElementById("hourPriceTotal"));
+    }
+    
+    
+    
+    function validateCottageCount() {
+        const cottageCountInput = document.getElementById("cottageCount");
+        let currentCount = parseInt(cottageCountInput.value) || 1;
+    
+        if (currentCount < 1) {
+            cottageCountInput.value = 1; // Reset to 1 if the value is less than 1
+        }
+    
+        calculateTotal(); // Recalculate the total dynamically
+    }
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize label positions
+        document.querySelectorAll(".form-group input, .form-group select").forEach((input) => {
+            updateLabelPosition(input);
+    
+            input.addEventListener("focus", () => updateLabelPosition(input));
+            input.addEventListener("blur", () => updateLabelPosition(input));
+            input.addEventListener("input", () => updateLabelPosition(input));
+        });
+    });
+    
+    function validateForm() {
+        const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+        const submitButton = document.getElementById('submitButton');
+    
+        // Check if all required fields are filled
+        const allFilled = Array.from(requiredFields).every(field => {
+            return field.value.trim() !== "";
+        });
+    
+        submitButton.disabled = !allFilled; // Enable button if all required fields are filled
+    }
+    
+    // Attach validation to all required fields
+    document.addEventListener("DOMContentLoaded", function () {
+        const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+        
+        requiredFields.forEach(field => {
+            field.addEventListener("input", validateForm);
+            field.addEventListener("change", validateForm); // For dropdowns and file inputs
+        });
+    
+        // Initial validation on page load
+        validateForm();
+    });
+    
+    
+    function previewImages(event) {
+        const files = event.target.files;
+        const previewContainer = document.getElementById("imagePreviewContainer");
+    
+        // Clear previous previews
+        previewContainer.innerHTML = "";
+    
+        Array.from(files).forEach((file, index) => {
+            if (!file.type.startsWith("image/")) {
+                alert("Only image files are allowed.");
+                return;
+            }
+    
+            const reader = new FileReader();
+    
+            reader.onload = function (e) {
+                const previewDiv = document.createElement("div");
+                previewDiv.style.position = "relative";
+                previewDiv.style.display = "inline-block";
+                previewDiv.style.width = "100px";
+                previewDiv.style.height = "100px";
+    
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.alt = `Guest ID ${index + 1}`;
+                img.style.width = "100%";
+                img.style.height = "100%";
+                img.style.objectFit = "cover";
+                img.style.border = "1px solid #ccc";
+    
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "✖";
+                deleteButton.style.position = "absolute";
+                deleteButton.style.top = "5px";
+                deleteButton.style.right = "5px";
+                deleteButton.style.background = "red";
+                deleteButton.style.color = "white";
+                deleteButton.style.border = "none";
+                deleteButton.style.borderRadius = "50%";
+                deleteButton.style.cursor = "pointer";
+                deleteButton.style.fontSize = "12px";
+                deleteButton.style.padding = "5px";
+    
+                deleteButton.onclick = function () {
+                    previewDiv.remove();
+                };
+    
+                previewDiv.appendChild(img);
+                previewDiv.appendChild(deleteButton);
+                previewContainer.appendChild(previewDiv);
+            };
+    
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    
+    function updateAllLabels() {
+        const idsToCheck = [
+            'arrivalDateTime', 'statusRate', 'hourPriceGuest',
+            'hourPriceChild', 'hourPriceTotal',
+            'totalGuestCount', 'totalChildCount'
+        ];
+
+        idsToCheck.forEach(id => {
+            const inputElement = document.getElementById(id);
+            if (inputElement) {
+                updateLabelPosition(inputElement);
+                checkValidity(inputElement);
+            } else {
+                console.warn(`Element with ID '${id}' not found in the DOM.`);
+            }
+        });
+    }
+
+    function checkStatusRate() {
+        const arrivalDateTimeInput = document.getElementById("arrivalDateTime");
+        const statusRateInput = document.getElementById("statusRate");
+
+        const arrivalTime = new Date(arrivalDateTimeInput.value);
+        const hours = arrivalTime.getHours();
+
+        let statusRate = "";
+        if (hours >= 6 && hours < 18) {
+            statusRate = "Daytour";
+        } else {
+            statusRate = "Nighttour";
+        }
+
+        statusRateInput.value = statusRate;
+        updateLabelPosition(statusRateInput);
+    }
+
+    // Autocomplete suggestions for cottage and payment method
+    const cottageSuggestions = ['Kubo (Front of Beach)', 'Cement Kubo', 'Kubo (Near Pond)', 'Patio (Good for 6 pax)', 'Tables (Good for 4 pax)'];
+    const cottageInput = document.getElementById("cottageRate");
+    const cottageSuggestionsContainer = document.getElementById("cottage-suggestions");
+
+    cottageInput.addEventListener("input", function () {
+        showSuggestions(cottageInput, cottageSuggestionsContainer, cottageSuggestions);
+    });
+
+    cottageInput.addEventListener("focus", function () {
+        showSuggestions(cottageInput, cottageSuggestionsContainer, cottageSuggestions);
+    });
+
+    const paymentMethodSuggestions = ['Cash Payment','GCash Payment', 'Card Payment'];
+    const paymentMethodInput = document.getElementById("paymentMethod");
+    const paymentMethodSuggestionsContainer = document.getElementById("paymentMethod-suggestions");
+
+    paymentMethodInput.addEventListener("input", function () {
+        showSuggestions(paymentMethodInput, paymentMethodSuggestionsContainer, paymentMethodSuggestions);
+    });
+
+    paymentMethodInput.addEventListener("focus", function () {
+        showSuggestions(paymentMethodInput, paymentMethodSuggestionsContainer, paymentMethodSuggestions);
+    });
+
+    function showSuggestions(input, suggestionsContainer, suggestions) {
+        suggestionsContainer.innerHTML = "";
+        const value = input.value.toLowerCase();
+        const filteredSuggestions = suggestions.filter(suggestion => suggestion.toLowerCase().startsWith(value));
+
+        if (filteredSuggestions.length > 0) {
+            suggestionsContainer.style.display = "block";
+            filteredSuggestions.forEach(suggestion => {
+                const suggestionItem = document.createElement("div");
+                suggestionItem.className = "autocomplete-suggestion";
+                suggestionItem.textContent = suggestion;
+                suggestionItem.onclick = function () {
+                    input.value = suggestion;
+                    suggestionsContainer.style.display = "none";
+                    checkValidity(input);
+                    updateLabelPosition(input);
+                };
+                suggestionsContainer.appendChild(suggestionItem);
+            });
+        } else {
+            suggestionsContainer.style.display = "none";
+        }
+    }
+
+    document.addEventListener("click", function (e) {
+        if (!cottageInput.contains(e.target) && !cottageSuggestionsContainer.contains(e.target)) {
+            cottageSuggestionsContainer.style.display = "none";
+        }
+        if (!paymentMethodInput.contains(e.target) && !paymentMethodSuggestionsContainer.contains(e.target)) {
+            paymentMethodSuggestionsContainer.style.display = "none";
+        }
+    });
+</script>
+
+
+{% endblock content %}

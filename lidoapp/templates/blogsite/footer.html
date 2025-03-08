@@ -1,0 +1,69 @@
+{% load static %}
+
+<!--footer section  -->
+        <footer class="main-footer">
+            <div class="auto-container">
+                <div class="footer-widgets-section">
+                    <div class="row clearfix">
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget footer-logo">
+                                <div class="image">
+                                    <a href={% url 'lidohome' %}><img src="{% static 'assets/images/components/logo-circle.png' %}" alt=""></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget about-widget">
+                                <h3 class="widget-title">About Us</h3>
+                                <div class="widget-content">
+                                    <div class="about-wdget-text">
+                                        {{ about_content|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget links-widget">
+                                <h3 class="widget-title">Top Links</h3>
+                                <div class="widget-content">
+                                    <ul>
+                                        {% comment %} <li><a href="#">Privacy Policy</a></li>
+                                        <li><a href="#">Terms & Conditions</a></li> {% endcomment %}
+                                        <li><a href={% url 'faq_policy' %}>FAQ</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column col-lg-3 col-md-6">
+                            <div class="widget contact-widget">
+                                <h2 class="widget-title">Sariaya, <span>Quezon Province</span></h2>
+                                <div class="contact-widget-text">
+                                    {{ address_content|safe }}
+                                </div>
+                                
+                                <div class="contact-widget-social-links">
+                                    <ul>
+                                        <li><a href="https://web.facebook.com/lidoshores"><i class="fab fa-facebook-f"></i></a></li>
+                                        <li><a href="https://www.instagram.com/lidoshores/" target="_blank"><i class="fa-brands fa-instagram"></i></a></li>
+                                        <li><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;tf=1&amp;to=lidoshores.sariaya@gmail.com" target="_blank"><i class="fa-brands fa-google"></i></a></li>
+                                        <li><a href="https://chats.viber.com/lidoshores.sariaya" target="_blank"><i class="fa-brands fa-viber"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="auto-container">
+                    <div class="wrapper-box">
+                        <div class="copyright-text">
+                            Lido Shores Resort | Sariaya © 2024
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <!--End pagewrapper-->

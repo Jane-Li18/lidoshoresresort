@@ -1,0 +1,143 @@
+<div class="container transaction-container">
+    <div class="header-row">
+        <h3 class="transaction-h3">Rebooking Requests</h3>
+        <a href={% url 'frontdesk_dashboard' %} class="btn-one"><i class="fa-solid fa-house-user"></i>&nbsp; Home <span></span></a>
+    </div>
+    <div style="font-size: 14px; background-color:rgb(255, 251, 218); border-left: 4px solid rgb(177, 173, 123); padding: 10px; margin-bottom: 20px;">
+        <i class="fa-solid fa-person-digging" style="color: rgb(177, 173, 123);"></i>&nbsp;
+        <strong>Rebooking Legends:</strong> 
+        <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+            <li><span class="status-booked"><i class="fa-regular fa-circle-check"></i> Approved</span> – The rebooking has been successfully confirmed.</li>
+            <li><span class="status-cancelled"><i class="fa-regular fa-circle-xmark"></i> Cancelled</span> – The rebooking has been cancelled.</li>
+        </ul>
+    </div>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Reservation ID</th>
+                <th>Guest Name</th>
+                <th>Requested Dates</th>
+                <th>Requested At</th>
+                <th>Availability</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in rebooking_requests %}
+            <tr>
+                <td>{{ request.reservation.reservation_ID }}</td>
+                <td>{{ request.reservation.guest.first_name }} {{ request.reservation.guest.last_name }}</td>
+                <td>{{ request.requested_check_in_date }} - {{ request.requested_check_out_date }}</td>
+                <td data-label="Requested At" class="requested-at" data-utc="{{ request.requested_at|date:'c' }}"></td>                
+                <td>
+                    {% if request.is_available %}
+                        <span class="status-booked">Available</span>
+                    {% else %}
+                        <span class="status-cancelled">Conflict</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button data-request-id="{{ request.id }}" class="btn btn-sm btn-success approve-button"><i class="fa-regular fa-circle-check"></i></button>
+                    <button data-request-id="{{ request.id }}" class="btn btn-sm btn-danger cancel-button"><i class="fa-regular fa-circle-xmark"></i></button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No pending rebooking requests.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const csrfToken = '{{ csrf_token }}';
+
+    function showLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.classList.add('active');
+    }
+    
+    function hideLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.classList.remove('active');
+    }
+    
+    function showMessage(message, type) {
+        const messageBox = document.getElementById('messageBox');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.role = 'alert';
+        alert.textContent = message;
+        messageBox.appendChild(alert);
+        messageBox.style.display = 'block';
+    
+        // Automatically fade out the message
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                alert.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    function handleRebookingRequest(requestId, action) {
+        showLoading();
+    
+        fetch(`/handle-rebooking-request/${requestId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            showMessage(data.message, data.success ? 'success' : 'error');
+    
+            if (data.success) {
+                // Reload the page after showing the message
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showMessage('An error occurred. Please try again.', 'error');
+        });
+    }
+    
+    document.querySelectorAll('.approve-button').forEach(button => {
+        button.addEventListener('click', function () {
+            handleRebookingRequest(this.dataset.requestId, 'approve');
+        });
+    });
+    
+    document.querySelectorAll('.pending-button').forEach(button => {
+        button.addEventListener('click', function () {
+            handleRebookingRequest(this.dataset.requestId, 'pending');
+        });
+    });
+    
+    document.querySelectorAll('.cancel-button').forEach(button => {
+        button.addEventListener('click', function () {
+            handleRebookingRequest(this.dataset.requestId, 'cancel');
+        });
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const requestedAtElements = document.querySelectorAll('.requested-at');
+    
+        requestedAtElements.forEach(element => {
+            const utcTime = element.dataset.utc;
+            const localTime = new Date(utcTime).toLocaleString('en-US', { timeZone: 'Asia/Manila' }); // Convert to Philippine time
+            element.textContent = localTime;
+        });
+    });
+    
+</script>

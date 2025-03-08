@@ -1,0 +1,63 @@
+<!-- Front Desk Task Section -->
+<div id="frontDeskTask" style="font-size: 14px; background-color: #eef7ff; border-left: 4px solid #6a9fb5; padding: 10px; margin-bottom: 20px;">
+    <i class="fa-solid fa-person-digging" style="color: #6a9fb5;"></i>&nbsp;
+    <strong>Front Desk Task:</strong>
+    <button onclick="toggleVisibility('frontDeskDetails', this)" style="float: right; background-color: transparent; color: #6a9fb5; border: none; cursor: pointer; font-size: 16px;">
+        <i class="fa-solid fa-eye"></i>
+    </button>
+    <div id="frontDeskDetails" style="display: none; overflow: hidden; transition: max-height 0.3s ease; max-height: 0; margin-top: 10px;">
+        <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+            <p style="margin: 10px 0; line-height: 1.6;">
+                The front desk is responsible for updating booking statuses and notifying guests. Follow these steps for common scenarios:
+            </p>
+            <li><strong>GCASH Payments:</strong> Verify the receipt reference number provided by the guest.
+                <br>
+                - If valid, update the status to <span class="status-booked">" Booked "</span>. 
+                <br>
+                - If invalid, set the status to <span class="status-cancelled">" Rejected "</span> and inform the guest.</li>
+            <br>
+            <li><strong>Rebooking:</strong> Process rebooking requests within 2-5 minutes. Update the status to <span style="color: teal; font-weight: bold;">" Rebooked "</span> once approved. Rebooking is only allowed once and must be requested within <span style="color: red;">3 days</span> of the booking creation.</li>
+            <br>
+            <li><strong>Refunds and Cancellations:</strong> These requests must be made via our <a href="https://web.facebook.com/lidoshores" target="_blank" style="color: var(--bgsecondary); text-decoration: none;">Facebook page</a>. 
+            <br>
+            Reservations with a status of <span style="color: red; font-weight: bold;">" Cancelled "</span> or <span style="color: blue; font-weight: bold;">" Refunded "</span> cannot be rebooked.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Booking Legends Section -->
+<div id="bookingLegends" style="font-size: 14px; background-color: rgb(255, 251, 218); border-left: 4px solid rgb(177, 173, 123); padding: 10px; margin-bottom: 20px;">
+    <i class="fa-solid fa-person-digging" style="color: rgb(177, 173, 123);"></i>&nbsp;
+    <strong>Booking Legends:</strong>
+    <button onclick="toggleVisibility('bookingLegendDetails', this)" style="float: right; background-color: transparent; color: rgb(177, 173, 123); border: none; cursor: pointer; font-size: 16px;">
+        <i class="fa-solid fa-eye"></i>
+    </button>
+    <div id="bookingLegendDetails" style="display: none; overflow: hidden; transition: max-height 0.3s ease; max-height: 0; margin-top: 10px;">
+        <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+            <li><span class="status-booked"><i class="fa-solid fa-book"></i> Booked</span> – The booking has been successfully confirmed and is currently active.</li>
+            <li><span class="status-pending"><i class="fa-solid fa-hourglass-half"></i> Pending</span> – The booking is awaiting confirmation or payment verification.</li>
+            <li><span class="status-cancelled"><i class="fa-solid fa-circle-xmark"></i> Cancelled</span> – The booking has been cancelled by the guest or the system.</li>
+            <li><span class="status-refunded"><i class="fa-solid fa-arrow-rotate-left"></i> Refunded</span> – A refund has been issued for this booking.</li>
+            <li><span class="status-rebooked"><i class="fa-solid fa-repeat"></i> Rebooked</span> – The booking has been modified and rebooked to new dates.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- JavaScript for Hide and Show -->
+<script>
+    function toggleVisibility(id, button) {
+        const element = document.getElementById(id);
+
+        if (element.style.display === 'none' || element.style.maxHeight === '0px') {
+            element.style.display = 'block';
+            element.style.maxHeight = element.scrollHeight + 'px';
+            button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>'; // Change icon to eye slash
+        } else {
+            element.style.maxHeight = '0px';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 300); // Match this with the CSS transition duration
+            button.innerHTML = '<i class="fa-solid fa-eye"></i>'; // Change icon to eye
+        }
+    }
+</script>

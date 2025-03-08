@@ -1,0 +1,491 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Guest Sign In | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: calc(100vh - 250px); /* Subtracts 250px from 100vh on larger screens */
+        background-color: var(--bgprimary);
+        position: relative;
+    }
+    
+    @media (max-width: 768px) {
+        .login-container {
+            height: 100vh; /* Reverts to full 100vh on smaller screens */
+        }
+    }
+
+    .input-container input:focus {
+        border-color: var(--bgsecondary); /* Change border color on focus */
+        outline: none; /* Remove default outline */
+    }
+    
+    .login-box, .password-box {
+        background-color: #ffffff;
+        padding: 40px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        width: 1000px;
+        display: flex;
+        align-items: center;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    }
+
+    .loading-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 4px;
+        width: 0;
+        background-color: var(--bgsecondary);
+        transition: width 1.5s ease-in-out;
+        visibility: hidden;
+    }
+
+    .login-box-left, .password-box-left {
+        flex: 1;
+        padding-right: 20px;
+        text-align: left;
+    }
+
+    .login-box-left img, .password-box-left img {
+        width: 75px;
+    }
+
+    .login-box-left h1, .password-box-left h1 {
+        font-size: 24px;
+        font-weight: 400;
+        color: var(--txtprimary);
+        margin: 20px 0;
+    }
+
+    .login-box-left p, .password-box-left p {
+        font-size: 16px;
+        color: var(--txtprimary);
+        margin-top: 0;
+        cursor: pointer;
+    }
+
+    .login-box-right, .password-box-right {
+        flex: 1;
+    }
+
+    .input-container {
+        position: relative;
+        margin-bottom: 40px;
+    }
+
+    .input-container input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #dadce0;
+        box-sizing: border-box;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.3s ease-in-out;
+    }
+
+    .input-container label {
+        position: absolute;
+        top: 50%;
+        left: 10px;
+        transform: translateY(-50%);
+        color: #80868b;
+        background: var(--bgtertiary);
+        padding: 0 4px;
+        pointer-events: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .input-container input:focus + label,
+    .input-container input:not(:placeholder-shown) + label {
+        top: 0px;
+        font-size: 12px;
+        color: var(--bgsecondary);
+    }
+
+    .input-container .error-message {
+        position: absolute;
+        bottom: -20px;
+        left: 0;
+        color: #d93025;
+        font-size: 12px;
+        display: none;
+    }
+
+    .login-box-right button, .password-box-right button {
+        width: 100%;
+        padding: 10px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 20px;
+        background-color: var(--bgsecondary);
+        transition: background-color 0.3s;
+    }
+
+    .login-box-right button:focus, .password-box-right button:focus,
+    .login-box-right button:active, .password-box-right button:active {
+        background-color: var(--bgsecondary);
+    }
+
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+
+    .custom-checkbox input[type="checkbox"] {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 1px solid #dadce0;
+        background-color: white;
+        cursor: pointer;
+        position: relative;
+        outline: none;
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked {
+        background-color: var(--bgsecondary);
+        border-color: var (--bgsecondary);
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked::before {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        color: white;
+    }
+
+    .custom-checkbox label {
+        margin-left: 8px;
+        font-size: 14px;
+        color: #202124;
+        cursor: pointer;
+    }
+
+    .guest-email {
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        border: 1px solid #dadce0;
+        font-size: 16px;
+        color: #202124;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+    .guest-email img {
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+    }
+
+    .guest-email span {
+        flex-grow: 1;
+    }
+
+    .guest-email .dropdown-arrow {
+        margin-left: 8px;
+        font-size: 16px;
+    }
+
+    .forgot-email, .forgot-password,
+    .create-account,
+    .guest-mode {
+        font-size: 14px;
+    }
+
+    .guest-mode, .forgot-password {
+        color: #5f6368;
+        margin-top: 20px;
+    }
+
+    .footer-links {
+        font-size: 12px;
+        color: #5f6368;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .footer-links a {
+        color: #5f6368;
+        text-decoration: none;
+    }
+
+    .footer-links a:hover {
+        text-decoration: underline;
+    }
+
+    .hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .login-box, .password-box {
+            flex-direction: column;
+            width: 90%;
+            padding: 20px;
+        }
+
+        .login-box-left, .password-box-left {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .login-box-right, .password-box-right {
+            width: 100%;
+        }
+
+        .footer-links {
+            justify-content: center;
+            margin-top: 20px;
+        }
+    }
+</style>
+{% block profile %}{% endblock profile %}
+<div class="login-container">
+    <div class="login-box">    
+        <div class="loading-line" id="loginLoadingLine"></div>
+        <div class="login-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Sign in</h1>
+            <p>Be a part of the Lido Shores Experience</p>
+        </div>
+        <div class="login-box-right">
+            <form id="loginForm" method="post" action="#">
+                {% csrf_token %}
+                <div class="input-container">
+                    <input type="text" name="email" id="email" placeholder=" " required pattern="^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$">
+                    <label for="email">Enter Email</label>
+                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter valid email address</div>
+                </div>
+                <a href="#" class="forgot-email">Forgot email?</a>
+                <button type="submit" class="btn-one">Next<span></span></button>
+            </form>
+
+            <div class="guest-mode">
+                <p>Not your computer? Use a private browsing window to sign in.</p>
+            </div>
+            <div class="create-account" style="text-align: center;">
+                <p><a href="{% url 'guest_signup' %}">Create account</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="password-box hidden">
+        <div class="loading-line" id="passwordLoadingLine"></div>
+        <div class="password-box-left">
+            <img src="{% static 'assets/images/components/logo-circle.png' %}" alt="Lido Logo">
+            <h1>Welcome</h1>
+            <div id="guestEmail" class="guest-email">
+                <img src="{% static 'assets/images/components/default-guest-active.png' %}" alt="Profile Picture">
+                <span id="userEmail">user@example.com</span>
+                <div class="dropdown-arrow"><i class="ri-arrow-down-s-line"></i></div>
+            </div>
+        </div>
+        <div class="password-box-right">
+            <form id="passwordForm" method="post" action="#">
+                {% csrf_token %}
+                <div class="input-container">
+                    <input type="password" name="password" id="password" placeholder=" " required>
+                    <label for="password">Enter your password</label>
+                    <div class="error-message"><i class="fa-solid fa-circle-exclamation"></i> Enter your password</div>
+                </div>
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="showPassword">
+                    <label for="showPassword">Show password</label>
+                </div>
+                <a href="#" class="forgot-password">Forgot password?</a>
+                <button type="submit" class="btn-one">Next<span></span></button>
+            </form>
+        </div>
+
+    </div>
+</div>
+<div class="footer-links">
+    <a href="#">Help</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var loginForm = document.getElementById('loginForm');
+        var passwordForm = document.getElementById('passwordForm');
+        var passwordBox = document.querySelector('.password-box');
+        var loginBox = document.querySelector('.login-box');
+        var loginLoadingLine = document.getElementById('loginLoadingLine');
+        var passwordLoadingLine = document.getElementById('passwordLoadingLine');
+        var emailInput = document.getElementById('email');
+        var passwordInput = document.getElementById('password');
+        var emailErrorMessage = emailInput.parentElement.querySelector('.error-message');
+        var passwordErrorMessage = passwordInput.parentElement.querySelector('.error-message');
+        var userEmail = document.getElementById('userEmail');
+        var showPasswordCheckbox = document.getElementById('showPassword');
+        var guestEmail = document.getElementById('guestEmail');
+        var createAccountLink = document.querySelector('.create-account a');
+        
+        var hasInteracted = false;
+    
+        emailInput.addEventListener('focus', function() {
+            hasInteracted = true;
+            emailErrorMessage.style.display = 'none';
+        });
+    
+        emailInput.addEventListener('blur', function() {
+            if (hasInteracted && (emailInput.value === '' || !emailInput.checkValidity())) {
+                emailErrorMessage.style.display = 'block';
+                emailInput.style.borderColor = '#d93025';
+            } else {
+                emailErrorMessage.style.display = 'none';
+                emailInput.style.borderColor = '#dadce0';
+            }
+        });
+    
+        function startLoadingAnimation(loadingLine) {
+            loadingLine.style.visibility = 'visible';
+            loadingLine.style.width = '100%';
+    
+            loadingLine.addEventListener('transitionend', function() {
+                if (loadingLine.style.width === '100%') {
+                    setTimeout(() => {
+                        loadingLine.style.width = '0';
+                    }, 500); // Reset after 500ms, you can adjust this for longer validation
+                }
+            });
+        }
+    
+        function hideLoadingAnimation(loadingLine) {
+            loadingLine.style.width = '0';
+            loadingLine.style.visibility = 'hidden';
+        }
+    
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            if (emailInput.checkValidity()) {
+                startLoadingAnimation(loginLoadingLine);
+    
+                // AJAX POST request to check if email exists
+                fetch('{% url "check_email" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: new URLSearchParams({
+                        'email': emailInput.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        // Email exists, proceed to password step
+                        setTimeout(function() {
+                            loginBox.style.opacity = '0';
+                            loginBox.style.visibility = 'hidden';
+                            passwordBox.classList.remove('hidden');
+                            userEmail.textContent = emailInput.value;
+                            hideLoadingAnimation(loginLoadingLine);
+                        }, 1500);
+                    } else {
+                        // Email doesn't exist or is invalid, show error
+                        emailErrorMessage.innerHTML = `<i class="${data.icon_class}"></i> ${data.error}`;
+                        emailErrorMessage.style.display = 'block';
+                        emailInput.style.borderColor = '#d93025';
+                        hideLoadingAnimation(loginLoadingLine);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    hideLoadingAnimation(loginLoadingLine);
+                });
+    
+            } else {
+                emailErrorMessage.style.display = 'block';
+                emailInput.style.borderColor = '#d93025';
+            }
+        });
+    
+        passwordForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            if (passwordInput.value) {
+                startLoadingAnimation(passwordLoadingLine);
+    
+                // AJAX POST request to verify the password
+                fetch('{% url "guest_login" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: new URLSearchParams({
+                        'email': emailInput.value,
+                        'password': passwordInput.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Password is correct, redirect to home
+                        window.location.href = data.redirect_url;
+                    } else {
+                        // Password is incorrect, show error
+                        passwordErrorMessage.textContent = data.error;
+                        passwordErrorMessage.style.display = 'block';
+                        passwordInput.style.borderColor = '#d93025';
+                        hideLoadingAnimation(passwordLoadingLine);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    hideLoadingAnimation(passwordLoadingLine);
+                });
+    
+            } else {
+                passwordErrorMessage.style.display = 'block';
+                passwordInput.style.borderColor = '#d93025';
+            }
+        });
+    
+        showPasswordCheckbox.addEventListener('change', function() {
+            passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
+        });
+    
+        guestEmail.addEventListener('click', function() {
+            // Show email input container and hide password container
+            passwordBox.classList.add('hidden');
+            loginBox.style.opacity = '1';
+            loginBox.style.visibility = 'visible';
+        });
+    
+        createAccountLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            startLoadingAnimation(loginLoadingLine);
+            setTimeout(function() {
+                window.location.href = createAccountLink.href;
+            }, 1500);  // Adjust the timing as needed to show the loading animation before the redirect
+        });
+    });
+    
+</script>
+
+{% endblock content %}

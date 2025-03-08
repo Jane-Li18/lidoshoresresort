@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Admin Dashboard | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+{% block profile %}{% endblock profile %}
+
+{% include 'authentication/admin/admin_navbar.html' %}
+
+<div style="display: flex; justify-content: center; gap: 20px; padding: 20px;">
+    <!-- Line Graph Container -->
+    <div id="graphContainer" style="flex: 1; max-width: 600px; background-color: white; padding: 20px; border: 1px solid #ccc;">
+        <h3 style="text-align: center;">Reservation Status Over Time</h3>
+        <canvas id="salesChart"></canvas>
+        <hr>
+        <h3 style="text-align: center;">Monthly Sales</h3>
+        <table class="table table-bordered" style="width: 100%; margin-top: 20px; text-align: center; border-collapse: collapse; border: 1px solid #ccc;">
+            <tr>
+                <th>As of</th>
+                <th><i class="fa-solid fa-piggy-bank"></i> &nbsp;Total Gain</th>
+                <th><i class="fa-solid fa-thumbs-down"></i> &nbsp;Total Loss</th>
+            </tr>
+            <tr>
+                <td>{{ last_month }}</td>
+                <td>{{ total_gain }}</td>
+                <td>{{ total_loss }}</td>
+            </tr>
+        </table>
+
+        <form method="POST" action="{% url 'download_sales_report' %}">
+            {% csrf_token %}
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" name="report_type" value="pdf" class="btn-one">Download PDF <span></span></button>
+                <button type="submit" name="report_type" value="excel" class="btn-one">Download Excel <span></span></button>
+            </div>
+        </form>
+        
+        
+        
+    </div>
+
+    <!-- Table Container -->
+    <div id="tableContainer" style="flex: 2; background-color: white; padding: 20px; border: 1px solid #ccc;">
+        <h3 style="text-align: center;">Reservation Sales Report</h3>
+        <table class="table table-bordered" id="reservationTable" border="1" style="width: 100%; text-align: center; border-collapse: collapse; ">
+            <thead>
+                <tr>
+                    <th style="padding: 10px;">Room</th>
+                    <th style="padding: 10px;">Payment Method</th>
+                    <th style="padding: 10px;">Status</th>
+                    <th style="padding: 10px;">Total Amount</th>
+                    <th style="padding: 10px;">Check-in</th>
+                    <th style="padding: 10px;">Check-out</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Table rows dynamically populated on hover -->
+            </tbody>
+        </table>
+        <div style="text-align: center; margin-top: 10px;">
+            <button id="prevPage" style="display: none;">Previous</button>
+            <button id="nextPage" style="display: none;">Next</button>
+        </div>
+    </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; gap: 20px; padding: 20px;">
+    <!-- Add Sales Container -->
+    <div id="addSalesContainer" style="flex: 1; padding: 20px; border: 1px solid #ccc; background-color: white;">
+        <h3 style="text-align: center;">Add Sales</h3>
+        <form id="addSaleForm">
+            <div class="form-group">
+                <input type="number" id="saleAmount" name="saleAmount" required placeholder=" " />
+                <label for="saleAmount">Sale Amount *</label>
+                <div class="error-message" style="display: none;">Sale Amount is required.</div>
+            </div>
+    
+            <div class="form-group">
+                <input type="text" id="saleDescription" name="saleDescription" required placeholder=" " />
+                <label for="saleDescription">Description *</label>
+                <div class="error-message" style="display: none;">Description is required.</div>
+            </div>
+    
+            <div class="form-group">
+                <input type="text" id="handledBy" name="handledBy" required placeholder=" " />
+                <label for="handledBy">Handled by *</label>
+                <div class="error-message" style="display: none;">Handled by is required.</div>
+            </div>
+    
+            <button type="submit" class="btn-one" style="width: 100%;" disabled>Add Sale <span></span></button>
+        </form>
+    </div>
+
+    <!-- Saved Sales Table -->
+    <div id="salesTableContainer" style="flex: 2; padding: 20px; border: 1px solid #ccc; background-color: white;">
+        <h3 style="text-align: center;">Saved Sales</h3>
+        <table class="table table-bordered" style="width: 100%; text-align: center; border-collapse: collapse; border: 1px solid #ccc;">
+            <thead>
+                <tr>
+                    <th>Amount</th>
+                    <th>Description</th>
+                    <th>Handled By</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="salesTableBody">
+                {% for sale in sales %}
+                <tr>
+                    <td>₱ {{ sale.amount|floatformat:2|intcomma }}</td>
+                    <td>{{ sale.description }}</td>
+                    <td>{{ sale.handled_by }}</td>
+                    <td>{{ sale.date_created }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+<style>
+    h3 {
+        font-size: 20px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    /* Form group styling */
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 1em;
+        color: #666;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 4px;
+    }
+
+    /* Error message styling */
+    .form-group .error-message {
+        color: white;
+        font-size: 13px;
+        display: none;
+        padding: 5px;
+        background-color: #d93025;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        width: 100%;
+        text-align: center;
+        margin-top: 1px; /* Adjusted margin to prevent overlap */
+    }
+
+    .form-group.error .error-message {
+        display: block;
+    }
+
+    /* Label transition */
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label,
+    .form-group select:focus + label,
+    .form-group select:not(:empty) + label {
+        top: -10px;
+        left: 5px;
+        font-size: 12px;
+        color: #333;
+    }
+
+    button.btn-one:disabled {
+        background-color: #cccccc; /* Light gray background */
+        color: #666666; /* Gray text color */
+        cursor: not-allowed; /* Disabled cursor */
+        opacity: 0.6; /* Slightly transparent */
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script>
+
+    const form = document.getElementById('addSaleForm');
+    const inputs = form.querySelectorAll('input[required]');
+    const button = form.querySelector('button[type="submit"]');
+
+    // Function to check if all fields are filled
+    function checkFields() {
+        let allFilled = true;
+        inputs.forEach(input => {
+            const errorMessage = input.nextElementSibling.nextElementSibling;
+            if (!input.value.trim()) {
+                allFilled = false;
+                errorMessage.style.display = 'block'; // Show error message
+            } else {
+                errorMessage.style.display = 'none'; // Hide error message
+            }
+        });
+        button.disabled = !allFilled; // Enable/disable the button
+    }
+
+    // Add event listeners to inputs
+    inputs.forEach(input => {
+        input.addEventListener('input', checkFields);
+    });
+
+    // Initial check
+    checkFields();
+
+    // Prevent form submission if fields are invalid
+    form.addEventListener('submit', function (e) {
+        checkFields(); // Ensure fields are validated
+        if (button.disabled) {
+            e.preventDefault(); // Stop submission if button is still disabled
+        }
+    });
+
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const months = {{ months|safe }};
+    const chartData = {{ chart_data|safe }};
+    const reservationsDetails = {{ reservations_json|safe }};
+
+    // Pagination
+    let currentPage = 1;
+    const rowsPerPage = 5;
+
+    function renderTable(data) {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = currentPage * rowsPerPage;
+
+        data.slice(start, end).forEach((reservation) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="padding: 10px;">${reservation.room_chosen}</td>
+                <td style="padding: 10px;">${reservation.payment_method}</td>
+                <td style="padding: 10px;">${reservation.status}</td>
+                <td style="padding: 10px;">${reservation.overall_total_amount}</td>
+                <td style="padding: 10px;">${reservation.check_in_date}</td>
+                <td style="padding: 10px;">${reservation.check_out_date}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        document.getElementById('prevPage').style.display = currentPage > 1 ? 'inline-block' : 'none';
+        document.getElementById('nextPage').style.display = currentPage * rowsPerPage < data.length ? 'inline-block' : 'none';
+    }
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+        if (currentPage * rowsPerPage < reservationsDetails.length) {
+            currentPage++;
+            renderTable(reservationsDetails);
+        }
+    });
+
+    document.getElementById('prevPage').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable(reservationsDetails);
+        }
+    });
+
+    // Line Chart
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: Object.keys(chartData).map((status) => ({
+                label: status,
+                data: chartData[status],
+                borderColor: getColor(status),
+                borderWidth: 2,
+                pointRadius: 4,
+                tension: 0.4,
+                hidden: chartData[status].every((value) => value === 0),
+            })),
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function (tooltipItem) {
+                            const status = tooltipItem.dataset.label;
+                            const filteredReservations = reservationsDetails.filter((r) => r.status === status);
+                            currentPage = 1;
+                            renderTable(filteredReservations);
+                            return `${status}: ${tooltipItem.raw}`;
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    function getColor(status) {
+        return {
+            'Booked': 'green',
+            'Pending': 'gray',
+            'Cancelled': 'red',
+            'Refunded': 'blue',
+            'Rebooked': 'orange',
+        }[status] || 'black';
+    }
+
+    // Download PDF
+    {% comment %} document.getElementById('downloadPdf').addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('landscape', 'mm', 'a4'); // Landscape mode, A4 size
+    
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+    
+        const graphContainer = document.getElementById('graphContainer');
+        const tableContainer = document.getElementById('tableContainer');
+    
+        // Capture Graph Container
+        html2canvas(graphContainer, { scale: 1 }).then((graphCanvas) => {
+            const graphImgData = graphCanvas.toDataURL('image/png');
+            const graphWidth = pageWidth * 0.35; // Reduce to 35% of page width
+            const graphHeight = (graphCanvas.height * graphWidth) / graphCanvas.width;
+    
+            // Capture Table Container
+            html2canvas(tableContainer, { scale: 1 }).then((tableCanvas) => {
+                const tableImgData = tableCanvas.toDataURL('image/png');
+                const tableWidth = pageWidth * 0.6; // Adjust table to 60% of page width
+                const tableHeight = (tableCanvas.height * tableWidth) / tableCanvas.width;
+    
+                // Add Graph on the Left
+                pdf.addImage(graphImgData, 'PNG', 10, (pageHeight - graphHeight) / 2, graphWidth, graphHeight);
+    
+                // Add Table on the Right
+                pdf.addImage(tableImgData, 'PNG', pageWidth * 0.4, (pageHeight - tableHeight) / 2, tableWidth, tableHeight);
+    
+                pdf.save('reservation_report.pdf');
+            });
+        });
+    }); {% endcomment %}
+    
+    document.getElementById('addSaleForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+    
+        const formData = new FormData(event.target);
+    
+        fetch('/add_sale/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Sale added successfully!');
+                location.reload();
+            } else {
+                alert('Failed to add sale.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+    
+    
+</script>
+
+{% endblock content %}

@@ -4,19 +4,54 @@
 
 {% block content %}
 <style>
+    /* Loading overlay styles */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.5s linear;
+    }
+
+    #loadingOverlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .spinner {
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid var(--bgsecondary);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
     /* Style for confirmation page */
     .lidocompleted-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 50px;
+        margin: 50px;
+        padding: 30px;
         background: var(--bgtertiary);
         border: 1px solid #ccc;
     }
     
-    .success-message {
-        text-align: center;
-    }
-
     .progress-title {
         text-align: center;
         font-size: 24px;
@@ -66,9 +101,9 @@
         height: 5px;
         background-color: var(--bgsecondary);
         position: relative;
-        top: -15px;
+        top: -13px;
         z-index: 0;
-        margin: 0 -40px;
+        margin: 0 -35px;
     }
 
     .step-progress .label {
@@ -83,9 +118,100 @@
         justify-content: center;
         gap: 10px; /* Space between buttons */
     }
+
+    .success-message {
+        text-align: center;
+    }
+
+    .success-message p {
+        font-size: clamp(1rem, 1.5vw, 1.2rem);
+    }
+
+    .message-box-buttons {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .message-box-buttons a {
+        font-size: clamp(0.8rem, 1.2vw, 1rem);
+    }
+
+
+    /* Responsive Adjustments for Booking Content */
+  @media (max-width: 1024px) {
+      .booking-content {
+          flex-direction: column; /* Stack items vertically */
+          gap: 20px;
+      }
+  }
+  
+  /* General Mobile Adjustments */
+  @media (max-width: 768px) {
+    .lidocompleted-container{
+        margin: 30px;
+    }
+
+      .step-progress .label{
+          font-size: 10px;
+    }
+
+    .step-progress {
+        width: 100%;
+    }
+
+    .step-progress .circle-step {
+        flex: none; /* Prevent shrinking */
+        margin-right: 10px; /* Add space between steps */
+    }
+
+    .step-progress::-webkit-scrollbar {
+        height: 5px; /* Slim scrollbar for horizontal scrolling */
+    }
+
+    .step-progress::-webkit-scrollbar-thumb {
+        background: #ccc; /* Color for scrollbar thumb */
+        border-radius: 5px;
+    }
+
+    .step-progress::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+
+      .progress-title {
+          font-size: 20px; /* Adjust font size */
+          text-align: center;
+      }
+
+  }
+
+  /* Extra Small Devices */
+  @media (max-width: 480px) {
+      .step-progress .circle {
+          width: 25px; /* Smaller circles */
+          height: 25px;
+          font-size: 12px;
+      }
+
+      .progress-title {
+          font-size: 18px;
+      }
+
+      .lidocompleted-container{
+        margin: 10px;
+      }
+  }
 </style>
 
-<div class="lidocompleted-container" style="margin-top: 100px;">
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="lidocompleted-container">
     <h2 class="progress-title">Confirmation</h2>
     <div class="step-progress">
         <div class="circle-step">
@@ -110,27 +236,54 @@
         </div>
     </div>
 
-    <div class="success-message">
-        <p>Your reservation booking has been submitted!</p> 
-        <p>Thank you and kindly save this reservation ID to be presented on your arrival!</p>
-        {% comment %} , and kindly wait for the front desk to confirm it within 2-5 minutes. {% endcomment %}
-        <p>Your Reservation ID: <strong id="reservationID"></strong></p> <!-- Display the reservation ID -->
-        {% if reservation_id %}
-        <a href="{% url 'generate_invoice' reservation_id %}" class="btn-one">Download Invoice <span></span></a>
-        {% else %}
-        <p>Reservation ID not found. Unable to generate invoice.</p>
-        {% endif %}
+    <div class="booking-content">
+        <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 20px; margin-bottom: 5px; text-align: center;">
+            <p>Your reservation booking has been <strong>submitted</strong>!</p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>
+                    <p>Thank you! Kindly save this Reservation ID and invoice to present upon your arrival.</p>                
+                </li>
+                <li>
+                    <p><li><i class="fa-solid fa-circle-info" style="color: rgb(177, 173, 123);"></i>&nbsp;Take Note: Paying through GCash <span style="color: rgb(177, 173, 123); font-weight: bold;">allows you to choose between full payment</span> or <span style="color:rgb(177, 173, 123); font-weight: bold;">down payment (50% of the total amount)</span> requests take 2-5 minutes for front desk processing. </li></p>                
+                </li>
+                <li>
+                    <p style="font-size: 16px;">Your Reservation ID: <u><strong id="reservationID"></strong></u></p>
+                    {% if reservation_id %}
+                    <a href="{% url 'generate_invoice' reservation_id %}" id="downloadInvoice" class="btn-one" style="display:none;">Download Invoice <span></span></a>
+                    {% else %}
+                    <p>Reservation ID not found. Unable to generate invoice.</p>
+                    {% endif %}
+                </li>
+            </ul>                
+        </div>
+
+
         
         <div class="message-box-buttons">
-            <a href="{% url 'lidohome' %}" class="btn-one">Go Back to Home <span></span></a>
-            <a href="{% url 'lidobooking' %}" class="btn-one">Book Again? <span></span></a>
+            <a href={% url 'lidohome' %} class="btn-one"><i class="fa-solid fa-house-user"></i>&nbsp; Home <span></span></a>
+            <a href="{% url 'lidobooking' %}" id="bookAgain" class="btn-one"> <i class="fa-solid fa-arrow-rotate-right"></i>&nbsp; Book Again? <span></span></a>
+            <a href="{% url 'guest_transactions' %}" class="btn-one"> <i class="fa-solid fa-file-invoice"></i>&nbsp; See Transactions <span></span></a>
         </div>
     </div>
 </div>
 
 <script>
-    // Clear local storage if the backend signals to do so
     document.addEventListener("DOMContentLoaded", function () {
+        // Show the loading overlay
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.classList.add("active");
+
+        // Ensure the overlay hides once the page finishes loading
+        window.addEventListener("load", function () {
+            loadingOverlay.classList.remove("active");
+        });
+
+        // Fallback to hide the overlay after a timeout in case of unexpected issues
+        setTimeout(() => {
+            loadingOverlay.classList.remove("active");
+        }, 5000); // Adjust timeout as needed
+
+        // Clear local storage if the backend signals to do so
         const shouldClearLocalStorage = {{ clear_local_storage|yesno:"true,false" }};
         if (shouldClearLocalStorage) {
             try {
@@ -145,8 +298,15 @@
         const urlParams = new URLSearchParams(window.location.search);
         const reservationID = urlParams.get('reservation_ID'); // Get reservation_ID from URL
         document.getElementById("reservationID").textContent = reservationID || 'N/A'; // Display the reservation ID or 'N/A'
+
+        // Automatically trigger the invoice download if reservation ID exists
+        const downloadInvoice = document.getElementById("downloadInvoice");
+        if (downloadInvoice && reservationID) {
+            downloadInvoice.click();
+        }
     });
 </script>
+
 
 
 {% endblock content %}

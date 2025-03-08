@@ -273,7 +273,7 @@
             <p>Welcome back, Admin! Your role powers the Lido Shores legacy.</p>
         </div>
         <div class="login-box-right">
-            <form id="loginForm" method="post" action="{% url 'adminlogin' %}">
+            <form id="loginForm" method="post" action="{% url 'admin_login' %}">
                 {% csrf_token %}
                 <div class="input-container">
                     <input type="text" name="email" id="email" placeholder=" " required pattern="^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$">
@@ -436,7 +436,7 @@
                 startLoadingAnimation(passwordLoadingLine);
         
                 // AJAX POST request to verify the password for the admin account
-                fetch('{% url "adminlogin" %}', {
+                fetch('{% url "admin_login" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',

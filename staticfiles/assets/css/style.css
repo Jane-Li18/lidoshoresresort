@@ -1,7 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
 @import url("fontawesome-all.css");
-@import url("animate.css");
 @import url("custom-animate.css");
 @import url("jquery-ui-1.9.2.custom.min.css");
 @import url("nice-select.css");
@@ -13,7 +12,7 @@
 @import url("rtl.css");
 @import url("elpath.css");
 
-@font-face {
+/* @font-face {
   font-family: "Candide Regular";
   src: url("/static/fonts/Candide-Regular.otf") format("opentype");
 }
@@ -31,7 +30,7 @@
 @font-face {
   font-family: "Candide Thin";
   src: url("/static/fonts/Candide-Thin.otf") format("opentype");
-}
+} */
 
 *::selection {
   background: var(--bgsecondary); /* For Highlighting in the website*/
@@ -347,13 +346,15 @@ body {
   }
   
   .alert-error{
-    background: var(--bgsecondary);
+    background: #D9544D;
+    color: var(--bgtertiary);
     padding: 20px;
     margin: 0px;
   }
   
   .alert-warning{
-    background: var(--bgsecondary);
+    background: #D9544D;
+    color: var(--bgtertiary);
     padding: 20px;
     margin: 0px;
   }
@@ -743,118 +744,7 @@ img {
 
 /*  Scroll To Top style */
 
-.scroll-to-top {
-  position: fixed;
-  right: 50px;
-  bottom: 50px;
-  width: 65px;
-  height: 65px;
-  font-size: 18px;
-  line-height: 65px;
-  text-align: center;
-  z-index: 100;
-  cursor: pointer;
-  border-radius: 50%;
-  margin-left: -26px;
-  display: none;
-  -webkit-transition: all 300ms ease;
-  -o-transition: all 300ms ease;
-  transition: all 300ms ease;
-  background: var(--bgsecondary);
-  color: var(--txtprimary);
-}
 
-.scroll-to-top.style-two {
-  color: var(--txtprimary);
-}
-
-.scroll-to-top:hover {
-  background: var(--bgtertiary);
-  color: var(--txttertiary);
-  border: 0.5px solid rgba(0, 0, 0, 0.3);
-}
-
-.scroll-to-top a:hover {
-  color: var(--txtprimary);
-}
-
-.scroll-to-top a {
-  bottom: 50px;
-  width: 65px;
-  height: 65px;
-  font-size: 18px;
-  line-height: 65px;
-  color: var(--bgprimary);
-  display: block;
-}
-
-
-
-.profile {
-  position: fixed;
-  right: 50px;
-  bottom: 130px; /* Adjusted to appear above scroll-to-top */
-  width: 65px;
-  height: 65px;
-  font-size: 18px;
-  line-height: 65px;
-  text-align: center;
-  z-index: 101; /* Higher than scroll-to-top */
-  cursor: pointer;
-  border-radius: 50%;
-  display: none;
-  transition: all 300ms ease;
-  background: var(--bgsecondary);
-  color: var(--txtprimary);
-}
-
-.profile.style-two {
-  color: var(--txtprimary);
-}
-
-.profile:hover {
-  background: var(--bgtertiary);
-  color: var(--txttertiary);
-  border: 0.5px solid rgba(0, 0, 0, 0.3);
-}
-
-.profile a:hover {
-  color: var(--txtprimary);
-}
-
-/* Profile container styling */
-.profile-circle {
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  color: var(--bgprimary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-  text-decoration: none; /* Remove underline from anchor tag */
-  border: 3px solid var(--bgsecondary); /* Outside border */
-}
-
-/* Image styling to ensure it fits the circle */
-.profile-circle img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; 
-  display: block;
-  background-color: var(--bgprimary);
-  border-radius: 50%;
-}
-
-/* Styling for initials when no profile picture is present */
-.profile-circle span {
-  font-size: 24px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-/* Styling for the default icon if the user is not logged in */
 
 
 
@@ -1685,9 +1575,8 @@ img {
 .mobile-menu .nav-logo {
   position: relative;
   padding: 30px 25px;
-  text-align: left;
-  margin-bottom: 100px;
-  margin-top: 25px;
+  text-align: center;
+  width: 80%;
 }
 
 .mobile-menu-visible {
@@ -1802,12 +1691,23 @@ img {
   padding: 10px 25px;
   font-size: 15px;
   font-weight: 500;
-  color: #ffffff;
   text-transform: uppercase;
   -webkit-transition: all 500ms ease;
   -o-transition: all 500ms ease;
   transition: all 500ms ease;
+  text-align: center;
 }
+
+.mobile-menu .navigation li > a {
+  transition: all 0.3s ease; /* Smooth transition for the hover effect */
+}
+
+.mobile-menu .navigation li > a:hover {
+  color: var(--txtprimary); /* Change the text color to white */
+  background-color: white; /* Change the background to white */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Optional: Add a shadow for visibility */
+}
+
 
 .mobile-menu .navigation li ul li > a {
   font-size: 15px;
@@ -3032,17 +2932,19 @@ ul.filter-tabs li {
   letter-spacing: 4px;
   color: #adaaaa;
   font-weight: 700;
-  font-family: "Open Sans";
   text-align: right;
   text-transform: uppercase;
   border: 1px solid transparent;
   cursor: pointer;
+  margin-left: 20px;
+  padding: 0 20px;
+  border-radius: 50px;
   margin-bottom: 20px;
 }
 
 ul.filter-tabs li.active {
-  color: #1c1c1c;
-  border-color: #1c1c1c;
+  color: var(--txtprimary); 
+  background-color: var(--bgprimary);
 }
 
 .gallery-one-box {
@@ -3054,70 +2956,7 @@ ul.filter-tabs li.active {
   width: 100%;
 }
 
-.gallery-one-content {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  padding: 0 45px 50px;
-}
 
-h4.gallery-one-title {
-  font-size: 48px;
-  line-height: 30px;
-  color: #ffffff;
-  font-weight: 700;
-  margin-bottom: 20px;
-  opacity: 0;
-  visibility: hidden;
-  -webkit-transition: all 500ms ease;
-  -o-transition: all 500ms ease;
-  transition: all 500ms ease;
-  -webkit-transform: translateY(-20px);
-  -ms-transform: translateY(-20px);
-  transform: translateY(-20px);
-}
-
-.gallery-one-text {
-  font-size: 16px;
-  letter-spacing: 2px;
-  line-height: 30px;
-  color: #ffffff;
-  font-weight: 700;
-  opacity: 0;
-  visibility: hidden;
-  -webkit-transition: all 500ms ease;
-  -o-transition: all 500ms ease;
-  transition: all 500ms ease;
-  -webkit-transform: translateY(-20px);
-  -ms-transform: translateY(-20px);
-  transform: translateY(-20px);
-}
-
-.gallery-one-like {
-  position: absolute;
-  right: 50px;
-  top: 25px;
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: #ffffff;
-  text-align: center;
-  line-height: 45px;
-  transition: 0.5s;
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  -webkit-transition: all 500ms ease;
-  -o-transition: all 500ms ease;
-  transition: all 500ms ease;
-  transform: scale(0.2);
-}
-
-.gallery-one-like:hover {
-  background: var(--theme-color);
-  color: #fff;
-}
 
 span.gallery-one-rating {
   border-radius: 3px;
@@ -3640,7 +3479,7 @@ section.clients-logo-one-section.style-two {
 footer.main-footer {
   background-color: #1c1c1c;
   position: relative;
-  padding-top: 120px;
+  padding-top: 80px;
   margin-top: 120px;
 }
 
@@ -3740,16 +3579,16 @@ h2.widget-title span {
   background: #252525;
   font-size: 14px;
   letter-spacing: 1px;
-  line-height: 48px;
+  line-height: 70px;
   color: #adaaaa;
   text-align: center;
-  padding: 21px 0;
+  /* padding: 21px 0; */
   text-transform: uppercase;
 }
 
 .footer-widgets-section {
   position: relative;
-  padding-bottom: 80px;
+  padding-bottom: 50px;
 }
 
 /* Header style two */

@@ -6,25 +6,394 @@
 {% block mainnav %}{% endblock mainnav %}
 
 {% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+{% include 'message_notification.html' %}
 
 <style>
     h3 {
         font-size: 20px;
         text-transform: uppercase;
+        margin-bottom: 10px;
     }
+
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table thead {
+        background-color: #f9f9f9;
+    }
+    
+    .table th, .table td {
+        padding: 10px;
+
+    }
+    
+    .table tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .status-booked {
+        color: green;
+        font-weight: bold;
+    }
+    
+    .status-pending {
+        color: orange;
+        font-weight: bold;
+    }
+    
+    .status-rebooked {
+        color: teal;
+        font-weight: bold;
+    }
+    
+    .filter-section {
+        margin-bottom: 20px;
+        text-align: right;
+    }
+    
+
+    
+    #date-filter {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px 10px;
+        font-size: 14px;
+        width: 200px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        outline: none;
+        transition: border-color 0.3s ease-in-out;
+    }
+    
+    #date-filter:focus {
+        border-color: #4caf50;
+    }
+    
+    .main-container {
+        background-color: var(--bgtertiary);
+        padding: 20px;
+        border: 1px solid #ccc;
+        max-width: 1200px;
+        margin: 50px auto;
+        overflow-x: auto; /* Enable horizontal scrolling on small screens */
+
+    }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .main-container {
+            width: 100%; /* Take full width on small screens */
+            padding: 10px; /* Adjust padding for smaller screens */
+        }
+    }
+
+    @media (max-width: 425px) {
+        .btn-one {
+            width: 100%; /* Full-width submit button */
+            padding: 12px; /* Add padding for touch devices */
+            font-size: 16px; /* Increase font size */
+        }
+
+        .btn, .btn-one {
+            padding: 8px; /* Adjust button padding */
+            font-size: 14px; /* Smaller button text */
+        }
+    }
+    
+    .chart-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+    
+    .chart-box {
+        width: 100%;
+        max-width: 300px;
+        aspect-ratio: 1; /* Ensure it's a square */
+        background: var(--bgtertiary);
+        padding: 10px;
+        border: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Default styles for table */
+.table-container {
+    display: block;
+}
+
+.cards-container {
+    display: none;
+}
+
+/* Card styles */
+.card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.status-booked {
+    color: green;
+    font-weight: bold;
+}
+
+.status-pending {
+    color: orange;
+    font-weight: bold;
+}
+
+.status-rebooked {
+    color: teal;
+    font-weight: bold;
+}
+
+/* Responsive styles for smaller screens */
+@media (max-width: 768px) {
+    .table-container {
+        display: none;
+    }
+
+    .cards-container {
+        display: block;
+    }
+}
+
 </style>
 
-{% comment %} <!-- Welcome Section -->
-<div class="welcome-container" style="padding: 20px; text-align: center; background-color: var(--bgsecondary); color: var(--txtprimary);">
-    <h1 style="color: var(--bgtertiary);">Welcome, {{ frontdesk.first_name }}!</h1>
-    <p style="color: var(--bgtertiary);">Welcome to your frontdesk dashboard. Here you can monitor sales performance and account creation trends.</p>
-</div> {% endcomment %}
+<div class="container main-container" style="background: var(--bgprimary); border: none;">
+<div class="chart-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
+    <div class="chart-box">
+        <canvas id="statusChart1"></canvas>
+    </div>
+    <div class="chart-box">
+        <canvas id="statusChart2"></canvas>
+    </div>
+    <div class="chart-box">
+        <canvas id="statusChart3"></canvas>
+    </div>
+</div>
+</div>
+
+
+<div class="container main-container">
+    <div class="header-row">
+        <h3>Activity Booking History</h3>
+    </div>
+
+    <form id="filter-form" method="get" action="{% url 'frontdesk_dashboard' %}">
+        <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid var(--bgsecondary); padding: 10px; margin-bottom: 5px;">
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li> Use the filter below to view bookings for a specific date or return to the full history.</li>
+                <br>
+                <ul style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 0; padding: 0; list-style: none;">
+                    <li><input type="text" id="date-filter" name="date" value="{{ filter_date|default:'' }}"></li>
+                    <li><a href="#" onclick="document.getElementById('filter-form').submit();" class="btn-one">Filter <span></span></a></li>
+                    <li><a href="{% url 'frontdesk_dashboard' %}" class="btn-one">NOW <span></span></a></li>
+                </ul>
+            </ul>
+        </div>
+    </form>
+    
+    <div class="activity-history">
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Reservation ID</th>
+                        <th>Guest Name</th>
+                        <th>Check-In Date</th>
+                        <th>Check-Out Date</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in ongoing_reservations %}
+                    <tr>
+                        <td>{{ reservation.reservation_ID }}</td>
+                        <td>{{ reservation.first_name }} {{ reservation.last_name }}</td>
+                        <td>{{ reservation.check_in_date }}</td>
+                        <td>{{ reservation.check_out_date }}</td>
+                        <td>
+                            <span class="status-{{ reservation.status|lower }}">
+                                {{ reservation.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ reservation.created_at|date:"h:i A" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No reservations found for this date.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="cards-container">
+            {% for reservation in ongoing_reservations %}
+            <div class="card">
+                <p><strong>Reservation ID:</strong> {{ reservation.reservation_ID }}</p>
+                <p><strong>Guest Name:</strong> {{ reservation.first_name }} {{ reservation.last_name }}</p>
+                <p><strong>Check-In Date:</strong> {{ reservation.check_in_date }}</p>
+                <p><strong>Check-Out Date:</strong> {{ reservation.check_out_date }}</p>
+                <p><strong>Status:</strong>
+                    <span class="status-{{ reservation.status|lower }}">
+                        {{ reservation.get_status_display }}
+                    </span>
+                </p>
+                <p><strong>Time:</strong> {{ reservation.created_at|date:"h:i A" }}</p>
+            </div>
+            {% empty %}
+            <div class="card">
+                <p>No reservations found for this date.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+</div>
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Register plugin for center text
+    Chart.register({
+        id: 'centerText',
+        beforeDraw(chart) {
+            const { width, height, ctx } = chart;
+            const dataset = chart.data.datasets[0];
+            const total = dataset.data.reduce((a, b) => a + b, 0);
+            const value = dataset.data[0] + '/' + total;
+    
+            ctx.save();
+            ctx.font = `${height / 10}px 'Montserrat', sans-serif`; // Use custom font here
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#000'; // Use default font color
+            ctx.fillText(value, width / 2, height / 2 - 15  ); // Adjust vertical position (-15 is optional)
+            ctx.restore();
+        },
+    });
+    
+
+    const options = {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'bottom', // Legend below the chart
+                labels: {
+                    usePointStyle: true,
+                    font: {
+                        size: 10, // Reduce the font size of the legend
+                    },
+                    boxWidth: 10, // Adjust the size of the color box in the legend
+                    padding: 10, // Adjust padding between legend items
+                    textAlign: 'center', // Center-align text to prevent offset
+                },
+            },
+            tooltip: {
+                callbacks: {
+                    label(tooltipItem) {
+                        const label = tooltipItem.label || '';
+                        // Truncate label to fit
+                        return label.length > 20 ? label.substring(0, 17) + '...' : label;
+                    },
+                },
+            },
+        },
+    };
+
+    // Booked and Rebooked Chart
+    const statusChart1 = new Chart(document.getElementById('statusChart1').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Booked', 'Rebooked'],
+            datasets: [{
+                data: [{{ booked }}, {{ rebooked }}],
+                backgroundColor: ['#77dd77', '#80BCBD'],
+            }]
+        },
+        options,
+    });
+
+    // Cancelled and Refunded Chart
+    const statusChart2 = new Chart(document.getElementById('statusChart2').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Cancelled', 'Refunded'],
+            datasets: [{
+                data: [{{ cancelled }}, {{ refunded }}],
+                backgroundColor: ['#FF8383', '#C4D9FF'],
+            }]
+        },
+        options,
+    });
+
+    // Pending Reservation and Rebooking Chart
+    const statusChart3 = new Chart(document.getElementById('statusChart3').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending Reservations', 'Pending Rebooking'],
+            datasets: [{
+                data: [{{ pending_reservation }}, {{ pending_rebooking }}],
+                backgroundColor: ['#FAFFC5', '#E5E3D4'],
+            }]
+        },
+        options,
+    });
 
 
-
-
+    document.addEventListener('DOMContentLoaded', function () {
+        flatpickr('#date-filter', {
+            dateFormat: 'Y-m-d', // Matches Django's expected date format
+            defaultDate: '{{ filter_date|default:'' }}', // Preselect the filtered date
+            altInput: true, // Display a prettier alternative input
+            altFormat: 'F j, Y', // User-friendly format
+            allowInput: true, // Allow manual input
+        });
+    });
+    
+</script>
 
 {% endblock content %}

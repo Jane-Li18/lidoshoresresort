@@ -1,0 +1,783 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Cottage Rates | Lido Shores Resort{% endblock title %}
+{% block content %}
+
+{% block mainnav %}{% endblock mainnav %}
+{% block profile %}{% endblock profile %}
+
+{% include 'authentication/frontdesk/frontdesk_navbar.html' %}
+{% include 'message_notification.html' %}
+
+<div class="container-fluid mt-3">
+    <div class="mb-2 col-md-12 col-sm-12" style="background: var(--bgtertiary); padding: 20px; border: 1px solid #ccc;">
+        <div style="font-size: 14px; background-color: #eef7ff; border-left: 4px solid #6a9fb5; padding: 10px;">
+            <i class="fa-solid fa-person-digging" style="color: #6a9fb5;"></i>&nbsp;
+            <strong>Front Desk Task:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>To view the availability of cottages, click <span style="color: #6a9fb5; font-weight: bold;">"View Avails"</span>. This will display details of current reservations for that cottage.</li>
+                <li>After reviewing, you can hide the details by clicking <span style="color: #6a9fb5; font-weight: bold;">"Hide Avails"</span>. Ensure to manage visibility as per the guest's privacy.</li>
+                <li>If a reservation's status needs to be updated (e.g., <span style="color: green; font-weight: bold;">Completed</span>, <span style="color: red; font-weight: bold;">Cancelled</span>, <span style="color: orange; font-weight: bold;">Refunded</span>), use the corresponding buttons under the guest's details.</li>
+                <li>For GCASH payments:
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>Verify the receipt reference number submitted by the guest.</li>
+                        <li>If the receipt is valid, update the reservation status to <span style="color: teal; font-weight: bold;">"Booked"</span>.</li>
+                        <li>If the receipt is invalid, update the reservation status to <span style="color: red; font-weight: bold;">"Rejected"</span> and inform the guest to provide a valid receipt.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+<br>
+    <div class="row">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
+            <div class="add-rate-form">
+                <h3>Add Rates <span style="float: right; font-weight: bold; color: red; font-size: 10px;">* required</span></h3>
+                <hr>
+                <form id="addRateForm" method="POST" action="{% url 'submit_cottage_rates' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <input type="text" id="cottage_rate_name" name="cottage_rate_name" required placeholder=" " />
+                        <label for="cottage_rate_name">Cottage Rate Name *</label>
+                        <div class="error-message">Cottage Rate Name is required.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" id="cottage_rate_price" name="cottage_rate_price" step="0.01" min="100" max="20000" required placeholder=" " />
+                        <label for="cottage_rate_price">Rate Price *</label>
+                        <div class="error-message" id="required-error-message">Rate Price is required.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" id="cottage_rate_capacity" name="cottage_rate_capacity" min="1" required placeholder=" " />
+                        <label for="cottage_rate_capacity">Rate Capacity *</label>
+                        <div class="error-message" id="capacity-required-error">Rate Capacity is required.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="number" id="cottage_rate_unit" name="cottage_rate_unit" required placeholder=" " />
+                        <label for="cottage_rate_unit">Rate Available Count *</label>
+                        <div class="error-message">Rate Available is required.</div>
+                    </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+            <div class="rate-image-container">
+                <h3>Cottage Image <span style="float: right; font-weight: bold; color: red; font-size: 10px;">* Main image is required</span></h3>
+                <br>
+                <div style="font-size: 14px; background-color: #f9f9f9; border-left: 4px solid #83b17b; padding: 10px; margin-bottom: 20px;">
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>Click on the box to upload/reupload a new main images. <br>Main image: Maximum size 10MB.</li>
+                    </ul>
+                </div>
+                <hr>
+                <div class="main-image-box" id="mainImageContainer">
+                    <img id="main-image-preview" src="{% static 'placeholder.png' %}" alt="">
+                    <i class="fa-solid fa-circle-plus main-add-icon"></i>
+                    <input type="file" id="rate_image" name="rate_image" accept="image/*" required />
+                </div>
+
+                <button type="submit" id="saveRateButton" class="btn-one" style="width: 100%;" disabled><i class="fa-regular fa-floppy-disk"></i> &nbsp;Save <span></span></button>
+            </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5 col-md-12 col-sm-12 mb-3">
+            <div class="rate-image-container">
+                <!-- Centered Title -->
+                <h3>
+                    Available Rates
+                </h3>
+                <hr>
+                <div class="row">
+                    {% for rate in cottage_rates %}
+                    <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+                        <div class="card shadow-sm" style="border-radius: 10px; position: relative;">
+                            <!-- Delete Button -->
+                            <button onclick="confirmDelete({{ rate.id }})" id="deleteBtn-{{ rate.id }}" 
+                                class="btn btn-danger btn-sm"
+                                style="position: absolute; top: 10px; right: 10px; z-index: 2; border-radius: 50%; font-size: 16px;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            <div id="confirmButtons-{{ rate.id }}" style="display: none; position: absolute; top: 10px; right: 10px; z-index: 2;">
+                                <button onclick="deleteRate({{ rate.id }})" class="btn btn-success btn-sm">✔</button>
+                                <button onclick="cancelDelete({{ rate.id }})" class="btn btn-warning btn-sm">✖</button>
+                            </div>
+        
+                            <!-- Card Image -->
+                            {% if rate.cottage_rate_image %}
+                            <img src="{{ rate.cottage_rate_image.url }}" class="card-img-top" alt="Image"
+                                style="height: 200px; object-fit: cover; border-radius: 10px 10px 0 0;">
+                            {% else %}
+                            <div class="d-flex align-items-center justify-content-center" 
+                                 style="height: 200px; background-color: #f4f4f4; color: #888;">
+                                No Image
+                            </div>
+                            {% endif %}
+        
+                            <!-- Card Content -->
+                            <div class="card-body" style="background: var(--bgtertiary); position: relative; padding: 10px;">
+                                <!-- Title and Price in Same Row -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <!-- Title -->
+                                    <h3 style="color: var(--bgsecondary); margin: 0; font-size: 18px; font-weight: 500; text-transform: capitalize ;">
+                                        {{ rate.cottage_rate_name }}
+                                    </h3>
+                                    <!-- Price -->
+                                    <div style="color: var(--bgsecondary); font-size: 16px; font-weight: 500;">
+                                        ₱ {{ rate.cottage_rate_price }}
+                                    </div>
+                                </div>
+
+                                <div style="color: var(--txtprimary); font-size: 14px; text-align: center; margin-top: 15px;">
+                                    <i class="fa-solid fa-user-group"></i>&nbsp; {{ rate.cottage_rate_capacity }} person(s)
+                                    <div class="card-text mb-1" style="font-size: 12px; margin-top: 5px;">
+                                        Available:
+                                        {% if rate.available_count > 0 %}
+                                        <strong style="color: var(--bgsecondary);">
+                                            {{ rate.available_count }}/{{ rate.cottage_rate_unit }}
+                                        </strong>                                        
+                                        {% else %}
+                                        <strong style="color: #D9544D;">
+                                            {{ rate.available_count }}/{{ rate.cottage_rate_unit }}
+                                        </strong>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                            </div>
+
+                            
+                            <div class="card-footer text-center" style="background: var(--bgprimary);">
+                                <a href="javascript:void(0)" onclick="toggleAvails({{ rate.id }})">
+                                    <i class="fa-regular fa-eye"></i> View Avails
+                                </a>
+                                <div id="availsContainer-{{ rate.id }}" class="hidden mt-1">
+                                    {% if rate.avails %}
+                                    <ul class="list-unstyled">
+                                        {% for avail in rate.avails %}
+                                        <li style="font-size: 12px; color: var(--txtprimary);">
+                                            <strong>{{ avail.first_name }} {{ avail.last_name }}</strong> - 
+                                            Status Rate: {{ avail.status_rate }}, Status: <strong>{{ avail.walk_in_status }}</strong>, Guests: {{ avail.total_guest_count }},
+                                            Children: {{ avail.total_child_count }}, Avails: {{ avail.cottage_count }}
+                                            <div style="margin-top: 5px;">
+                                                <button class="btn btn-success btn-sm" onclick="updateStatus('{{ avail.walk_in_ID }}', 'Completed')">Done</button>
+                                                <button class="btn btn-danger btn-sm" onclick="updateStatus('{{ avail.walk_in_ID }}', 'Cancelled')">Cancel</button>
+                                                <button class="btn btn-warning btn-sm" onclick="updateStatus('{{ avail.walk_in_ID }}', 'Refunded')">Refund</button>
+                                            </div>
+                                        </li>
+                                        <br>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p style="font-size: 14px; color: #888;">No avails</p>
+                                    {% endif %}
+                                </div>
+                                
+                            </div>
+                            
+                            
+
+                                        
+
+
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center" style="width: 100%; color: #888;">No rates available</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        
+        
+    </div>
+</div>
+
+
+<style>
+    #availsContainer-{{ rate.id }} {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        opacity: 0;
+    }
+    
+    #availsContainer-{{ rate.id }}.visible {
+        max-height: 500px; /* Adjust this value as needed based on the content size */
+        opacity: 1;
+    }
+    
+    #availsContainer-{{ rate.id }}.hidden {
+        max-height: 0;
+        opacity: 0;
+    }
+
+    .hidden {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+    
+    .visible {
+        max-height: 500px; /* Adjust based on content size */
+        opacity: 1;
+        transition: max-height 0.5s ease, opacity 0.5s ease;
+    }
+    
+    .card {
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: scale(1.02);
+    }
+
+    .card img {
+        border-radius: 10px 10px 0 0;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .btn-danger,
+    .btn-success,
+    .btn-warning {
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .card {
+            margin-bottom: 20px;
+        }
+    }
+    
+    .alert {
+        padding: 20px;
+    }
+
+    button.btn-one:disabled {
+        background-color: #cccccc; /* Light gray background */
+        color: #666666; /* Gray text color */
+        cursor: not-allowed; /* Disabled cursor */
+        opacity: 0.6; /* Slightly transparent */
+    }
+
+    h3 {
+        font-size: 20px;
+        text-transform: uppercase;
+    }
+
+    /* Content container for overall layout */
+    .content-container {
+        padding: 20px;
+    }
+    
+    .add-rate-form {
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #ccc; 
+    }
+
+    .form-section-right {
+        background-color: white;
+        padding: 20px;
+        border: 1px solid #ccc;
+    }
+
+    /* Form group styling */
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 1em;
+        color: #666;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 4px;
+    }
+
+    /* Error message styling */
+    .form-group .error-message {
+        color: white;
+        font-size: 13px;
+        display: none;
+        padding: 5px;
+        background-color: #d93025;
+        border: 0.25px solid rgba(0, 0, 0, 0.3);
+        width: 100%;
+        text-align: center;
+        margin-top: 1px; /* Adjusted margin to prevent overlap */
+    }
+
+    .form-group.error .error-message {
+        display: block;
+    }
+
+    /* Label transition */
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label,
+    .form-group select:focus + label,
+    .form-group select:not(:empty) + label {
+        top: -10px;
+        left: 5px;
+        font-size: 12px;
+        color: #333;
+    }
+    
+
+    .rate-image-container {
+        padding: 20px;
+        background-color: white;
+        border: 1px solid #ccc;
+    }
+    
+
+    /* Main Image Box */
+    .main-image-box {
+        margin-bottom: 20px;
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 250px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .main-image-box img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .main-add-icon {
+        position: absolute;
+        font-size: 48px;
+        color: #999;
+        display: none; /* Initially hidden */
+    }
+
+    .main-image-box input[type="file"] {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Additional Images Box */
+    .additional-images-box {
+        display: flex;
+        justify-content: space-evenly;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .additional-image-box {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border: 1px solid #ccc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f9f9f9;
+    }
+
+    .additional-image-box img {
+        display: block;
+    }
+
+    .additional-image-box img[src="{% static 'placeholder.png' %}"] + .add-icon {
+        display: block; /* Show the plus icon if placeholder image is shown */
+    }
+    
+    .additional-image-box img:not([src="{% static 'placeholder.png' %}"]) + .add-icon {
+        display: none; /* Hide the plus icon if an actual image is uploaded */
+    }
+
+    .add-icon {
+        position: absolute;
+        font-size: 24px;
+        color: #999;
+        display: none; /* Initially hidden */
+    }
+
+    .additional-image-box input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Show icons if no image is present */
+    .main-image-box img[src*="placeholder.png"] + .main-add-icon {
+        display: block;
+    }
+
+    
+</style>
+
+
+<script>
+    window.addEventListener('load', function() {
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+
+        // Handle Django messages passed from the backend
+        const djangoMessages = JSON.parse('{{ messages|safe }}');
+
+        if (djangoMessages.length > 0) {
+            djangoMessages.forEach((message) => {
+                messageText.textContent = message.message;
+                if (message.tags === 'success') {
+                    messageBox.classList.add('success');
+                    messageBox.classList.remove('error');
+                } else if (message.tags === 'error') {
+                    messageBox.classList.add('error');
+                    messageBox.classList.remove('success');
+                }
+                messageBox.style.display = 'block';
+
+                // Hide message after 5 seconds
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 5000);
+            });
+        }
+
+        checkFormValidity(); // Ensure the button state is checked on page load
+    });
+
+    window.onload = function() {
+        const messageBox = document.getElementById('messageBox');
+        const alerts = document.querySelectorAll('.alert');
+    
+        if (alerts.length > 0) {
+            messageBox.style.display = 'block';
+    
+            // Automatically fade out each alert
+            setTimeout(() => {
+                alerts.forEach((alert) => {
+                    alert.style.opacity = '0'; // Start fade out
+                });
+    
+                setTimeout(() => {
+                    alerts.forEach((alert) => {
+                        alert.style.display = 'none';
+                    });
+                }, 500);
+            }, 3000);
+        }
+    };
+    
+    function confirmDelete(id) {
+        // Hide delete button and show confirmation buttons
+        document.getElementById(`deleteBtn-${id}`).style.display = 'none';
+        document.getElementById(`confirmButtons-${id}`).style.display = 'block';
+    }
+
+    function cancelDelete(id) {
+        // Hide confirmation buttons and show delete button
+        document.getElementById(`confirmButtons-${id}`).style.display = 'none';
+        document.getElementById(`deleteBtn-${id}`).style.display = 'block';
+    }
+
+    function deleteRate(id) {
+        // Submit a POST request to delete the rate
+        fetch(`/delete/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reload the page after successful deletion
+                window.location.reload();
+            } else {
+                alert('Failed to delete. Please try again.');
+            }
+        })
+        .catch(error => {
+            alert('An unexpected error occurred: ' + error.message);
+        });
+    }
+
+    function toggleAvails(id) {
+        const availsContainer = document.getElementById(`availsContainer-${id}`);
+        const toggleLink = document.querySelector(`a[onclick="toggleAvails(${id})"]`);
+    
+        if (availsContainer.classList.contains('hidden')) {
+            availsContainer.classList.remove('hidden');
+            availsContainer.classList.add('visible');
+            toggleLink.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Hide Avails';
+        } else {
+            availsContainer.classList.remove('visible');
+            availsContainer.classList.add('hidden');
+            toggleLink.innerHTML = '<i class="fa-solid fa-eye"></i> View Avails';
+        }
+    }
+    
+    
+    
+    
+    function updateStatus(walk_in_ID, new_status) {
+        fetch('/update_walk_in_status/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({
+                walk_in_ID: walk_in_ID,
+                new_status: new_status,
+            }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the status.');
+        });
+    }
+    
+    
+    
+    const ratePriceInput = document.getElementById('cottage_rate_price');
+    const requiredErrorMessage = document.getElementById('required-error-message');
+
+    ratePriceInput.addEventListener('input', function() {
+        const value = parseFloat(ratePriceInput.value);
+        
+        // Clear previous error messages
+        requiredErrorMessage.style.display = 'none';
+        rangeErrorMessage.style.display = 'none';
+        ratePriceInput.closest('.form-group').classList.remove('error');
+
+        checkFormValidity(); // Recheck form validity after input
+    });
+
+
+    const rateCapacityInput = document.getElementById('cottage_rate_capacity');
+    const capacityRequiredErrorMessage = document.getElementById('capacity-required-error');
+    
+    const saveButton = document.getElementById('saveRateButton');
+
+    // Call checkFormValidity whenever input changes
+    rateCapacityInput.addEventListener('input', checkFormValidity);
+    document.querySelectorAll('input[required], select[required]').forEach(input => {
+        input.addEventListener('blur', () => {
+            checkValidity(input);
+            checkFormValidity(); // Revalidate after blur
+        });
+    });
+        
+
+
+
+    // Validate main image size
+    document.getElementById('rate_image').addEventListener('change', function () {
+        const file = this.files[0];
+        if (file && file.size > 10 * 1024 * 1024) { // 10MB limit
+            alert('Main image must not exceed 10MB.');
+            this.value = ''; // Reset the file input
+        }
+    });
+
+    // Validate additional image sizes
+    document.querySelectorAll('input[name="additional_images[]"]').forEach((input) => {
+        input.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file && file.size > 5 * 1024 * 1024) { // 5MB limit
+                alert('Additional images must not exceed 5MB each.');
+                this.value = ''; // Reset the file input
+            }
+        });
+    });
+
+
+
+
+
+
+        
+
+
+
+
+
+
+    // Utility function to update label position based on input state
+    function updateLabelPosition(input) {
+        const formGroup = input.closest(".form-group");
+        const label = formGroup.querySelector("label");
+
+        if (label) {
+            if (input.value.trim() !== "" || document.activeElement === input) {
+                label.style.top = "-10px";
+                label.style.left = "8px";
+                label.style.fontSize = "0.85em";
+                label.style.color = "#333";
+            } else {
+                label.style.top = "8px";
+                label.style.left = "8px";
+                label.style.fontSize = "1em";
+                label.style.color = "#666";
+            }
+        }
+    }
+
+
+
+    const fieldsToValidate = ['cottage_rate_price',  'cottage_rate_capacity', 'cottage_rate_unit'];
+
+    // Add event listeners to the fields
+    fieldsToValidate.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+
+        field.addEventListener('input', function () {
+            // If the input is exactly "0", change it to "1"
+            if (this.value === "0") {
+                this.value = "1";
+            }
+        });
+
+        field.addEventListener('blur', function () {
+            // Trim leading zeros for valid numbers like 010 -> 10
+            if (/^0[1-9]+/.test(this.value)) {
+                this.value = this.value.replace(/^0+/, '');
+            }
+        });
+    });
+
+
+    function checkFormValidity() {
+        const rateName = document.getElementById('cottage_rate_name').value.trim();
+        const ratePrice = document.getElementById('cottage_rate_price').value.trim();
+        const rateCapacity = document.getElementById('cottage_rate_capacity').value.trim();
+        const rateAvailableCount = document.getElementById('cottage_rate_unit').value.trim();
+        const capacityRangeErrorMessage = document.getElementById('cottage_rate_unit').value.trim();
+        const mainImage = document.getElementById('rate_image').files.length > 0;
+
+        // Check for any errors
+
+        const rateCapacityError = rateCapacityInput.closest('.form-group').classList.contains('error');
+
+        saveButton.disabled = !(
+            rateName &&
+            ratePrice &&
+            rateCapacity &&
+            rateAvailableCount &&
+            mainImage &&
+            !rateCapacityError
+        );
+    }
+
+
+
+    // Utility function to validate input and show/hide error message
+    function checkValidity(input) {
+        const formGroup = input.closest('.form-group');
+        const errorMessage = formGroup.querySelector('.error-message');
+
+        if (input.hasAttribute('required') && input.value.trim() === '') {
+            formGroup.classList.add('error');
+            errorMessage.style.display = 'block';
+        } else {
+            formGroup.classList.remove('error');
+            errorMessage.style.display = 'none';
+        }
+    }
+
+    // Function to handle image preview
+    function previewImage(event, previewId) {
+        const reader = new FileReader();
+        const imageField = document.getElementById(previewId);
+    
+        reader.onload = function () {
+            if (reader.readyState === 2) {
+                imageField.src = reader.result;  // Set the preview image's source
+            }
+        };
+    
+        if (event.target.files.length > 0) {
+            reader.readAsDataURL(event.target.files[0]);  // Read the image file
+        }
+    }
+
+    // Main image input change
+    const mainImageInput = document.getElementById('rate_image');
+    mainImageInput.addEventListener('change', function (event) {
+        previewImage(event, 'main-image-preview');
+        checkFormValidity(); // Check validity when main image changes
+    });
+
+    document.getElementById('addRateForm').addEventListener('submit', function (event) {
+        event.preventDefault();  // Prevent the default form submission behavior
+        
+        const form = this;
+        const formData = new FormData(form);
+    
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the page if successful
+                window.location.reload();
+            } else {
+                // Display error messages
+                alert(data.error || "An unexpected error occurred.");
+            }
+        })
+        .catch(error => alert('An unexpected error occurred: ' + error.message));
+    });
+    
+</script>
+
+{% endblock content %}

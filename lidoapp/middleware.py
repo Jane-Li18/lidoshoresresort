@@ -18,11 +18,11 @@ class GuestAccessMiddleware:
             restricted_paths = [
                 reverse('admin_dashboard'),
                 reverse('frontdesk_dashboard'),
-                reverse('adminlogin'),
+                reverse('admin_login'),
                 reverse('frontdesklogin'),
             ]
             if any(path.startswith(rp) for rp in restricted_paths):
-                return redirect('guestlogin')  # Redirect guest to guestlogin
+                return redirect('guest_login')
 
         # Allow request to proceed if no restrictions are triggered
         response = self.get_response(request)

@@ -217,6 +217,92 @@
     #guestProfile.edit-mode {
         opacity: 1;
     }
+
+    /* General Responsive Layout */
+    @media (max-width: 768px) {
+        .profile-wrapper {
+            flex-direction: column;
+            margin: 20px;
+            gap: 20px;
+        }
+
+        .guest-profile-picture-container,
+        .guest-profile-container {
+            max-width: 100%;
+            flex: none;
+        }
+
+        .guest-profile-circle {
+            width: 150px;
+            height: 150px;
+        }
+
+        .form-row {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group input {
+            font-size: 0.9em;
+            padding: 8px;
+        }
+
+        .btn {
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .guest-profile-circle {
+            width: 120px;
+            height: 120px;
+        }
+
+        h2 {
+            font-size: 12px;
+        }
+
+        .btn {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .modal-remove-profile {
+            width: 90%;
+            padding: 15px;
+        }
+
+        .modal-remove-profile-content {
+            font-size: 0.9em;
+        }
+    }
+
+    /* Improved Accessibility and Button Design */
+    .btn:focus {
+        outline: 2px solid var(--bgprimary);
+        outline-offset: 2px;
+    }
+
+    .modal-remove-profile[role="dialog"] {
+        aria-modal: "true";
+        aria-labelledby: "modal-title";
+        aria-describedby: "modal-desc";
+    }
+
+    .profile-actions .btn {
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .profile-actions .btn:hover {
+        background-color: var(--bgprimary);
+        transform: scale(1.05);
+    }
+
+    .profile-actions .btn:focus {
+        transform: scale(1.1);
+    }
+
     
     
 </style>
@@ -278,7 +364,7 @@
                 </div>
                 <div class="form-group">
                     <input type="text" id="middleName" name="middleName" value="{{ guest.middle_name }}" placeholder=" " readonly />
-                    <label for="middleName">Middle Name</label>
+                    <label for="middleName">Middle Name (Optional)</label>
                 </div>
                 <div class="form-group">
                     <input type="text" id="lastName" name="lastName" value="{{ guest.last_name }}" placeholder=" " readonly required />
@@ -324,7 +410,7 @@
             
     
             <!-- Contact -->
-            <div class="form-row">
+            {% comment %} <div class="form-row">
                 <div class="form-group">
                     <input type="tel" id="contactNumber" name="contactNumber" value="{{ guest.contact_number }}" placeholder=" " readonly required />
                     <label for="contactNumber">Contact Number *</label>
@@ -334,7 +420,7 @@
                     <input type="tel" id="telephoneNumber" name="telephoneNumber" value="{{ guest.telephone_number }}" placeholder=" " readonly />
                     <label for="telephoneNumber">Telephone Number</label>
                 </div>
-            </div>
+            </div> {% endcomment %}
     
             <!-- Address -->
             <div class="form-row">
@@ -432,19 +518,25 @@
             const data = {};
         
             inputs.forEach((input) => {
-                data[input.name] = input.value;
+                if (input.id === "password" || input.id === "confirmPassword") {
+                    if (input.value.trim()) {
+                        data[input.name] = input.value;
+                    }
+                } else {
+                    data[input.name] = input.value;
+                }
             });
         
+            // Validate that password and confirm password match if provided
             const passwordField = document.getElementById("password");
             const confirmPasswordField = document.getElementById("confirmPassword");
         
-            if (!passwordField.value.trim()) {
-                // Do not send password if it's blank
-                delete data.password;
-                delete data.confirmPassword;
-            } else if (passwordField.value.trim() !== confirmPasswordField.value.trim()) {
-                showMessage("error", "Password and Confirm Password must match.");
-                return;
+            if (passwordField.value.trim() || confirmPasswordField.value.trim()) {
+                if (passwordField.value.trim() !== confirmPasswordField.value.trim()) {
+                    showMessage("error", "Password and Confirm Password must match.");
+                    return;
+                }
+                data["password"] = passwordField.value.trim();
             }
         
             fetch("{% url 'update_guest_profile' %}", {
@@ -459,7 +551,7 @@
                 .then((data) => {
                     if (data.success) {
                         showMessage("success", "Details saved successfully!");
-                        setTimeout(() => location.reload(), 1000); // Reload after 1 second
+                        setTimeout(() => location.reload(), 1000);
                     } else {
                         showMessage("error", data.error || "Failed to save details.");
                     }
@@ -469,6 +561,7 @@
                     showMessage("error", "An error occurred while saving details.");
                 });
         }
+        
         
     
         // Attach the enableEdit function to the global scope
