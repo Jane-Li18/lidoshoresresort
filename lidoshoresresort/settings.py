@@ -131,10 +131,11 @@ import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',  # Fallback to SQLite for development
+        default="postgres://lidoshoresresort_postgre_user:wWbtEoQlqUfB7yeg5DRMjuOwanInhn4f@dpg-cv62eo3tq21c73ddvop0-a.oregon-postgres.render.com/lidoshoresresort_postgre",
         conn_max_age=600,
     )
 }
+
 
 
 # Password validation
