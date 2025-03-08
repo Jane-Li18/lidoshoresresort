@@ -27,13 +27,14 @@ SECRET_KEY = 'django-insecure-t6+@pd32j1&06@vkxnh)t!z4(b%khlzt+lwbypqwfnxcohz1q*
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['www.lidoshoresresort.online', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['www.lidoshoresresort.online', 'localhost', '127.0.0.1', 'lidoshoresresort.onrender.com']
 handler404 = 'django.views.defaults.page_not_found'
 
 CSRF_TRUSTED_ORIGINS = ['https://www.lidoshoresresort.online']
 
 CORS_ALLOWED_ORIGINS = [
-    'https://www.lidoshoresresort.online'
+    'https://www.lidoshoresresort.online',
+    'https://lidoshoresresort.onrender.com'
 ]
 
 
