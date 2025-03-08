@@ -1,1 +1,1 @@
-web: gunicorn lidoshoresresort.wsgi:application
+web: gunicorn lidoshoresresort.wsgi:application 
