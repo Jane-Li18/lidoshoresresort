@@ -27,14 +27,13 @@ SECRET_KEY = 'django-insecure-t6+@pd32j1&06@vkxnh)t!z4(b%khlzt+lwbypqwfnxcohz1q*
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['www.lidoshoresresort.online', 'localhost', '127.0.0.1', 'lidoshoresresort.onrender.com']
+ALLOWED_HOSTS = ['www.lidoshoresresort.online', 'localhost', '127.0.0.1']
 handler404 = 'django.views.defaults.page_not_found'
 
 CSRF_TRUSTED_ORIGINS = ['https://www.lidoshoresresort.online']
 
 CORS_ALLOWED_ORIGINS = [
-    'https://www.lidoshoresresort.online',
-    'https://lidoshoresresort.onrender.com'
+    'https://www.lidoshoresresort.online'
 ]
 
 
@@ -131,11 +130,10 @@ import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.config(
-        default="postgres://lidoshoresresort_postgre_user:wWbtEoQlqUfB7yeg5DRMjuOwanInhn4f@dpg-cv62eo3tq21c73ddvop0-a.oregon-postgres.render.com/lidoshoresresort_postgre",
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',  # Fallback to SQLite for development
         conn_max_age=600,
     )
 }
-
 
 
 # Password validation
