@@ -31,15 +31,15 @@ ALLOWED_HOSTS = [
     'localhost', 
     '127.0.0.1', 
     'lidoshoresresort.onrender.com', 
-    'web-production-2e52.up.railway.app', 
     'lidoshoresresort.up.railway.app',  # Add new Railway domain
-    '.railway.app'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://www.lidoshoresresort.online',
-    'https://lidoshoresresort.up.railway.app'  # Add new Railway domain
+    'https://lidoshoresresort.up.railway.app',
+    'http://lidoshoresresort.up.railway.app'  # Add HTTP version if needed
 ]
+
 
 CORS_ALLOWED_ORIGINS = [
     'https://www.lidoshoresresort.online',
@@ -140,7 +140,7 @@ AUTHENTICATION_BACKENDS = (
 import os
 import dj_database_url
 
-DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:@JaneLi08182002%23@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/lidoshoresresort_db"
 
 DATABASES = {
     'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
