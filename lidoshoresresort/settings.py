@@ -141,7 +141,14 @@ import os
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.lzaivdnsgpdrouluczfg',
+        'PASSWORD': 'JaneLi08182002#',
+        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+        'PORT': '6543',  # Use 5432 if 6543 doesn't work
+    }
 }
 
 
