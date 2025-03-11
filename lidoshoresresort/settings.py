@@ -140,16 +140,14 @@ AUTHENTICATION_BACKENDS = (
 import os
 import dj_database_url
 
+DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:@JaneLi08182002%23@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.lzaivdnsgpdrouluczfg',
-        'PASSWORD': 'JaneLi08182002#',
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
-        'PORT': '5432',  # Use 5432 if 6543 doesn't work
-    }
+    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
 }
+
+
+
 
 
 # Password validation
