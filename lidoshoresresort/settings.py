@@ -147,7 +147,7 @@ DATABASES = {
         'USER': 'postgres.lzaivdnsgpdrouluczfg',
         'PASSWORD': 'JaneLi08182002#',
         'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
-        'PORT': '6543',  # Use 5432 if 6543 doesn't work
+        'PORT': '5432',  # Use 5432 if 6543 doesn't work
     }
 }
 
