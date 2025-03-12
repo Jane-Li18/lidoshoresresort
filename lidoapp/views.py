@@ -3597,6 +3597,7 @@ def check_admin_signup_email(request):
 
 
 # Authentication Views
+@csrf_exempt
 def guest_login(request):
     # Redirect if the user is already logged in
     if request.session.get('guest_id'):
@@ -3638,7 +3639,7 @@ def guest_login(request):
     return render(request, 'authentication/guest/guest_login.html')
 
 
-
+@csrf_exempt
 def guest_signup(request):
     if request.method == 'POST':
         form = GuestAccountForm(request.POST)

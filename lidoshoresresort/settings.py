@@ -26,27 +26,17 @@ SECRET_KEY = 'django-insecure-t6+@pd32j1&06@vkxnh)t!z4(b%khlzt+lwbypqwfnxcohz1q*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'www.lidoshoresresort.online', 
-    'localhost', 
-    '127.0.0.1', 
-    'lidoshoresresort.onrender.com', 
-    'lidoshoresresort.up.railway.app',  # Add new Railway domain
-]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://www.lidoshoresresort.online',
-    'https://lidoshoresresort.up.railway.app',
-    'http://lidoshoresresort.up.railway.app'  # Add HTTP version if needed
-]
+ALLOWED_HOSTS = ['www.lidoshoresresort.online', 'localhost', '127.0.0.1', 'lidoshoresresort.onrender.com']
+handler404 = 'django.views.defaults.page_not_found'
 
+CSRF_TRUSTED_ORIGINS = ['https://www.lidoshoresresort.online']
 
 CORS_ALLOWED_ORIGINS = [
     'https://www.lidoshoresresort.online',
-    'https://lidoshoresresort.onrender.com',
-    'https://web-production-2e52.up.railway.app',
-    'https://lidoshoresresort.up.railway.app'  # Add new Railway domain
+    'https://lidoshoresresort.onrender.com'
 ]
+
 
 
 
@@ -140,7 +130,7 @@ AUTHENTICATION_BACKENDS = (
 import os
 import dj_database_url
 
-DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/lidoshoresresort_db"
+DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:LidoShoresResort@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
 
 DATABASES = {
     'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
