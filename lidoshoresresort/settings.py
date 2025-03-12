@@ -142,11 +142,28 @@ AUTHENTICATION_BACKENDS = (
 import os
 import dj_database_url
 
-DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:LidoShoresResort@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+# Database URL (session pooler configuration)
+DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:LidoShoresResort@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+
+# Parse the URL using dj_database_url
+db_from_env = dj_database_url.parse(DATABASE_URL)
 
 DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',  # The name of your database
+        'USER': 'postgres.lzaivdnsgpdrouluczfg',  # The username
+        'PASSWORD': 'LidoShoresResort',  # The password
+        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',  # Host of the database
+        'PORT': '5432',  # Port number
+        'OPTIONS': {
+            'sslmode': 'require',  # Use SSL for the connection
+        },
+        'CONN_MAX_AGE': 600,  # Connection pooling
+    }
 }
+
+
 
 
 
