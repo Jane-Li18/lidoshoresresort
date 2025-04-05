@@ -14,11 +14,50 @@ from django.dispatch import receiver
 from django.conf import settings
 from django.utils.timezone import now
 from datetime import datetime, timedelta
+
+
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from django.db.models import Q
+
+import cohere
+from django.conf import settings
+
+client = cohere.Client(settings.COHERE_API_KEY)  
+
+class HotelInfo(models.Model):
+    name = models.CharField(max_length=255, default="Lido Shores Resort")
+    address = models.TextField()
+    location_url = models.URLField(blank=True, null=True)
+    contact_number = models.CharField(max_length=20)
+    email = models.EmailField()
+    facebook = models.URLField(blank=True, null=True)
+    instagram = models.URLField(blank=True, null=True)
+    viber = models.URLField(blank=True, null=True)  # <--- ADD THIS
+    website = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+
+class GuestInquiry(models.Model):
+    guest = models.ForeignKey('lidoapp.GuestAccount', on_delete=models.CASCADE, null=True, blank=True)
+    question = models.TextField()
+    answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("question", "answer")
+
+    def __str__(self):
+        return f"{self.question[:50]} - {self.answer[:50]}"
+
+
+
+
 
 def guest_profile_picture_path(instance, filename):
     first_name = instance.first_name.replace(" ", "_")  # Replace spaces

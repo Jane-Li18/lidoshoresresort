@@ -1,9 +1,13 @@
 from http.client import HTTPResponse
 from django.urls import path
 from . import views 
-from .views import delete_profile_picture, verify_recaptcha, get_logged_in_guest_details, check_admin_email, check_admin_signup_email, admin_add_room, check_frontdesk_email, check_frontdesk_signup_email, admin_rooms, faq_policy
+from .views import  lidobot_generate_response, chatbot, delete_profile_picture, verify_recaptcha, get_logged_in_guest_details, check_admin_email, check_admin_signup_email, admin_add_room, check_frontdesk_email, check_frontdesk_signup_email, admin_rooms, faq_policy
 
 urlpatterns = [
+    path("chatbot/", chatbot, name="chatbot"), 
+    path("chatbot/api/", lidobot_generate_response, name="lidobot_generate_response"),
+
+    
     path('verify_recaptcha/', verify_recaptcha, name='verify_recaptcha'),
     
     # Lido Blogsite

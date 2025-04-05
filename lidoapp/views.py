@@ -2,7 +2,7 @@
 from .models import (
     GuestAccount, Reservation, RebookingRequest, AdminAccount, AddOn,
     FrontdeskAccount, Room, RoomImage, Amenity, Policy, GCashReceipt, RoomAvailability, GalleryImage, WalkInReservation, CottageRate, GuestIdProof,
-    Schedule, Sale, SalesReport, Banner, Receipt, Dropdown
+    Schedule, Sale, SalesReport, Banner, Receipt, Dropdown,  HotelInfo, GuestInquiry
 )
 
 # Import forms from the current app
@@ -105,6 +105,537 @@ from openpyxl import Workbook
 # Clear Django cache (if using caching)
 from django.core.cache import cache
 cache.clear()
+
+from django.http import JsonResponse
+from django.conf import settings
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from langchain.prompts import ChatPromptTemplate
+from langchain_ollama import OllamaLLM
+from difflib import get_close_matches
+
+# Optimized Model for Speed and Concise Replies
+model = OllamaLLM(model="mistral:7b", max_tokens=20, streaming=False)
+
+# Store chat context with limited history
+chat_context = {}
+CONTEXT_LIMIT = 300  # Limit context size
+
+
+
+# Correct Word Function
+def correct_word(user_message):
+    """Auto-corrects only if the word is slightly misspelled, but avoids unrelated changes."""
+    correction_map = {
+        "facebook": "facebook",
+        "instagram": "instagram",
+        "email": "email",
+        "location": "location",
+        "contact": "contact",
+        "reservation": "reservation",
+        "booking": "booking",
+    }
+    
+    corrected = get_close_matches(user_message, correction_map.keys(), n=1, cutoff=0.9)
+    
+    if corrected:
+        return correction_map[corrected[0]]  # Return exact match from the dictionary
+    
+    return user_message  # Return original if no valid correction is found
+
+# Get Guest Name Function
+def get_guest_name(request):
+    guest_name = "Guest"
+    guest_id = request.session.get('guest_id')
+    if guest_id:
+        try:
+            guest = GuestAccount.objects.get(id=guest_id)
+            guest_name = guest.first_name
+        except GuestAccount.DoesNotExist:
+            pass
+    return guest_name
+
+
+    
+
+# Lidobot Generate Response Function
+@csrf_exempt
+def lidobot_generate_response(request):
+    """Handles chatbot response using Ollama, ensuring concise and relevant replies."""
+    global chat_context
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method."})
+
+    try:
+        data = json.loads(request.body)
+        user_message = data.get("message", "").strip().lower()
+        user_id = request.session.session_key or "guest"
+
+        if not user_message:
+            return JsonResponse({"response": "Please enter a message."})
+
+        # Apply word correction
+        user_message = correct_word(user_message)
+
+        # Initialize context
+        if user_id not in chat_context:
+            chat_context[user_id] = {"context": "", "has_asked_question": False}
+
+        # Get guest name and hotel info
+        guest_name = get_guest_name(request)
+        hotel_info = HotelInfo.objects.first()
+
+        # Handle account creation
+        account_creation_keywords = ["account", "acc", "register", "sign up", "create account"]
+        if any(keyword in user_message for keyword in account_creation_keywords):
+            chat_context[user_id]["context"] = "account_creation"  # Set context to account creation
+            return handle_account_creation(user_message, hotel_info)
+
+        # Handle exit or cancel during account creation
+        if "exit" in user_message.lower() or "cancel" in user_message.lower():
+            if chat_context[user_id].get("context") == "account_creation":
+                chat_context[user_id]["context"] = "cancelling_account_creation"  # Set context to cancelling
+                return JsonResponse({
+                    "response": "Are you sure you want to cancel the account creation process?",
+                    "next_message": "Type '<b>yes</b>' to confirm or '<b>no</b>' to continue."
+                    })
+
+        # Handle confirmation for cancellation
+        if chat_context[user_id].get("context") == "cancelling_account_creation":
+            if "yes" in user_message.lower():
+                chat_context[user_id]["context"] = ""  # Reset context
+                return JsonResponse({"response": "Account creation process cancelled. Let us know if you need any other assistance!"})
+            elif "no" in user_message.lower():
+                chat_context[user_id]["context"] = "account_creation"  # Resume account creation
+                return JsonResponse({"response": "Account creation process resumed. Please continue providing the required information."})
+
+        # Handle social media and website queries
+        response = handle_social_media_queries(user_message, hotel_info)
+        if response:
+            return response
+
+        # Handle reservation queries
+        response = handle_reservation_queries(user_message, hotel_info)
+        if response:
+            if "next_message" in response:
+                return JsonResponse({"response": response["response"], "next_message": response["next_message"]})
+            else:
+                return response
+
+        # Handle hotel information queries
+        response = handle_hotel_info_queries(user_message, hotel_info)
+        if response:
+            return response
+
+        # Handle conversation flow
+        response = handle_conversation_flow(user_message, chat_context, user_id, request)
+        if response:
+            return response
+
+        # Block unrelated questions (only if not in account creation or cancellation flow)
+        if chat_context[user_id].get("context") not in ["account_creation", "cancelling_account_creation"]:
+            response = block_unrelated_questions(user_message)
+            if response:
+                return response
+
+        # Generate response using Ollama
+        response = generate_response_using_ollama(user_message, chat_context, user_id, guest_name)
+        return response
+
+    except Exception as e:
+        print("Error:", str(e))
+        return JsonResponse({"error": str(e)})
+
+
+
+    
+# Global variables for account creation
+user_info = {}
+chat_context = {}
+
+# Handle Account Creation Function
+def handle_account_creation(user_message, hotel_info):
+    global user_info, chat_context
+
+    # Keywords to skip recording
+    skip_keywords = ["exit", "cancel", "back", "yes", "no"]
+
+    # Check for account creation keywords
+    account_creation_keywords = [
+        "account", "acc", "register", "sign up", "create account", "make account", "new account", "account creation"
+    ]
+    
+    # Initialize account creation context
+    if chat_context.get("context") != "account_creation":
+        if any(q in user_message.lower() for q in account_creation_keywords):
+            user_info = {}  # Reset user_info for a new account creation
+            chat_context["context"] = "account_creation"  # Set context to account creation
+            return JsonResponse({
+                "response": "Welcome to Lido Shores Resort! 🌊 To create an account, please provide the following information: First Name, Last Name, Email, Password, Birthdate, Gender, Country, and City.",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process. <br><br>Please type your first name."
+            })
+
+    # Continue the account creation process based on the current step
+    if chat_context.get("context") == "account_creation":
+        if "first_name" not in user_info:
+            user_info["first_name"] = user_message.strip()
+            return JsonResponse({
+                "response": f"Thank you, {user_info['first_name']}! Now, please provide your last name.",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+
+        
+        if "last_name" not in user_info:
+            user_info["last_name"] = user_message
+            return JsonResponse({
+                "response": "Great! Now, please provide your email address.",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+        
+        if "email" not in user_info:
+            user_info["email"] = user_message
+            return JsonResponse({
+                "response": "Thanks! Now, please create a password.",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+        
+        if "password" not in user_info:
+            user_info["password"] = user_message
+            return JsonResponse({
+                "response": "Perfect! Please provide your birthdate (YYYY-MM-DD).",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+        
+        if "birthdate" not in user_info:
+            user_info["birthdate"] = user_message
+            return JsonResponse({
+                "response": "Thank you! What is your gender? (male/female/other)",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+        
+        if "gender" not in user_info:
+            user_info["gender"] = user_message
+            return JsonResponse({
+                "response": "Got it! Please provide your country.",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+        
+        if "country" not in user_info:
+            user_info["country"] = user_message
+            return JsonResponse({
+                "response": "Thanks! Finally, please provide your city.",
+                "next_message": "Type '<b>exit</b>' or '<b>cancel</b>' at any time to stop the process."
+            })
+        
+        if "city" not in user_info:
+            user_info["city"] = user_message
+            # Here you can save the user_info to the database
+            # save_user_info_to_db(user_info)  # Implement this function as needed
+            return JsonResponse({
+                "response": "Congratulations, {first_name}! Your account has been created successfully! 🎉".format(first_name=user_info["first_name"]),
+                "next_message": "You can now log in with your email and password."
+            })
+
+    # If the user wants to exit or cancel
+    if any (q in user_message.lower() for q in skip_keywords):
+        chat_context["context"] = None  # Reset context
+        return JsonResponse({
+            "response": "The account creation process has been canceled. If you need assistance, just let me know!",
+            "next_message": ""
+        })
+
+    return JsonResponse({
+        "response": "I'm sorry, I didn't understand that. Please type 'create account' to start the account creation process.",
+        "next_message": ""
+    })
+
+def create_account(first_name, last_name, email, password, birthdate, gender, country, city):
+    try:
+        new_account = GuestAccount(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            birthdate=birthdate,
+            gender=gender,
+            country=country,
+            city=city
+        )
+        new_account.save()
+        return JsonResponse({"response": "Your account has been successfully created. Welcome to Lido Shores Resort! 🌊"})
+    except Exception as e:
+        print("Account creation error:", str(e))
+        return JsonResponse({"response": "An error occurred while creating your account. Please try again."})
+    
+    
+    
+# Handle Social Media Queries Function
+def handle_social_media_queries(user_message, hotel_info):
+    if any(q in user_message for q in ["facebook", "fb"]):
+        return JsonResponse({"response": random.choice([
+            f"We would be delighted to have you join us on Facebook: <br>{hotel_info.facebook}",
+            f"Please follow us on Facebook for the latest updates and news: <br>{hotel_info.facebook}",
+            f"We would love to connect with you on Facebook, you can find us here: <br>{hotel_info.facebook}",
+            f"We invite you to join our Facebook community for exclusive offers and updates: <br>{hotel_info.facebook}",
+            f"We appreciate your interest in our Facebook page, where you can find guest experiences and updates: <br>{hotel_info.facebook}"
+        ])})
+
+
+    if any(q in user_message for q in ["instagram", "insta", "ig"]):
+        return JsonResponse({"response": random.choice([
+            f"We would be pleased to have you check out our Instagram for amazing views: <br>{hotel_info.instagram}",
+            f"Please follow us on Instagram to see the beauty of Lido Shores Resort: <br>{hotel_info.instagram}",
+            f"We invite you to join us on Instagram, where you can find stunning photos and stories: <br>{hotel_info.instagram}",
+            f"We would be delighted to have you discover our Instagram page, where you can find guest experiences and updates: <br>{hotel_info.instagram}",
+            f"We appreciate your interest in our Instagram page, where you can find the latest news and updates: <br>{hotel_info.instagram}"
+        ])})
+
+
+    if any(q in user_message for q in ["viber", "vb"]):
+        return JsonResponse({"response": random.choice([
+            f"If you need a quick chat, please feel free to message us on Viber: <br>{hotel_info.viber}",
+            f"We are available on Viber and would be happy to assist you: <br>{hotel_info.viber}",
+            f"We invite you to connect with us on Viber for instant support: <br>{hotel_info.viber}",
+            f"If you have any questions, please do not hesitate to chat with us on Viber: <br>{hotel_info.viber}",
+            f"We appreciate your interest in our Viber page, where you can find updates and news: <br>{hotel_info.viber}"
+        ])})
+
+
+    if any(q in user_message for q in ["website", "site", "web"]):
+        return JsonResponse({"response": random.choice([
+            f"We would be delighted to have you visit our official website for more details: <br>{hotel_info.website}",
+            f"Please explore our website for the latest news and updates: <br>{hotel_info.website}",
+            f"We invite you to check out our website for special offers and packages: <br>{hotel_info.website}",
+            f"We would be pleased to have you discover our website, where you can find guest experiences and updates: <br>{hotel_info.website}",
+            f"We appreciate your interest in our website, where you can find the latest news and updates: <br>{hotel_info.website}"
+        ])})
+
+
+    if any(q in user_message for q in ["location", "loc", "map"]):
+        return JsonResponse({"response": random.choice([
+            f"Our resort is located at <br>{hotel_info.address}. We would be delighted to have you check us out on Google Maps: <br>{hotel_info.location_url}",
+            f"Lido Shores Resort is situated at <br>{hotel_info.address}. Please feel free to visit our Google Maps link: <br>{hotel_info.location_url}",
+            f"We invite you to explore our location on Google Maps: <br>{hotel_info.location_url}",
+            f"We would be pleased to have you discover our location, where you can find more information about our resort: <br>{hotel_info.location_url}",
+            f"We appreciate your interest in our location, where you can find the latest news and updates: <br>{hotel_info.location_url}"
+        ])})
+
+
+# Chatbot Response Function
+def chatbot_response(user_message):
+    hotel_info = HotelInfo.objects.first()
+
+    # Add buttons for available links
+    if "facebook" in user_message.lower() and hotel_info.facebook:
+        response += f" {hotel_info.facebook}"
+    if "instagram" in user_message.lower() and hotel_info.instagram:
+        response += f" {hotel_info.instagram}"
+    if "viber" in user_message.lower() and hotel_info.viber:
+        response += f" {hotel_info.viber}"
+    if "website" in user_message.lower() and hotel_info.website:
+        response += f" {hotel_info.website}"
+    if "location" in user_message.lower() and hotel_info.location_url:
+        response += f" {hotel_info.location_url}"
+
+    return response
+
+# Handle Reservation Queries Function
+def handle_reservation_queries(user_message, hotel_info):
+    reservation_keywords = [
+        "reservation", "reserve", "book", "booking", "availability", "stay", 
+        "check availability", "room", "rooms", "accommodations", "inquire", 
+        "hold", "secure", "confirm", "arrange", "schedule", "plan", "dates", 
+        "staycation", "getaway", "trip", "vacation"
+    ]
+
+    if any(q in user_message.lower() for q in reservation_keywords):
+        if hotel_info:
+            booking_url = reverse('lidobooking')  # Generate the URL
+            return JsonResponse({"response": random.choice([
+                f"We would be delighted to have you stay with us! Please feel free to book your room now: <br>"
+                f'<a href="{booking_url}" class="btn-one" style="padding: 5px 10px;">Book Now +<span></span></a><br>',
+                f"We are pleased to offer you a comfortable stay at our resort. You can book your room here: <br>"
+                f'<a href="{booking_url}" class="btn-one" style="padding: 5px 10px;">Book Now +<span></span></a><br>',
+                f"We would be happy to assist you with your booking. You can book your room now: <br>"
+                f'<a href="{booking_url}" class="btn-one" style="padding: 5px 10px;">Book Now +<span></span></a><br>',
+            ]), "next_message": random.choice([
+                f'If you need any assistance with the booking, please do not hesitate to ask. We are here to help.',
+                f'Would you like us to guide you through the booking process? Just let us know.',
+                f'If you have any questions or need help with the booking, we are here to assist you.',
+            ])})
+
+
+# Handle Hotel Information Queries Function
+def handle_hotel_info_queries(user_message, hotel_info):
+    if any(q in user_message for q in ["your name", "who are you"]):
+        return JsonResponse({"response": random.choice([
+            "I'm LidoBot, your friendly assistant for Lido Shores Resort! 😊",
+            "Hey there! I'm LidoBot, here to help with anything about Lido Shores Resort. How can I assist?"
+        ])})
+
+    if any(q in user_message for q in ["what is lido shores", "tell me about lido shores"]):
+        response_text = f"{hotel_info.name} is located at {hotel_info.address}."
+        if hasattr(hotel_info, "description") and hotel_info.description:
+            response_text += f" {hotel_info.description}"
+        return JsonResponse({"response": response_text})
+
+    # Handle Location Questions
+    location_keywords = ["address", "location", "locate", "where are you"]
+    if any(q in user_message for q in location_keywords):
+        return JsonResponse({"response": random.choice([
+            f"Our resort is at {hotel_info.address}. Check us out on Google Maps: {hotel_info.location_url} 📍",
+            f"Lido Shores Resort is located at {hotel_info.address}. Here’s our Google Maps link: {hotel_info.location_url} 🌍"
+        ])})
+
+    if any(q in user_message for q in ["contact", "phone", "call"]):
+        return JsonResponse({"response": f"Give us a call at {hotel_info.contact_number} 📞"})
+
+    if any(q in user_message for q in ["email", "gmail", "mail"]):
+        return JsonResponse({"response": f"Feel free to email us at {hotel_info.email} 📩"})
+
+
+# Handle Conversation Flow Function
+def handle_conversation_flow(user_message, chat_context, user_id, request):
+    greetings = ["hi", "hello", "hey", "greetings", "hello there", "hi there", "hey there", "good morning", "good afternoon", "good evening"]
+    if any(q in user_message.lower() for q in greetings):
+        guest_name = get_guest_name(request)
+        if not guest_name or guest_name == "":
+            guest_name = "Guest"
+        return JsonResponse({"response": random.choice([
+            f"Hello {guest_name}! Welcome to Lido Shores Resort. I'd be delighted to assist you with your reservation or any other inquiries you may have.",
+            f"Hi {guest_name}! We're thrilled to have you here. How can I help you with your stay or booking?",
+            f"Hey {guest_name}! What brings you to our lovely resort today? Do you have any questions about our rooms or packages?",
+            f"Greetings {guest_name}! I'm here to help you with all your reservation needs. Please feel free to ask me anything.",
+            f"Good day {guest_name}! I hope you're having a wonderful day. How can I assist you with your booking or any other questions you may have?",
+        ])})
+
+    if user_message in ["yes", "sure", "okay"] and chat_context[user_id]["has_asked_question"]:
+        chat_context[user_id]["has_asked_question"] = False
+        return JsonResponse({"response": random.choice([
+            "Awesome! What can I do for you? 😊",
+            "Great! How can I assist you further?"
+        ])})
+
+    if user_message in ["no", "not really"] and chat_context[user_id]["has_asked_question"]:
+        chat_context[user_id]["has_asked_question"] = False
+        return JsonResponse({"response": random.choice([
+            "Alright! Let me know if you need anything else. 😊",
+            "No worries! If you need anything later, just ask!"
+        ])})
+
+    if "i don't want" in user_message or "i dont want" in user_message:
+        return JsonResponse({"response": random.choice([
+            "Got it! If you change your mind, I’m here to help. 😊",
+            "No problem! Just let me know if you need anything else."
+        ])})
+
+
+# Block Unrelated Questions Function
+def block_unrelated_questions(user_message):
+    reservation_keywords = [
+        "reservation", "reserve", "book", "booking", "availability", "stay", 
+        "check availability", "room", "rooms", "accommodations", "inquire", 
+        "hold", "secure", "confirm", "arrange", "schedule", "plan", "dates", 
+        "staycation", "getaway", "trip", "vacation"
+    ]
+    account_creation_keywords = [
+        "register", "account", "create account", "login", "sign up"
+    ]
+    if not any(keyword in user_message for keyword in reservation_keywords + account_creation_keywords):
+        return JsonResponse({"response": random.choice([
+            "I’m sorry, but I specialize in helping with reservations and account creation. If you have questions about booking a room or creating an account, I’d be happy to help! 🏨",
+            "Apologies, but I can only assist with inquiries related to reservations and account creation. What would you like to know about booking a room or creating an account?",
+            "I appreciate your question, but my expertise is in helping with reservations and account creation. How can I assist you today? 📝",
+            "I’m here to help with anything about reservations and account creation! If you have questions about booking a room or creating an account, feel free to ask!",
+            "I’m sorry, but I can only provide information about reservations and account creation. What can I help you with regarding your booking or account? 📊",
+            "Thank you for your question! However, I can only assist with inquiries related to reservations and account creation. How can I help you today?",
+            "I’m focused on helping with reservations and account creation! If you have questions about booking a room or creating an account, I’m here to help! 📈"
+        ])})
+
+
+# Generate Response Using Ollama Function
+def generate_response_using_ollama(user_message, chat_context, user_id, guest_name):
+    template = f"""
+    You are "LidoBot," the AI assistant for Lido Shores Resort in the Philippines. 
+    Answer questions based on the provided hotel information first before making assumptions. 
+    If you do not know the exact answer, say: 'I'm not sure, but here's what I found: ...'  
+    Keep responses **brief and straight to the point** (max 2 sentences).
+
+    Last conversation:
+    {chat_context[user_id]["context"]}
+
+    {guest_name}: {user_message}
+
+    LidoBot:
+    """
+    prompt = ChatPromptTemplate.from_template(template)
+    chain = prompt | model
+    result = chain.invoke({}).strip()
+
+    # Ensure Response is Not "Undefined"
+    if not result or "undefined" in result.lower():
+        return JsonResponse({"response": "Hmm, I didn’t get that. Can you rephrase it? 😊"})
+
+    # Update Context
+    chat_context[user_id]["context"] += f"\n{guest_name}: {user_message}\nLidoBot: {result}"
+    chat_context[user_id]["context"] = chat_context[user_id]["context"][-CONTEXT_LIMIT:]  # Trim history if too long
+
+    return JsonResponse({"response": result, "step": "answer"})
+
+# Web Search Function
+def web_search(query):
+    """Fetch search results from DuckDuckGo API with Wikipedia fallback."""
+    url = f"https://api.duckduckgo.com/?q={query} !w&format=json&no_redirect=1&no_html=1"
+    try:
+        response = requests.get(url, timeout=3)  # Faster timeout
+        if response.status_code == 200:
+            data = response.json()
+
+            result = data.get("Abstract", "").strip()
+            source_url = data.get("AbstractURL", "").strip()
+
+            # Skip empty results & use RelatedTopics
+            if not result and "RelatedTopics" in data:
+                for topic in data["RelatedTopics"]:
+                    if "Text" in topic:
+                        result = topic["Text"]
+                        source_url = topic.get("FirstURL", "")
+                        break
+
+            return f"{result}\nSource: {source_url}" if result else "No relevant information found."
+
+    except Exception as e:
+        return f"Search failed: {str(e)}"
+
+    return "Search failed."
+
+
+def chatbot(request):
+    user_id = request.session.session_key or "guest"
+    if user_id in chat_context:
+        del chat_context[user_id]  # Remove only chat history
+
+    user_avatar = "/static/assets/images/components/default-guest-inactive.png"
+    guest_name = "Guest"  # Default name
+    
+    guest_id = request.session.get('guest_id')
+    if guest_id:
+        try:
+            guest = GuestAccount.objects.get(id=guest_id)
+            if guest.profile_picture:
+                user_avatar = guest.profile_picture.url
+            guest_name = guest.first_name  # Use guest's name if available
+        except GuestAccount.DoesNotExist:
+            pass
+
+    return render(request, "chatbot/chatbot_menu.html", {"user_avatar": user_avatar, "guest_name": guest_name})
+
+
+
+
 
 
 

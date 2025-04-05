@@ -1,10 +1,21 @@
 from django.contrib import admin
 from django import forms
-from .models import GuestAccount, Receipt, Dropdown, Reservation, AdminAccount, AddOn, FrontdeskAccount, Room, SalesReport, RoomImage, Amenity, Schedule, Banner, RebookingRequest, GalleryImage, Policy, WalkInReservation, CottageRate
+from .models import HotelInfo, GuestInquiry, GuestAccount, Receipt, Dropdown, Reservation, AdminAccount, AddOn, FrontdeskAccount, Room, SalesReport, RoomImage, Amenity, Schedule, Banner, RebookingRequest, GalleryImage, Policy, WalkInReservation, CottageRate
 from django.db.models import F
 from django.contrib.auth.hashers import make_password
 from django.utils.html import format_html
 
+
+admin.site.register(HotelInfo)
+
+@admin.register(GuestInquiry)
+class GuestInquiryAdmin(admin.ModelAdmin):
+    list_display = ("question", "answer", "created_at")
+    search_fields = ("question", "answer")
+    list_filter = ("created_at",)
+    
+    
+    
 # Register FrontdeskAccount
 @admin.register(FrontdeskAccount)
 class FrontdeskAccountAdmin(admin.ModelAdmin):

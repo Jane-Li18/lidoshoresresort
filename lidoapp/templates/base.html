@@ -88,7 +88,52 @@
         display: block;
       }
       
+
+      .chatbot {
+        position: fixed;
+        right: 50px;
+        bottom: 210px;
+        width: 65px;
+        height: 65px;
+        font-size: 18px;
+        line-height: 65px;
+        text-align: center;
+        z-index: 100;
+        cursor: pointer;
+        border-radius: 50%;
+        margin-left: -26px;
+        display: none;
+        -webkit-transition: all 300ms ease;
+        -o-transition: all 300ms ease;
+        transition: all 300ms ease;
+        background: var(--bgsecondary);
+        color: var(--txtprimary);
+      }
       
+      .chatbot.style-two {
+        color: var(--txtprimary);
+      }
+      
+      .chatbot:hover {
+        background: var(--bgtertiary);
+        color: var(--txttertiary);
+        border: 0.5px solid rgba(0, 0, 0, 0.3);
+      }
+      
+      .chatbot a:hover {
+        color: var(--txtprimary);
+      }
+      
+      .chatbot a {
+        bottom: 50px;
+        width: 65px;
+        height: 65px;
+        font-size: 18px;
+        line-height: 65px;
+        color: var(--bgprimary);
+        display: block;
+      }
+
       
       .profile {
         position: fixed;
@@ -157,7 +202,8 @@
       /* Responsive Adjustments for Scroll-to-Top and Profile */
       @media (max-width: 1300px) {
           .scroll-to-top,
-          .profile {
+          .profile,
+          .chatbot {
               width: 50px; /* Smaller width */
               height: 50px; /* Smaller height */
               font-size: 14px; /* Reduce font size */
@@ -195,7 +241,8 @@
       
       @media (max-width: 768px) {
           .scroll-to-top,
-          .profile {
+          .profile,
+          .chatbot {
               width: 40px; /* Further reduce size for mobile */
               height: 40px;
               font-size: 12px;
@@ -228,8 +275,8 @@
       footer.main-footer {
         background-color: #1c1c1c;
         position: relative;
-        padding-top: 80px;
-        margin-top: 120px;
+        padding-top: 50px;
+        margin-top: 50px;
       }
 
       .footer-bottom {
@@ -271,6 +318,12 @@
 
     <!--Scroll to top-->
     <div class="scroll-to-top"><a href="#" class="back-to-top" data-wow-duration="1.0s" data-wow-delay="1.0s"><i class="fa fa-angle-up"></i></a></div>
+    <div class="chatbot">
+        <a href="{% url 'chatbot' %}" class="chat" data-wow-duration="1.0s" data-wow-delay="1.0s">
+            <i class="fa-brands fa-rocketchat"></i>
+        </a>
+    </div>
+    
     {% block profile %}
     <div class="profile">
         {% if guest %}

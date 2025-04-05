@@ -32,7 +32,7 @@ ALLOWED_HOSTS = [
     'localhost', 
     '127.0.0.1', 
     'lidoshoresresort.onrender.com', 
-    'lidoshoresresort.up.railway.app'
+    '.herokuapp.com'
 ]
 
 handler404 = 'django.views.defaults.page_not_found'
@@ -141,30 +141,31 @@ AUTHENTICATION_BACKENDS = (
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 import os
 import dj_database_url
+from dotenv import load_dotenv
 
-# Database URL (session pooler configuration)
-DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:LidoShoresResort@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+load_dotenv()  # Load environment variables
+
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+
+
+
 
 # Parse the URL using dj_database_url
-db_from_env = dj_database_url.parse(DATABASE_URL)
+# db_from_env = dj_database_url.parse(DATABASE_URL)
+
+# DATABASE_URL = "postgresql://postgres.lzaivdnsgpdrouluczfg:LidoShoresResort@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+
+# DATABASES = {
+#     'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600, ssl_require=True)
+# }
+
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',  # The name of your database
-        'USER': 'postgres.lzaivdnsgpdrouluczfg',  # The username
-        'PASSWORD': 'LidoShoresResort',  # The password
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',  # Host of the database
-        'PORT': '5432',  # Port number
-        'OPTIONS': {
-            'sslmode': 'require',  # Use SSL for the connection
-        },
-        'CONN_MAX_AGE': 600,  # Connection pooling
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',  # Fallback to SQLite for development
+        conn_max_age=600,
+    )
 }
-
-
-
 
 
 

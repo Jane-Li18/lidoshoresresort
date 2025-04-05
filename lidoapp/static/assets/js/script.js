@@ -71,6 +71,7 @@
 		var siteHeader = $('.main-header');
 		var scrollLink = $('.scroll-to-top');
 		var scrollProfile = $('.profile');
+		var scrollChatbot = $('.chatbot');
 		var sticky_header = $('.main-header .sticky-header');
 	
 		if (windowpos > 100) {
@@ -80,6 +81,7 @@
 			}
 			scrollLink.fadeIn(300);
 			scrollProfile.fadeIn(300);
+			scrollChatbot.fadeIn(300);
 		} else {
 			if (siteHeader.length) {
 				siteHeader.removeClass('fixed-header');
@@ -87,6 +89,7 @@
 			}
 			scrollLink.fadeOut(300);
 			scrollProfile.fadeOut(300);
+			scrollChatbot.fadeOut(300);
 		}
 	}
 	

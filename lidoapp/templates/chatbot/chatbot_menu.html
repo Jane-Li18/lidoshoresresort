@@ -1,0 +1,573 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+
+{% block title %}Chat | Lido Shores Resort{% endblock title %}
+
+{% block content %}
+
+
+<style>
+    .link-button {
+        background-color: var(--bgsecondary);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+    
+    .link-button:hover {
+        background-color: var(--bgprimary);
+    }
+
+    
+    #chat-container { 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between; 
+        align-items: center;
+        margin: 15px 0 15px 0;
+        padding: 5px; /* Optional: Add padding for better spacing */
+        background: rgba(255, 255, 255, 0.9); /* Light background for contrast */
+        border-radius: 10px; /* Smooth edges */
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
+    }
+    
+    /* Chatbox */
+    #chatbox { 
+        width: 900px; 
+        height: 50vh; 
+        background: #fff; 
+        overflow-y: auto; 
+        {% comment %} margin: 50px 20px 0px 20px;  {% endcomment %}
+        padding: 30px; 
+        display: flex; 
+        flex-direction: column;
+    }
+
+    .message-container { 
+        display: flex;  
+        align-items: flex-end;
+        margin-bottom: 10px; 
+        opacity: 0; 
+        animation: fadeIn 0.3s forwards; 
+    }
+    
+    @keyframes fadeIn { 
+        to { opacity: 1; } 
+    }
+    
+    .bot-avatar, .user-avatar { 
+        width: 40px; 
+        height: 40px; 
+        border-radius: 50%;
+        object-fit: contain;
+        border: var(--bgsecondary) 1px solid;
+    }
+    
+    .bot-avatar { margin-right: 10px; }
+    .user-avatar { margin-left: 10px; }
+    
+    .user {
+        justify-content: flex-end;
+        align-items: center;
+    }
+    
+    .bot {
+        justify-content: flex-start;
+        {% comment %} align-items: center; {% endcomment %}
+    }
+    
+    .message-content {
+        display: flex;
+        flex-direction: column;
+        max-width: 60%;
+        position: relative;
+    }
+    
+    .user .message-content {
+        align-items: flex-end;
+    }
+    
+    .bot .message-content {
+        align-items: flex-start;
+    }
+    
+    .message { 
+        word-wrap: break-word; 
+        overflow-wrap: break-word; 
+        padding: 12px; 
+        border-radius: 15px; 
+        text-align: left; 
+        position: relative;
+    }
+    
+    .user-message { 
+        background: var(--bgsecondary); 
+        color: var(--bgtertiary); 
+        border-radius: 15px 15px 5px 15px; 
+    }
+    
+    .bot-message { 
+        background: #dddd; 
+        color: var(--txtprimary); 
+        border-radius: 15px 15px 15px 5px; 
+    }
+    
+    .timestamp {
+        font-size: 0.75em;
+        color: #888;
+        margin-top: 4px;
+    }
+    
+    .user .timestamp {
+        align-self: flex-end;
+    }
+    
+    .bot .timestamp {
+        align-self: flex-start;
+    }
+    
+
+
+
+    /* Input Container */
+    #inputContainer { 
+        width: 900px; 
+        display: flex; 
+        padding: 10px; 
+        background: #fff; 
+        justify-content: center;
+        transition: background 0.4s ease;
+    }
+
+    /* Send Button */
+    .send-button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: 1px solid #ddd;
+        background-color: var(--bgsecondary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: 10px;
+        margin-right: 10px;
+        transition: background 0.4s ease;
+    }
+
+    .send-button:hover {
+        background-color: var(--bgprimary);
+        color: var(--txtprimary);
+        transition: background 0.4s ease;
+        border: 1px solid #ddd;
+    }
+
+    .send-button i {
+        font-size: 20px;
+    }
+
+
+    .web-button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: 1px solid #ddd;
+        background-color: var(--bgprimary); /* Default disabled state */
+        color: var(--txtprimary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: 10px;
+        margin-right: 10px;
+        transition: background 0.4s ease, color 0.4s ease;
+        position: relative;
+    }
+    
+    .web-button:hover {
+        background-color: var(--bgsecondary);
+        color: var(--bgtertiary);
+        border: 1px solid #ddd;
+    }
+
+    .web-button:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 110%; /* Adjust position */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        white-space: nowrap;
+        font-size: 12px;
+        opacity: 1;
+        transition: opacity 0s; /* No delay */
+        pointer-events: none;
+    }
+
+
+    /* Input Field */
+    .form-group {
+        position: relative;
+        width: 80%;
+        max-width: 600px;
+        transition: background 0.4s ease;
+        margin-bottom: 0px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border: 1px solid #ddd;
+        outline: none;
+        border-radius: 25px;
+        transition: all 0.2s ease;
+        overflow-x: auto; /* Enables horizontal scrolling */
+        white-space: nowrap; /* Prevents text from wrapping */
+    }
+    
+
+    .form-group input:focus {
+        border-color: var(--bgprimary);
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 12px;
+        left: 15px;
+        font-size: 1em;
+        color: #666;
+        background: var(--bgtertiary);
+        transition: all 0.2s ease;
+        pointer-events: none;
+        padding: 0 5px;
+    }
+
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label {
+        top: -10px;
+        left: 10px;
+        font-size: 0.85em;
+        color: #333;
+    }
+
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 20px 15px 20px;
+        font-size: 1em;
+        border: 1px solid #ddd;
+        outline: none;
+        border-radius: 20px;
+        transition: all 0.2s ease;
+        resize: none; /* Prevents manual resizing */
+        min-height: 45px;
+        max-height: 90px; /* Limit max height */
+        overflow-y: auto; /* Enables vertical scrolling */
+    }
+
+    .button-group {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .button-group button {
+        background: var(--bgsecondary);
+        color: var(--bgtertiary);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .button-group button i {
+        font-size: 16px;
+    }
+
+
+    /* Typing Animation */
+    .typing { 
+        font-style: italic; 
+        color: gray; 
+        opacity: 0.7; 
+    }
+    
+    .loader {
+        width: 20px;
+        aspect-ratio: 4;
+        --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
+        background: 
+            var(--_g) 0%   50%,
+            var(--_g) 50%  50%,
+            var(--_g) 100% 50%;
+        background-size: calc(100%/3) 100%;
+        animation: l7 1s infinite linear;
+        display: inline-block;
+    }
+
+    @keyframes l7 {
+        33% { background-size: calc(100%/3) 0%  ,calc(100%/3) 100%,calc(100%/3) 100% }
+        50% { background-size: calc(100%/3) 100%,calc(100%/3) 0%  ,calc(100%/3) 100% }
+        66% { background-size: calc(100%/3) 100%,calc(100%/3) 100%,calc(100%/3) 0%  }
+    }
+
+    .parallax {
+        background: url("{% static 'assets/images/gallery/chat.jpg' %}") no-repeat center center;
+        background-size: cover;
+        background-attachment: fixed;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    footer.main-footer {
+        background-color: #1c1c1c;
+        position: relative;
+        padding-top: 50px;
+        margin-top: 0px;
+      }
+    
+
+
+</style>
+
+<div class="parallax">
+    <div id="chat-container">
+        <div id="chatbox">
+            {% comment %}
+            <div class="message-container">
+                <img src="{% static 'assets/images/components/logo-circle.png'%}" alt="Bot Avatar" class="bot-avatar">
+                <div class="message bot-message">
+                    Hello! I am <b>LidoBot</b>, Welcome to <b>Lido Shores Resort</b>
+                    How can I assist you today?
+                </div>
+            </div>
+            {% endcomment %}
+        </div>
+
+        <div id="inputContainer">
+            <button class="web-button" onclick="toggleSearch(this)" data-tooltip="Web Search">
+                <i class="fas fa-globe"></i>
+            </button>
+            
+            
+            <div class="form-group">
+                <textarea id="userMessage" placeholder="Ask anything..." oninput="resizeInput()" onkeypress="handleKeyPress(event)"></textarea>
+                
+                {% comment %} <div class="button-group">
+                    <button id="searchToggle" onclick="toggleSearch()">
+                        <i class="fas fa-globe"></i>
+                    </button>
+                </div> {% endcomment %}
+            </div>
+            <button onclick="sendMessage()" class="send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        <span style="font-size: 0.75em; color: #888; display: block; text-align: center;">The AI may take a minute to respond. Please wait.</span>            </div>
+
+    </div>
+</div>
+
+
+
+    <script>
+        function handleKeyPress(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault(); // Prevents new line
+                sendMessage();
+            }
+        }
+        
+        function resizeInput() {
+            var input = document.getElementById("userMessage");
+            input.style.height = "auto"; // Reset height
+            input.style.height = (input.scrollHeight) + "px"; // Set new height
+        }
+        
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+        }
+
+        let webSearchEnabled = false;
+
+        function toggleSearch(button) {
+            webSearchEnabled = !webSearchEnabled;
+        
+            if (webSearchEnabled) {
+                button.style.backgroundColor = "var(--bgsecondary)";
+                button.style.color = "var(--bgtertiary)";
+                button.setAttribute("data-tooltip", "Web search enabled");
+            } else {
+                button.style.backgroundColor = "var(--bgprimary)";
+                button.style.color = "var(--txtprimary)";
+                button.setAttribute("data-tooltip", "Requires internet to web search");
+            }
+        }
+        
+        function formatResponse(response) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+        
+            return response.replace(urlRegex, (url) => {
+                let domain = new URL(url).hostname; // Extract domain name
+                let resortName = "Lido Shores Resort"; // Resort name
+                let faviconUrl = `https://www.google.com/s2/favicons?sz=32&domain=${domain}`; // Fetch icon from Google
+        
+                return `<button class="btn-one" onclick="window.open('${url}', '_blank')" style="padding: 5px 10px;">
+                            <img src="${faviconUrl}" alt="Site Icon" style="width: 18px; height: 18px; margin-right: 5px;"><span></span>
+                            ${resortName}
+                        </button>`;
+            });
+        }
+        
+          
+        function sendMessage() {
+            var input = document.getElementById("userMessage");
+            var userMessage = input.value.trim();
+            var sendButton = document.querySelector(".send-button");
+        
+            if (!userMessage) return;
+        
+            sendButton.disabled = true;
+            sendButton.style.opacity = "0.5";
+        
+            var chatbox = document.getElementById("chatbox");
+            var userAvatar = "{{ user_avatar|safe }}";
+            var time = getCurrentTime();
+        
+            chatbox.innerHTML += `
+                <div class="message-container user">
+                    <div class="message-content">
+                        <div class="message user-message">${userMessage}</div>
+                        <span class="timestamp">${time}</span> 
+                    </div>
+                    <img src="${userAvatar}" alt="User Avatar" class="user-avatar">
+                </div>
+            `;
+        
+            input.value = "";
+            input.style.height = "auto";
+            chatbox.scrollTop = chatbox.scrollHeight;
+        
+            var typingElement = document.createElement("div");
+            typingElement.classList.add("message-container", "bot");
+            typingElement.innerHTML = `
+                <img src="{% static 'assets/images/components/logo-circle.png'%}" alt="Bot Avatar" class="bot-avatar">
+                <div class="message-content">
+                    <div class="message bot-message">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            `;
+            chatbox.appendChild(typingElement);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        
+            // Send request to backend with web search status
+            fetch("/chatbot/api/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage, web_search: webSearchEnabled }) // Include web search status
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatbox.removeChild(typingElement);
+                var botMessage = `
+                    <div class="message-container bot">
+                        <img src="{% static 'assets/images/components/logo-circle.png'%}" alt="Bot Avatar" class="bot-avatar">
+                        <div class="message-content">
+                            <div class="message bot-message">${formatResponse(data.response)}</div>
+                            <span class="timestamp">${getCurrentTime()}</span>
+                        </div>
+                    </div>
+                `;
+                chatbox.innerHTML += botMessage;
+                if (data.next_message) {
+                    setTimeout(() => {
+                        var botMessages = chatbox.querySelectorAll('.message-container.bot');
+                        var firstBotMessage = botMessages[botMessages.length - 1];
+                        firstBotMessage.innerHTML = `
+                            <img src="{% static 'assets/images/components/logo-circle-white.png'%}" alt="Bot Avatar" class="bot-avatar" style="border: none;">
+                            <div class="message-content">
+                                <div class="message bot-message">${formatResponse(data.response)}</div>
+                            </div>
+                        `;
+                        var nextBotMessage = `
+                            <div class="message-container bot">
+                                <img src="{% static 'assets/images/components/logo-circle.png'%}" alt="Bot Avatar" class="bot-avatar">
+                                <div class="message-content">
+                                    <div class="message bot-message">${formatResponse(data.next_message)}</div>
+                                    <span class="timestamp">${getCurrentTime()}</span>
+                                </div>
+                            </div>
+                        `;
+                        chatbox.innerHTML += nextBotMessage;
+                        chatbox.scrollTop = chatbox.scrollHeight;
+                    }, 1000); // delay for 1 second
+                }
+                chatbox.scrollTop = chatbox.scrollHeight;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                chatbox.removeChild(typingElement); // Remove typing indicator
+                chatbox.innerHTML += `
+                            <div class="message-container bot">
+                                <img src="{% static 'assets/images/components/logo-circle.png'%}" alt="Bot Avatar" class="bot-avatar">
+                                <div class="message-content">
+                                    <div class="message bot-message error">Unfortunately, we encountered an issue while processing your request. We appreciate your patience and would be happy to help you further.</div>
+                                    <span class="timestamp">${getCurrentTime()}</span>
+                                </div>
+                            </div>
+                `;
+            })
+            .finally(() => {
+                sendButton.disabled = false;
+                sendButton.style.opacity = "1";
+            });
+        
+            console.log("Sending message:", userMessage);
+            console.log("Web Search Enabled:", webSearchEnabled);
+        }
+        
+           
+        // Add timestamp to the default bot message
+        document.addEventListener("DOMContentLoaded", function() {
+            var chatbox = document.getElementById("chatbox");
+            chatbox.innerHTML = `
+                <div class="message-container bot">
+                    <img src="{% static 'assets/images/components/logo-circle.png'%}" alt="Bot Avatar" class="bot-avatar">
+                    
+                    <div class="message-content">
+                        <div class="message bot-message">
+                            Hello! I am <b>LidoBot</b>, Welcome to <b>Lido Shores Resort</b>! 
+                            <br>How can I assist you today?
+                        </div>
+                        <span class="timestamp">${getCurrentTime()}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        
+        
+    </script>
+    
+
+{% endblock content %}
